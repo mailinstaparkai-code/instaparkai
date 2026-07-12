@@ -1,0 +1,149 @@
+# InstaPark AI — CLAUDE.md
+
+Instructions and context for Claude Code (or any future contributor) working in this
+repo. See [`HANDOFF.md`](./HANDOFF.md) for project status and next steps, and
+[`design.md`](./design.md) for the design system.
+
+## What this is
+
+InstaPark AI is an enterprise parking management platform, built in phases:
+
+1. **Super Admin Portal** (done) — the platform owner's console: organizations, parking
+   sites, zones, slots, access workflows, tariff rules.
+2. **Valet Parking Application** (in progress) — a Parking Admin dashboard, a native
+   Android operator app, and a link-based guest tracker, layered on top of a specific
+   parking site.
+
+## Repo structure
+
+```
+InstaParkAI/
+  apps/
+    super-admin/        Next.js app — Super Admin portal + Parking Admin dashboard
+  supabase/
+    migrations/          SQL migrations, applied via `supabase db push` (see below)
+  design.md               Design system: colors, type, spacing, components, motion
+  CLAUDE.md                This file
+  HANDOFF.md               Project status, access notes, what's next
+```
+
+Only one app exists so far. Future valet surfaces per the plan: a native Android app
+(likely `apps/valet-operator-android`) and possibly a separate web app for
+dweb/mweb — check `HANDOFF.md` for the current decision before assuming either exists.
+
+## Stack
+
+- **Backend**: Supabase — Postgres + RLS, Supabase Auth, Storage. No custom backend
+  server; all data access is via the Supabase client (RLS-scoped) or the service-role
+  client (see Auth model below).
+- **Frontend**: Next.js (App Router, Turbopack), Tailwind CSS v4, shadcn/ui
+  (`@base-ui-components/react` under the hood, not Radix), `lucide-react` icons,
+  `next-themes` for light/dark.
+- **Hosting**: Vercel (project `insta-park-ai/instaparkai-super-admin`).
+
+## Auth model — two separate systems, intentionally
+
+This is the single most important thing to understand before touching auth code.
+
+1. **`super_admin`** (and legacy `site_admin`, unused going forward) — real **Supabase
+   Auth** users. Session lives in Supabase's own cookies, checked via
+   `src/lib/supabase/server.ts` / `client.ts`. RLS policies (`is_super_admin()`,
+   `current_site_id()` SQL functions) gate access to `organizations`, `parking_spaces`,
+   `zones`, `slots`, `access_workflows`, `tariff_rules`.
+
+2. **`parking_admin` / `valet_operator`** — a **fully separate, custom username/password
+   system** (`valet_accounts` + `valet_sessions` tables), *not* Supabase Auth. This was a
+   deliberate choice (not a shortcut) — see `HANDOFF.md` for why. Consequences:
+   - These sessions carry no `auth.uid()`, so the RLS policies above don't apply to them.
+   - `valet_accounts` / `valet_sessions` have RLS **enabled with no policies** — deny-all
+     for `anon`/`authenticated`. All access goes through server-side code using the
+     **service-role client** (`src/lib/supabase/service.ts`), which bypasses RLS by
+     design. **Authorization for these tables lives in application code, not Postgres.**
+     Any new Server Action or Route Handler touching `valet_accounts`/`valet_sessions`
+     must check the caller's role/site itself — there is no database safety net.
+   - Passwords: Node's built-in `crypto.scrypt` (`src/lib/valet-auth/password.ts`), not a
+     third-party hashing lib.
+   - Sessions: random token, only the SHA-256 hash stored server-side, set as an httpOnly
+     cookie (`src/lib/valet-auth/session.ts`).
+   - Login lives at `/parking-admin/login`, separate from `/login` (Supabase Auth,
+     `super_admin` only). `src/proxy.ts` → `src/lib/supabase/proxy.ts` protects both route
+     trees independently — the `/parking-admin/*` branch only does a cheap cookie-presence
+     check (no `node:crypto` at the edge); the real, DB-verified check happens in the
+     page/layout via `getValetSession()`.
+
+## Database conventions
+
+- Every table has an `updated_at` trigger via the shared `public.set_updated_at()`
+  function — reuse it, don't write a new one per table.
+- RLS pattern for platform tables: a policy for `super_admin` (`using (is_super_admin())`)
+  granting full access, plus a narrower `site_admin`-scoped read policy where relevant.
+  `is_super_admin()` and `current_site_id()` (both `SECURITY DEFINER`) exist specifically
+  to avoid recursive-RLS issues when a policy needs to query `profiles` itself — reuse
+  them rather than inlining a `profiles` subquery in a new policy.
+- **Enum columns**: never assign a bare `CASE WHEN ... THEN 'a' ELSE 'b' END` to an enum
+  column without an explicit `::enum_type` cast. Postgres resolves two string-literal
+  `CASE` branches to `text` (not "unknown"/literal), and there's no implicit `text →
+  enum` cast — this silently breaks at runtime, not at migration-apply time. (Real bug
+  hit in this repo: see migration `20260712082304_fix_handle_new_user_role_cast.sql`.)
+- **PostgREST embeds**: a `child(count)` embed through a table with a **unique** FK
+  (one-to-one) returns a single object or `null`, not an array — unlike a normal
+  one-to-many embed, which returns `[]`/`[...]`. Check the FK's uniqueness before writing
+  `.foo[0]` — if it's unique, that's a bug waiting to crash on the first row.
+
+## Frontend conventions
+
+- **Server → Client Component boundary**: never pass a bare component reference (e.g. a
+  `lucide-react` icon component, `icon={SomeIcon}`) as a prop from a Server Component
+  into a Client Component — React can't serialize a function/class across that boundary
+  and it throws at request time (not build time). Render it first
+  (`icon={<SomeIcon className="size-5" />}`) and pass the resulting element instead.
+- **Clickable cards with a kebab menu** (`components/parking-spaces/components/
+  entity-card.tsx` is the reference implementation): the whole-card link is an absolutely
+  positioned `<Link>` at the back of the stack; only the kebab trigger gets `relative
+  z-10` to sit above it. Do **not** add `z-10`/`relative` to other content wrappers
+  (badges, stats, etc.) "for safety" — that creates dead click zones that swallow clicks
+  meant for the underlying link (hit this exact bug once already in this section).
+- **Dialogs bound to a Server Action**: prefer the `FormDialog` /
+  `ConfirmDeleteDialog` components (`app/dashboard/parking-spaces/components/`) over a
+  raw `<form action={serverAction}>` inside a shadcn `Dialog` — the raw version doesn't
+  close itself after a successful submit (a real bug we hit and fixed). Both components
+  call the action programmatically via `onSubmit` and close on success.
+- This app's Next.js version renamed the `middleware.ts` convention to `proxy.ts`
+  (exporting a function named `proxy`, not `middleware`) — don't "fix" `src/proxy.ts`
+  back to the old convention.
+- Design tokens live in `apps/super-admin/src/app/globals.css` as CSS variables, driven
+  by `design.md`. Don't hardcode a raw hex/px value in a component — add or reuse a
+  token.
+
+## Working with Supabase locally
+
+- No local Supabase stack — Docker isn't set up in this environment, and migrations are
+  applied straight to the linked remote project:
+  ```bash
+  npx supabase migration new <name>   # create a new migration file
+  npx supabase db push                # apply pending migrations to the remote project
+  npx supabase db query --linked "<sql>"   # ad-hoc read query against the remote project
+  ```
+- Service-role operations (creating `valet_accounts`, etc.) from a one-off script:
+  prefer `npx supabase db query --linked` or a Server Action over a bare Node script —
+  the plain `@supabase/supabase-js` client's realtime module can throw on this Node
+  version outside of Next.js's runtime.
+
+## Deploying
+
+- `git push` triggers Vercel's GitHub integration automatically, **but** in this
+  environment it has intermittently gotten stuck/cancelled — if that happens, deploy
+  manually and it works fine:
+  ```bash
+  vercel deploy --prod --yes
+  ```
+- Env vars (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+  `SUPABASE_SERVICE_ROLE_KEY`) are already set in the Vercel project's Production
+  environment — update there (not just `.env.local`) if they ever rotate.
+
+## Where to look next
+
+- [`HANDOFF.md`](./HANDOFF.md) — current status, access/account notes, what's next.
+- [`design.md`](./design.md) — the full design system.
+- `supabase/migrations/` — read in order for the full schema history; each file's header
+  comment explains *why*, not just *what*.
