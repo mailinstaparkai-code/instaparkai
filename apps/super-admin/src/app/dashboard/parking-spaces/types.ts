@@ -13,13 +13,33 @@ export type Zone = {
   slots: Slot[];
 };
 
+export type AccessMethod = "anpr" | "rfid" | "hid";
+
+export type AccessWorkflow = {
+  id: string;
+  methods: AccessMethod[];
+};
+
+export type TariffRule = {
+  id: string;
+  vehicle_category: string;
+  pricing_type: "flat" | "hourly" | "surge";
+  rate: number;
+  surge_multiplier: number | null;
+};
+
 export type ParkingSpace = {
   id: string;
   name: string;
   type: "corporate" | "commercial" | "industrial" | "hybrid";
   address: string | null;
+  latitude: number | null;
+  longitude: number | null;
   timezone: string;
   zones: Zone[];
+  // one-to-one relation (unique FK) -> PostgREST returns a single object or null, not an array
+  access_workflows: AccessWorkflow | null;
+  tariff_rules: TariffRule[];
 };
 
 export type Organization = {

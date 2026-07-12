@@ -25,7 +25,10 @@ export default async function ParkingSpacesPage() {
   const { data: organizations } = await supabase
     .from("organizations")
     .select(
-      "id, name, parking_spaces(id, name, type, address, timezone, zones(id, name, slots(id, slot_number, category, is_ev, is_disabled_slot, status)))"
+      "id, name, parking_spaces(id, name, type, address, latitude, longitude, timezone, " +
+        "zones(id, name, slots(id, slot_number, category, is_ev, is_disabled_slot, status)), " +
+        "access_workflows(id, methods), " +
+        "tariff_rules(id, vehicle_category, pricing_type, rate, surge_multiplier))"
     )
     .order("name")
     .returns<Organization[]>();

@@ -16,6 +16,15 @@ export async function createOrganization(formData: FormData) {
   revalidatePath(PATH);
 }
 
+function parseLatLng(formData: FormData) {
+  const latRaw = formData.get("latitude")?.toString().trim();
+  const lngRaw = formData.get("longitude")?.toString().trim();
+  return {
+    latitude: latRaw ? Number(latRaw) : null,
+    longitude: lngRaw ? Number(lngRaw) : null,
+  };
+}
+
 export async function createParkingSpace(formData: FormData) {
   const organization_id = formData.get("organization_id")?.toString();
   const name = formData.get("name")?.toString().trim();
@@ -25,9 +34,32 @@ export async function createParkingSpace(formData: FormData) {
   if (!organization_id || !name || !type) return;
 
   const supabase = await createClient();
+  const { error } = await supabase.from("parking_spaces").insert({
+    organization_id,
+    name,
+    type,
+    address,
+    timezone,
+    ...parseLatLng(formData),
+  });
+  if (error) throw new Error(error.message);
+
+  revalidatePath(PATH);
+}
+
+export async function updateParkingSpace(formData: FormData) {
+  const id = formData.get("id")?.toString();
+  const name = formData.get("name")?.toString().trim();
+  const type = formData.get("type")?.toString();
+  const address = formData.get("address")?.toString().trim() || null;
+  const timezone = formData.get("timezone")?.toString().trim() || "UTC";
+  if (!id || !name || !type) return;
+
+  const supabase = await createClient();
   const { error } = await supabase
     .from("parking_spaces")
-    .insert({ organization_id, name, type, address, timezone });
+    .update({ name, type, address, timezone, ...parseLatLng(formData) })
+    .eq("id", id);
   if (error) throw new Error(error.message);
 
   revalidatePath(PATH);
@@ -40,6 +72,44 @@ export async function createZone(formData: FormData) {
 
   const supabase = await createClient();
   const { error } = await supabase.from("zones").insert({ parking_space_id, name });
+  if (error) throw new Error(error.message);
+
+  revalidatePath(PATH);
+}
+
+export async function setAccessWorkflow(formData: FormData) {
+  const parking_space_id = formData.get("parking_space_id")?.toString();
+  const primary = formData.get("primary_method")?.toString();
+  const fallback = formData.get("fallback_method")?.toString();
+  if (!parking_space_id || !primary) return;
+
+  const methods = [primary, ...(fallback && fallback !== primary ? [fallback] : [])];
+
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("access_workflows")
+    .upsert({ parking_space_id, methods }, { onConflict: "parking_space_id" });
+  if (error) throw new Error(error.message);
+
+  revalidatePath(PATH);
+}
+
+export async function createTariffRule(formData: FormData) {
+  const parking_space_id = formData.get("parking_space_id")?.toString();
+  const vehicle_category = formData.get("vehicle_category")?.toString().trim() || "car";
+  const pricing_type = formData.get("pricing_type")?.toString();
+  const rateRaw = formData.get("rate")?.toString().trim();
+  const surgeRaw = formData.get("surge_multiplier")?.toString().trim();
+  if (!parking_space_id || !pricing_type || !rateRaw) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("tariff_rules").insert({
+    parking_space_id,
+    vehicle_category,
+    pricing_type,
+    rate: Number(rateRaw),
+    surge_multiplier: surgeRaw ? Number(surgeRaw) : null,
+  });
   if (error) throw new Error(error.message);
 
   revalidatePath(PATH);
