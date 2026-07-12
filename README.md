@@ -15,6 +15,10 @@ and, later, the valet parking operator apps (dweb, mweb, Android) for individual
 - Super Admin frontend: Next.js, Tailwind CSS, shadcn/ui
 - Valet apps (future): native Android (Kotlin) + a separate React web app for dweb/mweb
 
+## Deployments
+
+- Super Admin portal (production): https://instaparkai-super-admin.vercel.app
+
 ## Getting started
 
 ```bash
