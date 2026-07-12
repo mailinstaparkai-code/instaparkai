@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { signOut } from "./actions";
@@ -44,7 +45,13 @@ export default async function DashboardPage() {
           </div>
         </dl>
 
-        <form action={signOut} className="mt-6">
+        <Link href="/dashboard/parking-spaces" className="mt-6 block">
+          <Button variant="outline" className="w-full">
+            Manage parking spaces
+          </Button>
+        </Link>
+
+        <form action={signOut} className="mt-3">
           <Button type="submit" variant="secondary" className="w-full">
             Sign out
           </Button>
