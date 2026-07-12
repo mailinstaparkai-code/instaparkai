@@ -1,9 +1,10 @@
 "use server";
 
-import { randomBytes, randomInt } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getValetSession } from "@/lib/valet-auth/session";
+import { generateOtp } from "@/lib/otp";
 
 const PATH = "/parking-admin/queue";
 
@@ -16,10 +17,6 @@ async function assertParkingAdmin() {
     throw new Error("Parking Admin access required.");
   }
   return session;
-}
-
-function generateOtp(): string {
-  return randomInt(0, 10000).toString().padStart(4, "0");
 }
 
 export async function checkInVehicle(formData: FormData) {

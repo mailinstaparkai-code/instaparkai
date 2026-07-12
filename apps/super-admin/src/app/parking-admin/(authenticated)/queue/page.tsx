@@ -13,6 +13,7 @@ import {
   markArrived,
   requestVehicle,
 } from "./actions";
+import { CopyLinkButton } from "./copy-link-button";
 import { HandoverButton } from "./handover-button";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -33,6 +34,7 @@ const STATUS_COLOR: Record<string, string> = {
 
 type Ticket = {
   id: string;
+  ticket_token: string;
   vehicle_number: string;
   vehicle_type: string;
   mobile_number: string;
@@ -55,7 +57,7 @@ export default async function LiveQueuePage() {
     supabase
       .from("valet_tickets")
       .select(
-        "id, vehicle_number, vehicle_type, mobile_number, status, otp, checked_in_at, fare_amount, slots(slot_number)"
+        "id, ticket_token, vehicle_number, vehicle_type, mobile_number, status, otp, checked_in_at, fare_amount, slots(slot_number)"
       )
       .eq("parking_space_id", session.assignedSiteId)
       .neq("status", "completed")
@@ -157,6 +159,7 @@ export default async function LiveQueuePage() {
               <th className="p-3 font-medium">Slot</th>
               <th className="p-3 font-medium">Status</th>
               <th className="p-3 font-medium">Checked in</th>
+              <th className="p-3 font-medium">Link</th>
               <th className="p-3 font-medium">Action</th>
             </tr>
           </thead>
@@ -184,6 +187,9 @@ export default async function LiveQueuePage() {
                   </td>
                   <td className="p-3 text-xs text-muted-foreground">
                     {new Date(t.checked_in_at).toLocaleTimeString()}
+                  </td>
+                  <td className="p-3">
+                    <CopyLinkButton token={t.ticket_token} />
                   </td>
                   <td className="p-3">
                     {t.status === "parked" && (
@@ -224,7 +230,7 @@ export default async function LiveQueuePage() {
             })}
             {!tickets?.length && (
               <tr>
-                <td colSpan={6} className="p-6 text-center text-sm text-muted-foreground">
+                <td colSpan={7} className="p-6 text-center text-sm text-muted-foreground">
                   No active vehicles. Check one in to get started.
                 </td>
               </tr>

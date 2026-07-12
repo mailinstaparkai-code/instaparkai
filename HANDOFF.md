@@ -56,10 +56,19 @@ keys) to any file, including this one — reference where to find/reset them ins
   gateway, matches the "GPay screenshot + mark collected" design.
 - "Vehicles" (full vehicle log/reports), "Reports", "Communication", and "Settings" nav
   items are still stubs (`href: null` in `src/components/shell/nav-config.ts`).
+- **Guest tracking page** (Phase D): public `/track/[ticket_token]` route, no login. Shows
+  a status timeline (Parked → Requested → On the way → Arrived), a "Request my vehicle"
+  button (parked stage only), the handover OTP once the vehicle has arrived, and a
+  delivered/fare summary once completed. Auto-refreshes every 6s via
+  `src/app/track/[token]/status-poller.tsx` (plain polling, not Supabase Realtime, since
+  guest sessions aren't Supabase-authenticated). The Live Queue page has a "Guest link"
+  copy-to-clipboard button per row (`src/app/parking-admin/(authenticated)/queue/copy-link-button.tsx`)
+  for staff to share the link — no SMS/WhatsApp delivery yet (that's Communication
+  settings, still a stub).
 
-**Not started**: photo capture UI (check-in/handover, 4-side + odometer), the guest
-tracking page, the Android operator app, and all AI features (deferred by design — see
-below).
+**Not started**: photo capture UI (check-in/handover, 4-side + odometer), SMS/WhatsApp
+delivery of the guest tracking link, the Android operator app, and all AI features
+(deferred by design — see below).
 
 ## Architecture decisions worth knowing before you continue
 
@@ -92,9 +101,9 @@ below).
   screenshot + "mark collected" — by design, not a gap to fix).
 - Check-in/handover photo capture (4-side + odometer) isn't built — the `valet-photos`
   Storage bucket exists but nothing uploads to it yet.
-- No guest-facing tracking page yet, so the Parking Admin currently triggers "Guest
-  requested" on the guest's behalf from the Live Queue page rather than the guest
-  self-serving via a link.
+- The guest tracking link (`/track/[token]`) has to be copied and sent manually today
+  (Parking Admin clicks "Guest link" on the Live Queue row) — no automatic SMS/WhatsApp
+  delivery at check-in yet (needs Communication settings + a messaging provider).
 - Fare suggestion at handover (`src/lib/tariff.ts`) is best-effort (duration × tariff
   rule) and always operator-editable — it isn't wired into any billing/ledger system.
 
@@ -133,14 +142,12 @@ Roughly in order (matches the phased plan this project has been following):
 2. **Reports & full vehicle log** — a `/parking-admin/vehicles` or similar page showing
    all tickets (including completed), turnaround/operator stats; currently only the
    active Live Queue is surfaced.
-3. **Guest tracking page** (Phase D): public `/track/[ticket_token]` route — no login,
-   live status, one-tap "Request Vehicle," OTP display on arrival. `valet_tickets` already
-   has `ticket_token` for this.
-4. **Communication settings** (Phase C remainder): per-site WhatsApp/SMS/Email toggles +
+3. **Communication settings** (Phase C remainder): per-site WhatsApp/SMS/Email toggles +
    the site's own fresh Twilio/SendGrid/AiSensy credentials (never reuse anything from the
-   old reference doc — see above).
-5. **Android operator app** (Phase E): native Kotlin/Compose, consuming a small JSON API
+   old reference doc — see above) — needed to auto-send the `/track/[token]` link at
+   check-in instead of staff copying it manually.
+4. **Android operator app** (Phase E): native Kotlin/Compose, consuming a small JSON API
    under this Next.js app (bearer-token auth, since the Android app can't use Supabase's
    client SDK against the custom `valet_accounts` session model).
-6. AI enhancements — only after the above is live and there's real usage data to build
+5. AI enhancements — only after the above is live and there's real usage data to build
    against.
