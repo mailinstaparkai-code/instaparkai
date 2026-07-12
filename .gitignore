@@ -12,3 +12,5 @@ build/
 npm-debug.log*
 .supabase/
 .vercel/
+.vercel
+.env*
