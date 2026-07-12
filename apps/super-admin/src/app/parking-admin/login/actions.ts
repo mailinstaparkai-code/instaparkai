@@ -23,7 +23,7 @@ export async function loginParkingAdmin(
   if (
     !account ||
     !account.is_active ||
-    account.role !== "parking_admin" ||
+    (account.role !== "parking_admin" && account.role !== "valet_operator") ||
     !verifyPassword(password, account.password_hash)
   ) {
     return { error: "Invalid username or password." };

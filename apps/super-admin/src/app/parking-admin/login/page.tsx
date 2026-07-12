@@ -36,7 +36,7 @@ export default function ParkingAdminLoginPage() {
           Insta<span className="text-brand-orange">Park</span> AI
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Parking Admin sign in.
+          Sign in to continue.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">

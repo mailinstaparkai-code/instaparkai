@@ -53,7 +53,7 @@ export default async function VehicleLogPage({
   searchParams: Promise<{ status?: string }>;
 }) {
   const session = await getValetSession();
-  if (!session || session.role !== "parking_admin") {
+  if (!session) {
     redirect("/parking-admin/login");
   }
 

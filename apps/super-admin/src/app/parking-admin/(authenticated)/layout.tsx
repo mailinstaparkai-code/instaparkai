@@ -13,11 +13,13 @@ export default async function ParkingAdminDashboardLayout({
     redirect("/parking-admin/login");
   }
 
+  const isOperator = session.role === "valet_operator";
+
   return (
     <AppShell
-      nav="parking-admin"
+      nav={isOperator ? "valet-operator" : "parking-admin"}
       userLabel={session.fullName || session.username}
-      userSubLabel="Parking Admin"
+      userSubLabel={isOperator ? "Valet Operator" : "Parking Admin"}
       signOutAction={logoutParkingAdmin}
     >
       {children}

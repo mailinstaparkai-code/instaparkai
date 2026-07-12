@@ -57,3 +57,11 @@ export const parkingAdminNav: NavItem[] = [
   { label: "Communication", href: "/parking-admin/communication", icon: MessageSquare },
   { label: "Settings", href: null, icon: Settings },
 ];
+
+// valet_operator sidebar — a restricted subset of parkingAdminNav. No account
+// management or communication settings, both admin-only.
+export const valetOperatorNav: NavItem[] = [
+  { label: "Dashboard", href: "/parking-admin/dashboard", icon: LayoutDashboard },
+  { label: "Live Queue", href: "/parking-admin/queue", icon: ListOrdered },
+  { label: "Vehicles", href: "/parking-admin/vehicles", icon: Car },
+];

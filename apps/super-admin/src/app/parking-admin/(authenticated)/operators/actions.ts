@@ -39,6 +39,33 @@ export async function createOperator(formData: FormData) {
   revalidatePath(PATH);
 }
 
+export async function updateOperator(formData: FormData) {
+  const id = formData.get("id")?.toString();
+  const username = formData.get("username")?.toString().trim();
+  const password = formData.get("password")?.toString();
+  const full_name = formData.get("full_name")?.toString().trim() || null;
+  const employee_id = formData.get("employee_id")?.toString().trim() || null;
+  if (!id || !username) return;
+
+  const session = await assertParkingAdmin();
+
+  const update: Record<string, unknown> = { username, full_name, employee_id };
+  if (password) {
+    update.password_hash = hashPassword(password);
+  }
+
+  const supabase = createServiceClient();
+  const { error } = await supabase
+    .from("valet_accounts")
+    .update(update)
+    .eq("id", id)
+    .eq("assigned_site_id", session.assignedSiteId)
+    .eq("role", "valet_operator");
+  if (error) throw new Error(error.message);
+
+  revalidatePath(PATH);
+}
+
 export async function setOperatorActive(formData: FormData) {
   const id = formData.get("id")?.toString();
   const is_active = formData.get("is_active")?.toString() === "true";

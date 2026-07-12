@@ -4,15 +4,18 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { getValetSession } from "@/lib/valet-auth/session";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { createOperator, deleteOperator, setOperatorActive } from "./actions";
+import { createOperator, deleteOperator, setOperatorActive, updateOperator } from "./actions";
 import { DeleteButton } from "../../components/delete-button";
 import { Field } from "../../components/field";
 import { FormDialog } from "../../components/form-dialog";
 
 export default async function ValetOperatorsPage() {
   const session = await getValetSession();
-  if (!session || session.role !== "parking_admin") {
+  if (!session) {
     redirect("/parking-admin/login");
+  }
+  if (session.role !== "parking_admin") {
+    redirect("/parking-admin/dashboard");
   }
 
   const supabase = createServiceClient();
@@ -75,6 +78,31 @@ export default async function ValetOperatorsPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <FormDialog
+                key={`${op.username}-${op.full_name}-${op.employee_id}`}
+                trigger={
+                  <Button variant="outline" size="sm">
+                    Edit
+                  </Button>
+                }
+                title="Edit valet operator"
+                action={updateOperator}
+                submitLabel="Save"
+              >
+                <input type="hidden" name="id" value={op.id} />
+                <Field label="Username">
+                  <Input name="username" defaultValue={op.username} required />
+                </Field>
+                <Field label="New password">
+                  <Input name="password" type="password" placeholder="Leave blank to keep current" />
+                </Field>
+                <Field label="Full name">
+                  <Input name="full_name" defaultValue={op.full_name ?? ""} />
+                </Field>
+                <Field label="Employee ID">
+                  <Input name="employee_id" defaultValue={op.employee_id ?? ""} />
+                </Field>
+              </FormDialog>
               <form action={setOperatorActive}>
                 <input type="hidden" name="id" value={op.id} />
                 <input type="hidden" name="is_active" value={(!op.is_active).toString()} />

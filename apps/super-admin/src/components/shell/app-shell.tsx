@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Menu, X, Search, Sparkles, Bell, Sun, Moon, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { superAdminNav, parkingAdminNav } from "./nav-config";
+import { superAdminNav, parkingAdminNav, valetOperatorNav } from "./nav-config";
 
 export function AppShell({
   nav,
@@ -15,13 +15,14 @@ export function AppShell({
   signOutAction,
   children,
 }: {
-  nav: "super-admin" | "parking-admin";
+  nav: "super-admin" | "parking-admin" | "valet-operator";
   userLabel: string;
   userSubLabel?: string;
   signOutAction: () => void;
   children: React.ReactNode;
 }) {
-  const navItems = nav === "super-admin" ? superAdminNav : parkingAdminNav;
+  const navItems =
+    nav === "super-admin" ? superAdminNav : nav === "valet-operator" ? valetOperatorNav : parkingAdminNav;
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);

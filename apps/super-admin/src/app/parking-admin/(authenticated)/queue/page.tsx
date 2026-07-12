@@ -51,7 +51,7 @@ type Ticket = {
 
 export default async function LiveQueuePage() {
   const session = await getValetSession();
-  if (!session || session.role !== "parking_admin") {
+  if (!session) {
     redirect("/parking-admin/login");
   }
 

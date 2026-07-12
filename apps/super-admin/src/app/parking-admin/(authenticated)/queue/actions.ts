@@ -30,13 +30,14 @@ const CHECKIN_PHOTO_FIELDS = [
 
 const PATH = "/parking-admin/queue";
 
-// This web dashboard is Parking Admin only -- valet_operator is Android-app-only per
-// the Phase 2 plan (no web dashboard/config access), so it will call a separate
-// /api/valet/* REST API (Phase E) rather than these Server Actions.
-async function assertParkingAdmin() {
+// Live Queue is the day-to-day work surface for both roles -- parking_admin and
+// valet_operator can both run the ticket lifecycle here. Account management
+// (operators/actions.ts) and Communication settings (communication/actions.ts) stay
+// gated to parking_admin only via their own assertParkingAdmin().
+async function assertValetStaff() {
   const session = await getValetSession();
-  if (!session || session.role !== "parking_admin") {
-    throw new Error("Parking Admin access required.");
+  if (!session || (session.role !== "parking_admin" && session.role !== "valet_operator")) {
+    throw new Error("Sign-in required.");
   }
   return session;
 }
@@ -48,7 +49,7 @@ export async function checkInVehicle(formData: FormData) {
   const slot_id = formData.get("slot_id")?.toString() || null;
   if (!vehicle_number || !mobile_number) return;
 
-  const session = await assertParkingAdmin();
+  const session = await assertValetStaff();
   const supabase = createServiceClient();
 
   const ticketId = randomUUID();
@@ -101,7 +102,7 @@ export async function checkInVehicle(formData: FormData) {
 }
 
 export async function getTicketPhotoUrls(ticketId: string) {
-  const session = await assertParkingAdmin();
+  const session = await assertValetStaff();
   const supabase = createServiceClient();
 
   const { data: ticket } = await supabase
@@ -146,7 +147,7 @@ export async function requestVehicle(formData: FormData) {
   const id = formData.get("id")?.toString();
   if (!id) return;
 
-  const session = await assertParkingAdmin();
+  const session = await assertValetStaff();
   const supabase = createServiceClient();
   const ticket = await loadTicket(supabase, id, session.assignedSiteId);
   if (!ticket || ticket.status !== "parked") return;
@@ -180,7 +181,7 @@ export async function dispatchVehicle(formData: FormData) {
   const delivered_by = formData.get("delivered_by")?.toString() || null;
   if (!id) return;
 
-  const session = await assertParkingAdmin();
+  const session = await assertValetStaff();
   const supabase = createServiceClient();
   const ticket = await loadTicket(supabase, id, session.assignedSiteId);
   if (!ticket || ticket.status !== "requested") return;
@@ -213,7 +214,7 @@ export async function markArrived(formData: FormData) {
   const id = formData.get("id")?.toString();
   if (!id) return;
 
-  const session = await assertParkingAdmin();
+  const session = await assertValetStaff();
   const supabase = createServiceClient();
   const ticket = await loadTicket(supabase, id, session.assignedSiteId);
   if (!ticket || ticket.status !== "in_transit") return;
@@ -250,7 +251,7 @@ export async function completeHandover(formData: FormData) {
   const payment_collected = formData.get("payment_collected") === "on";
   if (!id || !otpEntered) return;
 
-  const session = await assertParkingAdmin();
+  const session = await assertValetStaff();
   const supabase = createServiceClient();
   const ticket = await loadTicket(supabase, id, session.assignedSiteId);
   if (!ticket || ticket.status !== "arrived") return;

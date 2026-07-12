@@ -20,8 +20,11 @@ export default async function CommunicationPage({
   searchParams: Promise<{ tab?: string; channel?: string }>;
 }) {
   const session = await getValetSession();
-  if (!session || session.role !== "parking_admin") {
+  if (!session) {
     redirect("/parking-admin/login");
+  }
+  if (session.role !== "parking_admin") {
+    redirect("/parking-admin/dashboard");
   }
 
   const { tab: tabParam, channel: channelParam } = await searchParams;
