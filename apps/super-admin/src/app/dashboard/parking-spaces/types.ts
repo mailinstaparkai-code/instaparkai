@@ -28,6 +28,13 @@ export type TariffRule = {
   surge_multiplier: number | null;
 };
 
+export type ParkingAdmin = {
+  id: string;
+  username: string;
+  full_name: string | null;
+  is_active: boolean;
+};
+
 export type ParkingSpace = {
   id: string;
   name: string;
@@ -36,6 +43,7 @@ export type ParkingSpace = {
   latitude: number | null;
   longitude: number | null;
   timezone: string;
+  valet_parking_enabled: boolean;
   zones: Zone[];
   // one-to-one relation (unique FK) -> PostgREST returns a single object or null, not an array
   access_workflows: AccessWorkflow | null;

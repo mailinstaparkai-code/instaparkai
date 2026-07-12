@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  createParkingAdmin,
   createParkingSpace,
   createSlot,
   createTariffRule,
@@ -9,7 +10,14 @@ import {
   setAccessWorkflow,
   updateParkingSpace,
 } from "./actions";
-import type { AccessMethod, Organization, ParkingSpace, Slot, Zone } from "./types";
+import type {
+  AccessMethod,
+  Organization,
+  ParkingAdmin,
+  ParkingSpace,
+  Slot,
+  Zone,
+} from "./types";
 
 const statusStyles: Record<Slot["status"], string> = {
   available: "bg-status-success/15 text-status-success",
@@ -27,9 +35,11 @@ const methodLabels: Record<AccessMethod, string> = {
 export function OrganizationNode({
   org,
   isSuperAdmin,
+  parkingAdminsBySite,
 }: {
   org: Organization;
   isSuperAdmin: boolean;
+  parkingAdminsBySite: Map<string, ParkingAdmin[]>;
 }) {
   return (
     <details className="glass-card p-4" open>
@@ -37,7 +47,12 @@ export function OrganizationNode({
 
       <div className="mt-3 flex flex-col gap-3 border-l border-border pl-4">
         {org.parking_spaces.map((space) => (
-          <ParkingSpaceNode key={space.id} space={space} isSuperAdmin={isSuperAdmin} />
+          <ParkingSpaceNode
+            key={space.id}
+            space={space}
+            isSuperAdmin={isSuperAdmin}
+            parkingAdmins={parkingAdminsBySite.get(space.id) ?? []}
+          />
         ))}
         {!org.parking_spaces.length && (
           <p className="text-sm text-muted-foreground">No parking spaces yet.</p>
@@ -105,6 +120,14 @@ function ParkingSpaceFields({ space }: { space?: ParkingSpace }) {
       <Field label="Timezone">
         <Input name="timezone" defaultValue={space?.timezone ?? "UTC"} />
       </Field>
+      <label className="flex items-center gap-2 text-sm">
+        <input
+          type="checkbox"
+          name="valet_parking_enabled"
+          defaultChecked={space?.valet_parking_enabled}
+        />
+        Valet parking enabled
+      </label>
     </>
   );
 }
@@ -112,9 +135,11 @@ function ParkingSpaceFields({ space }: { space?: ParkingSpace }) {
 function ParkingSpaceNode({
   space,
   isSuperAdmin,
+  parkingAdmins,
 }: {
   space: ParkingSpace;
   isSuperAdmin: boolean;
+  parkingAdmins: ParkingAdmin[];
 }) {
   const workflow = space.access_workflows;
 
@@ -124,6 +149,7 @@ function ParkingSpaceNode({
         <span className="font-medium">{space.name}</span>{" "}
         <span className="text-xs text-muted-foreground">
           {space.type} · {space.timezone}
+          {space.valet_parking_enabled && " · Valet enabled"}
         </span>
       </summary>
 
@@ -141,6 +167,10 @@ function ParkingSpaceNode({
               </Button>
             </form>
           </details>
+        )}
+
+        {space.valet_parking_enabled && isSuperAdmin && (
+          <ParkingAdmins space={space} parkingAdmins={parkingAdmins} />
         )}
 
         <div>
@@ -224,6 +254,60 @@ function ParkingSpaceNode({
         )}
       </div>
     </details>
+  );
+}
+
+function ParkingAdmins({
+  space,
+  parkingAdmins,
+}: {
+  space: ParkingSpace;
+  parkingAdmins: ParkingAdmin[];
+}) {
+  return (
+    <div>
+      <p className="text-xs font-medium text-muted-foreground">Parking admin</p>
+      {parkingAdmins.length > 0 ? (
+        <ul className="mt-1 flex flex-col gap-1 text-sm">
+          {parkingAdmins.map((admin) => (
+            <li key={admin.id} className="flex items-center gap-2">
+              <span>{admin.username}</span>
+              {admin.full_name && (
+                <span className="text-muted-foreground">({admin.full_name})</span>
+              )}
+              {!admin.is_active && (
+                <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                  Inactive
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-1 text-sm text-muted-foreground">No parking admin yet.</p>
+      )}
+
+      <details className="mt-2 rounded-lg border border-dashed border-border p-3">
+        <summary className="cursor-pointer text-sm text-brand-orange">
+          + New parking admin
+        </summary>
+        <form action={createParkingAdmin} className="mt-3 flex flex-col gap-2">
+          <input type="hidden" name="parking_space_id" value={space.id} />
+          <Field label="Username">
+            <Input name="username" required />
+          </Field>
+          <Field label="Password">
+            <Input name="password" type="password" required />
+          </Field>
+          <Field label="Full name">
+            <Input name="full_name" />
+          </Field>
+          <Button type="submit" size="sm" className="self-start">
+            Create
+          </Button>
+        </form>
+      </details>
+    </div>
   );
 }
 

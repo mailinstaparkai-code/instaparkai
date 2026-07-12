@@ -2,8 +2,25 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import { hashPassword } from "@/lib/valet-auth/password";
 
 const PATH = "/dashboard/parking-spaces";
+
+async function assertSuperAdmin() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not signed in.");
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+  if (profile?.role !== "super_admin") throw new Error("Super Admin access required.");
+}
 
 export async function createOrganization(formData: FormData) {
   const name = formData.get("name")?.toString().trim();
@@ -31,6 +48,7 @@ export async function createParkingSpace(formData: FormData) {
   const type = formData.get("type")?.toString();
   const address = formData.get("address")?.toString().trim() || null;
   const timezone = formData.get("timezone")?.toString().trim() || "UTC";
+  const valet_parking_enabled = formData.get("valet_parking_enabled") === "on";
   if (!organization_id || !name || !type) return;
 
   const supabase = await createClient();
@@ -40,6 +58,7 @@ export async function createParkingSpace(formData: FormData) {
     type,
     address,
     timezone,
+    valet_parking_enabled,
     ...parseLatLng(formData),
   });
   if (error) throw new Error(error.message);
@@ -53,13 +72,43 @@ export async function updateParkingSpace(formData: FormData) {
   const type = formData.get("type")?.toString();
   const address = formData.get("address")?.toString().trim() || null;
   const timezone = formData.get("timezone")?.toString().trim() || "UTC";
+  const valet_parking_enabled = formData.get("valet_parking_enabled") === "on";
   if (!id || !name || !type) return;
 
   const supabase = await createClient();
   const { error } = await supabase
     .from("parking_spaces")
-    .update({ name, type, address, timezone, ...parseLatLng(formData) })
+    .update({
+      name,
+      type,
+      address,
+      timezone,
+      valet_parking_enabled,
+      ...parseLatLng(formData),
+    })
     .eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(PATH);
+}
+
+export async function createParkingAdmin(formData: FormData) {
+  const parking_space_id = formData.get("parking_space_id")?.toString();
+  const username = formData.get("username")?.toString().trim();
+  const password = formData.get("password")?.toString();
+  const full_name = formData.get("full_name")?.toString().trim() || null;
+  if (!parking_space_id || !username || !password) return;
+
+  await assertSuperAdmin();
+
+  const supabase = createServiceClient();
+  const { error } = await supabase.from("valet_accounts").insert({
+    username,
+    password_hash: hashPassword(password),
+    role: "parking_admin",
+    assigned_site_id: parking_space_id,
+    full_name,
+  });
   if (error) throw new Error(error.message);
 
   revalidatePath(PATH);

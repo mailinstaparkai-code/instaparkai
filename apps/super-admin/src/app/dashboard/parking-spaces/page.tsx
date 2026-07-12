@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createOrganization } from "./actions";
 import { OrganizationNode } from "./tree";
-import type { Organization } from "./types";
+import type { Organization, ParkingAdmin } from "./types";
 
 export default async function ParkingSpacesPage() {
   const supabase = await createClient();
@@ -25,13 +26,28 @@ export default async function ParkingSpacesPage() {
   const { data: organizations } = await supabase
     .from("organizations")
     .select(
-      "id, name, parking_spaces(id, name, type, address, latitude, longitude, timezone, " +
+      "id, name, parking_spaces(id, name, type, address, latitude, longitude, timezone, valet_parking_enabled, " +
         "zones(id, name, slots(id, slot_number, category, is_ev, is_disabled_slot, status)), " +
         "access_workflows(id, methods), " +
         "tariff_rules(id, vehicle_category, pricing_type, rate, surge_multiplier))"
     )
     .order("name")
     .returns<Organization[]>();
+
+  const parkingAdminsBySite = new Map<string, ParkingAdmin[]>();
+  if (isSuperAdmin) {
+    const { data: admins } = await createServiceClient()
+      .from("valet_accounts")
+      .select("id, username, full_name, is_active, assigned_site_id")
+      .eq("role", "parking_admin")
+      .returns<(ParkingAdmin & { assigned_site_id: string })[]>();
+
+    for (const admin of admins ?? []) {
+      const list = parkingAdminsBySite.get(admin.assigned_site_id) ?? [];
+      list.push(admin);
+      parkingAdminsBySite.set(admin.assigned_site_id, list);
+    }
+  }
 
   return (
     <div className="min-h-dvh bg-background p-8 text-foreground">
@@ -67,7 +83,12 @@ export default async function ParkingSpacesPage() {
 
         <div className="flex flex-col gap-4">
           {organizations?.map((org) => (
-            <OrganizationNode key={org.id} org={org} isSuperAdmin={isSuperAdmin} />
+            <OrganizationNode
+              key={org.id}
+              org={org}
+              isSuperAdmin={isSuperAdmin}
+              parkingAdminsBySite={parkingAdminsBySite}
+            />
           ))}
           {!organizations?.length && (
             <p className="text-sm text-muted-foreground">
