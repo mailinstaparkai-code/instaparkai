@@ -54,8 +54,18 @@ keys) to any file, including this one — reference where to find/reset them ins
   `valet_operator` accounts for their site. Fare is auto-suggested at handover from the
   site's tariff rules (`src/lib/tariff.ts`) but always operator-editable — no payment
   gateway, matches the "GPay screenshot + mark collected" design.
-- "Vehicles" (full vehicle log/reports), "Reports", "Communication", and "Settings" nav
-  items are still stubs (`href: null` in `src/components/shell/nav-config.ts`).
+- **Vehicle log & reports** (`/parking-admin/vehicles`): full ticket history (last 100,
+  most recent first) across all statuses, with a filter row (All/Parked/Requested/In
+  transit/Arrived/Completed via `?status=` query param) and summary cards (completed
+  count, revenue + paid/pending split, avg turnaround, total shown). Shows the
+  check-in/delivery operator per ticket (joined via the two `valet_accounts` FKs on
+  `valet_tickets` — see the `checked_in_operator`/`delivered_operator` aliased embeds if
+  you need the pattern elsewhere) plus the same guest-link and photo-viewer affordances
+  as the Live Queue.
+- "Reports" (as a distinct analytics page) and "Communication" and "Settings" nav items
+  are still stubs (`href: null` in `src/components/shell/nav-config.ts`) — the Vehicles
+  page above covers the "reports" need for now (revenue/turnaround/operator visibility),
+  just not as a dedicated analytics dashboard.
 - **Guest tracking page** (Phase D): public `/track/[ticket_token]` route, no login. Shows
   a status timeline (Parked → Requested → On the way → Arrived), a "Request my vehicle"
   button (parked stage only), the handover OTP once the vehicle has arrived, and a
@@ -145,15 +155,12 @@ app, and all AI features (deferred by design — see below).
 
 Roughly in order (matches the phased plan this project has been following):
 
-1. **Reports & full vehicle log** — a `/parking-admin/vehicles` or similar page showing
-   all tickets (including completed), turnaround/operator stats; currently only the
-   active Live Queue is surfaced.
-2. **Communication settings** (Phase C remainder): per-site WhatsApp/SMS/Email toggles +
+1. **Communication settings** (Phase C remainder): per-site WhatsApp/SMS/Email toggles +
    the site's own fresh Twilio/SendGrid/AiSensy credentials (never reuse anything from the
    old reference doc — see above) — needed to auto-send the `/track/[token]` link at
    check-in instead of staff copying it manually.
-3. **Android operator app** (Phase E): native Kotlin/Compose, consuming a small JSON API
+2. **Android operator app** (Phase E): native Kotlin/Compose, consuming a small JSON API
    under this Next.js app (bearer-token auth, since the Android app can't use Supabase's
    client SDK against the custom `valet_accounts` session model).
-4. AI enhancements — only after the above is live and there's real usage data to build
+3. AI enhancements — only after the above is live and there's real usage data to build
    against.

@@ -51,7 +51,7 @@ export const superAdminNav: NavItem[] = [
 export const parkingAdminNav: NavItem[] = [
   { label: "Dashboard", href: "/parking-admin/dashboard", icon: LayoutDashboard },
   { label: "Live Queue", href: "/parking-admin/queue", icon: ListOrdered },
-  { label: "Vehicles", href: null, icon: Car },
+  { label: "Vehicles", href: "/parking-admin/vehicles", icon: Car },
   { label: "Valet Operators", href: "/parking-admin/operators", icon: Users },
   { label: "Reports", href: null, icon: FileText },
   { label: "Communication", href: null, icon: MessageSquare },
