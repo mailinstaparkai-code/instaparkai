@@ -1,0 +1,7 @@
+{
+  "name": "instaparkai",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ]
+}
