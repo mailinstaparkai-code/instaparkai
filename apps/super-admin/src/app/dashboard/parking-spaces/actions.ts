@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { hashPassword } from "@/lib/valet-auth/password";
@@ -179,4 +180,59 @@ export async function createSlot(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath(PATH);
+}
+
+export async function deleteOrganization(formData: FormData) {
+  const id = formData.get("id")?.toString();
+  if (!id) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("organizations").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(PATH);
+  redirect(PATH);
+}
+
+export async function deleteParkingSpace(formData: FormData) {
+  const id = formData.get("id")?.toString();
+  const organization_id = formData.get("organization_id")?.toString();
+  if (!id || !organization_id) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("parking_spaces").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+
+  const parentPath = `${PATH}/${organization_id}`;
+  revalidatePath(parentPath);
+  redirect(parentPath);
+}
+
+export async function deleteZone(formData: FormData) {
+  const id = formData.get("id")?.toString();
+  const organization_id = formData.get("organization_id")?.toString();
+  const parking_space_id = formData.get("parking_space_id")?.toString();
+  if (!id || !organization_id || !parking_space_id) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("zones").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+
+  const parentPath = `${PATH}/${organization_id}/${parking_space_id}`;
+  revalidatePath(parentPath);
+  redirect(parentPath);
+}
+
+export async function deleteSlot(formData: FormData) {
+  const id = formData.get("id")?.toString();
+  const organization_id = formData.get("organization_id")?.toString();
+  const parking_space_id = formData.get("parking_space_id")?.toString();
+  const zone_id = formData.get("zone_id")?.toString();
+  if (!id || !organization_id || !parking_space_id || !zone_id) return;
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("slots").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`${PATH}/${organization_id}/${parking_space_id}/${zone_id}`);
 }
