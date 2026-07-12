@@ -31,8 +31,11 @@ keys) to any file, including this one — reference where to find/reset them ins
 **Valet Parking Application — Phase A + B + C (core workflow)**:
 - Separate username/password auth for `parking_admin` / `valet_operator` roles
   (`valet_accounts` / `valet_sessions` tables), independent of Supabase Auth — see
-  `CLAUDE.md` for why and how this works. Verified: `valet_operator` accounts are blocked
-  from this web dashboard (parking_admin-only) since they're Android-app-only per plan.
+  `CLAUDE.md` for why and how this works. `valet_operator` accounts **can** log in at
+  `/parking-admin/login` (shared with `parking_admin`) and get a role-scoped sidebar —
+  see the Valet Operators bullet below for details. This was a deliberate stopgap fix,
+  not the original plan (which assumed operators would be Android-app-only) — the
+  dedicated native app is still the long-term intent, see Suggested next steps.
 - `valet_parking_enabled` feature flag per parking space; Super Admin can toggle it and
   create the first Parking Admin account for a site
 - A seeded test site ("Hotel Parking Test") with a Parking Admin account — see **Test
@@ -50,8 +53,19 @@ keys) to any file, including this one — reference where to find/reset them ins
   (`/parking-admin/queue`) with vehicle check-in, slot assignment, and the full status
   lifecycle (guest-requested → dispatch operator → mark arrived → complete handover with
   OTP verification + fare/payment capture); a **Valet Operators** page
-  (`/parking-admin/operators`) for the Parking Admin to create/deactivate/delete
-  `valet_operator` accounts for their site. Fare is auto-suggested at handover from the
+  (`/parking-admin/operators`) for the Parking Admin to create/edit/deactivate/delete
+  `valet_operator` accounts for their site — Edit updates username/full name/employee ID
+  and optionally rotates the password (`updateOperator` in `operators/actions.ts`; blank
+  password field keeps the current one, same "leave blank to keep current" convention as
+  Communication settings' credential fields). Operators can log in with those credentials
+  at `/parking-admin/login` and get a restricted sidebar (`valetOperatorNav` in
+  `nav-config.ts`: Dashboard, Live Queue, Vehicles only — no account management, no
+  Communication settings, both of which stay `parking_admin`-only via each page's own
+  role check). `queue/actions.ts`'s ticket-lifecycle actions (check-in through complete
+  handover) accept both roles (`assertValetStaff()`) since running the queue is an
+  operator's actual job; hitting an admin-only page/URL as an operator redirects to the
+  operator's own dashboard rather than bouncing back to the login screen. Fare is
+  auto-suggested at handover from the
   site's tariff rules (`src/lib/tariff.ts`) but always operator-editable — no payment
   gateway, matches the "GPay screenshot + mark collected" design.
 - **Vehicle log & reports** (`/parking-admin/vehicles`): full ticket history (last 100,
@@ -165,6 +179,13 @@ below).
   column is the natural fast-follow.
 - No true delivered/read message tracking (see Communication bullet above) — would need
   Twilio status-callback + SendGrid event-webhook endpoints, a separate future piece.
+- **Not mweb-friendly yet**: Live Queue, Vehicles, and the Communication Message Log all
+  render their data as a raw `<table>` in `overflow-x-auto`, which contradicts
+  `design.md` §4's "no horizontal scroll — card-per-row on narrow viewports" rule.
+  Confirmed by resizing to a 375px viewport: both KPI cards and the table scroll
+  horizontally instead of reflowing. The Operators list (card rows, not a table) and all
+  dialogs/forms are already responsive. Not fixed as part of the operator-login work —
+  would need a per-page card-view fallback below a breakpoint.
 
 ## Accounts & access
 
@@ -185,12 +206,17 @@ below).
 
 - **Super Admin**: `mail.instaparkai@gmail.com`, password set by the project owner
   directly (not stored anywhere in this repo).
-- **Parking Admin** (test site "Hotel Parking Test"): username `hotelvikas`, password set
-  during initial testing. If it's needed and unknown, a Super Admin can't currently reset
-  a Parking Admin's password through the UI (not built yet) — reset it directly via
-  `npx supabase db query --linked` by generating a new hash with
-  `src/lib/valet-auth/password.ts`'s `hashPassword()`, or delete and recreate the account
-  from the parking space's detail page in the Super Admin portal.
+- **Parking Admin** (test site "Hotel Parking Test"): username `hotelvikas`. Password was
+  reset during operator-login verification (the original was unknown/unrecorded) — shared
+  with the project owner directly, not stored in this repo. If it's needed and unknown
+  again, a Super Admin can't currently reset a Parking Admin's password through the UI
+  (not built yet) — reset it directly via `npx supabase db query --linked` by generating
+  a new hash with `src/lib/valet-auth/password.ts`'s `hashPassword()`, or delete and
+  recreate the account from the parking space's detail page in the Super Admin portal.
+- **Valet Operator** (same test site): username `testoperator`, created during operator-
+  login verification to confirm the new login/nav/lifecycle-action flow end-to-end.
+  Password was shared with the project owner directly, not stored in this repo. Safe to
+  delete from the Valet Operators tab if no longer needed.
 
 ## Suggested next steps
 
