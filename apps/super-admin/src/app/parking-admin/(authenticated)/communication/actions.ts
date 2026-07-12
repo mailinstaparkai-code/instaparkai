@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getValetSession } from "@/lib/valet-auth/session";
+import { sendTestMessage as sendTestMessageInternal, type Channel, type TriggerKey } from "@/lib/communication-triggers";
 
 const PATH = "/parking-admin/communication";
 
@@ -54,4 +55,68 @@ export async function updateCommunicationSettings(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath(PATH);
+}
+
+export async function updateTriggerSetting(formData: FormData) {
+  const session = await assertParkingAdmin();
+  const supabase = createServiceClient();
+
+  const trigger_key = formData.get("trigger_key")?.toString() as TriggerKey | undefined;
+  const channel = formData.get("channel")?.toString() as Channel | undefined;
+  if (!trigger_key || !channel) return;
+
+  const enabled = formData.get("enabled") === "on";
+  const template = formData.get("template")?.toString().trim() || null;
+  const subject =
+    channel === "email" ? formData.get("subject")?.toString().trim() || null : null;
+  const provider_reference =
+    channel === "whatsapp" ? formData.get("provider_reference")?.toString().trim() || null : null;
+
+  const { error } = await supabase.from("communication_trigger_settings").upsert(
+    {
+      parking_space_id: session.assignedSiteId,
+      trigger_key,
+      channel,
+      enabled,
+      template,
+      subject,
+      provider_reference,
+    },
+    { onConflict: "parking_space_id,trigger_key,channel" }
+  );
+  if (error) throw new Error(error.message);
+
+  revalidatePath(PATH);
+}
+
+export async function sendTestMessage(
+  formData: FormData
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const session = await assertParkingAdmin();
+  const supabase = createServiceClient();
+
+  const trigger_key = formData.get("trigger_key")?.toString() as TriggerKey | undefined;
+  const channel = formData.get("channel")?.toString() as Channel | undefined;
+  const recipient = formData.get("recipient")?.toString().trim();
+  if (!trigger_key || !channel || !recipient) {
+    return { ok: false, error: "Missing recipient." };
+  }
+
+  const { data: site } = await supabase
+    .from("parking_spaces")
+    .select("name")
+    .eq("id", session.assignedSiteId)
+    .single();
+
+  const result = await sendTestMessageInternal({
+    supabase,
+    siteId: session.assignedSiteId,
+    siteName: site?.name ?? "Valet parking",
+    triggerKey: trigger_key,
+    channel,
+    recipient,
+  });
+
+  revalidatePath(PATH);
+  return result;
 }

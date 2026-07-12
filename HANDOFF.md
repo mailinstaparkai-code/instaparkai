@@ -66,21 +66,43 @@ keys) to any file, including this one — reference where to find/reset them ins
   (`href: null` in `src/components/shell/nav-config.ts`) — the Vehicles page above covers
   the "reports" need for now (revenue/turnaround/operator visibility), just not as a
   dedicated analytics dashboard.
-- **Communication settings** (`/parking-admin/communication`): per-site SMS/WhatsApp
-  (Twilio) and Email (SendGrid) toggles + credentials, entered fresh per site — never
-  reused from the leaked reference doc. Secrets are masked on redisplay (`•••• last4`)
-  and a blank field on save means "keep the existing value," so credentials are never
-  echoed back into the DOM. Deliberate simplification: WhatsApp goes through **Twilio's**
-  WhatsApp API (a second, WhatsApp-enabled Twilio sender number) rather than AiSensy —
+- **Communication** (`/parking-admin/communication`): redesigned as a **Triggers /
+  Message Log / Settings** tabbed page (matching a reference product UI the user
+  provided). Five triggers fire at each `valet_tickets` lifecycle transition
+  (`vehicle_checked_in`, `pickup_requested`, `vehicle_in_transit`, `vehicle_arrived`,
+  `handover_complete`), each independently configurable per channel (WhatsApp/SMS/Email)
+  with its own enabled flag + freeform `{{variable}}` template
+  (`communication_trigger_settings` table, catalogue + firing logic in
+  `src/lib/communication-triggers.ts`'s `fireTrigger()`). Every send attempt — real or
+  via the per-row "Test" button — is logged to `communication_messages` (sent/failed +
+  error only; no true delivered/read tracking, since that needs Twilio
+  status-callback/SendGrid event webhooks which don't exist yet — the stat card is
+  honestly labeled "Sent" rather than "Delivered/Read"). `fireTrigger` is best-effort
+  (try/catch, never throws) and double-gates on both the per-trigger `enabled` flag *and*
+  the channel's master on/off in Settings — a send only goes out if both are on.
+  Settings tab still holds the shared per-channel credentials (Twilio SID/token/from
+  numbers, SendGrid key/from-email) — same masked-on-redisplay,
+  blank-keeps-existing-value behavior as before, now split into WhatsApp/SMS/Email
+  sub-tab panels, each with its own "Save Integration" button but all writing to the
+  same `communication_settings` row (hidden inputs carry the other two channels'
+  `enabled` state through on each save so one panel's save can't blank another's).
+  Deliberate simplification: WhatsApp stays on **Twilio's** WhatsApp API (a second
+  WhatsApp-enabled Twilio sender) rather than AiSensy (which the reference UI uses) —
   same account/credentials as SMS, avoiding an unverified second provider integration.
-  `checkInVehicle` now auto-sends the `/track/[token]` link via SMS/WhatsApp if either
-  channel is enabled and configured (`src/lib/messaging.ts`, `sendTrackingLink` in
-  `queue/actions.ts`) — best-effort: a send failure (bad credentials, provider outage)
-  does **not** fail the check-in, and the manual "Guest link" copy button remains as a
-  fallback either way. Verified the settings save/mask/reload round-trip and that
-  check-in still succeeds even when the configured Twilio credentials are invalid; actual
-  message delivery is unverified since there's no real Twilio/SendGrid account connected
-  in this environment.
+  Verified end-to-end against the live Supabase project: `checkInVehicle` and
+  `markArrived` each triggered a real Twilio API call that failed with a real Twilio
+  error (unverified trial-account number) and was correctly logged; unconfigured
+  triggers (`pickup_requested`, `vehicle_in_transit`, `handover_complete` in this test)
+  correctly no-op without crashing their lifecycle action; Settings save/mask/reload and
+  cross-channel preservation all confirmed. Actual message *delivery* is unverified —
+  no live Twilio/SendGrid account connected in this environment, only the API
+  request/response cycle was exercised.
+- **⚠️ Second leaked-credential sighting**: the same reference doc mentioned above
+  (`Insta Park AI - Valet Parking Application.docx`) has 7 embedded screenshots of the
+  reference product's Communication tab; several show what look like **live** SendGrid,
+  Twilio, and AiSensy credentials plus a personal email address, in addition to the ones
+  already flagged in the Architecture section below. None were used anywhere in this
+  codebase. If those credentials are still active, they're worth rotating.
 - **Guest tracking page** (Phase D): public `/track/[ticket_token]` route, no login. Shows
   a status timeline (Parked → Requested → On the way → Arrived), a "Request my vehicle"
   button (parked stage only), the handover OTP once the vehicle has arrived, and a
@@ -102,8 +124,8 @@ keys) to any file, including this one — reference where to find/reset them ins
   (`src/app/parking-admin/(authenticated)/queue/photos-button.tsx`). All optional — no
   photos required to check in or hand over a vehicle.
 
-**Not started**: SMS/WhatsApp delivery of the guest tracking link, the Android operator
-app, and all AI features (deferred by design — see below).
+**Not started**: the Android operator app, and all AI features (deferred by design — see
+below).
 
 ## Architecture decisions worth knowing before you continue
 
@@ -134,11 +156,15 @@ app, and all AI features (deferred by design — see below).
   phased out in favor of `valet_accounts`.
 - No payment gateway integration anywhere yet (valet payment collection is manual — GPay
   screenshot + "mark collected" — by design, not a gap to fix).
-- The guest tracking link (`/track/[token]`) has to be copied and sent manually today
-  (Parking Admin clicks "Guest link" on the Live Queue row) — no automatic SMS/WhatsApp
-  delivery at check-in yet (needs Communication settings + a messaging provider).
 - Fare suggestion at handover (`src/lib/tariff.ts`) is best-effort (duration × tariff
   rule) and always operator-editable — it isn't wired into any billing/ledger system.
+- No Email channel recipient exists yet: `valet_tickets` only captures `mobile_number`,
+  not an email address, so Email triggers are fully configurable in the UI but never
+  actually fire for real tickets (`fireTrigger` silently skips Email when there's no
+  guest email). Adding an optional email field to check-in + a `valet_tickets.guest_email`
+  column is the natural fast-follow.
+- No true delivered/read message tracking (see Communication bullet above) — would need
+  Twilio status-callback + SendGrid event-webhook endpoints, a separate future piece.
 
 ## Accounts & access
 
@@ -175,8 +201,8 @@ Roughly in order (matches the phased plan this project has been following):
    client SDK against the custom `valet_accounts` session model). This is the next
    unbuilt piece of the original plan and a much larger effort than anything so far —
    new language/toolchain, Android Studio/emulator work.
-2. Email delivery of the tracking link (SendGrid is wired in `messaging.ts` and
-   configurable in Communication settings, but nothing calls `sendEmail` yet since the
-   check-in form doesn't collect an email address — would need a small form field added).
-3. AI enhancements — only after the above is live and there's real usage data to build
+2. Collect a guest email at check-in (+ `valet_tickets.guest_email` column) so the
+   already-built Email channel in Communication triggers can actually fire.
+3. Delivered/read message tracking via Twilio status-callback + SendGrid event webhooks.
+4. AI enhancements — only after the above is live and there's real usage data to build
    against.

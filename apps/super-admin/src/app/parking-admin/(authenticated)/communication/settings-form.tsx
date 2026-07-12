@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 export function SettingsForm({
   action,
   children,
+  submitLabel = "Save settings",
 }: {
   action: (formData: FormData) => Promise<void> | void;
   children: ReactNode;
+  submitLabel?: string;
 }) {
   const [pending, setPending] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -30,7 +32,7 @@ export function SettingsForm({
       {children}
       <div className="flex items-center gap-3">
         <Button type="submit" disabled={pending}>
-          {pending ? "Saving…" : "Save settings"}
+          {pending ? "Saving…" : submitLabel}
         </Button>
         {saved && <span className="text-sm text-status-success">Saved</span>}
       </div>

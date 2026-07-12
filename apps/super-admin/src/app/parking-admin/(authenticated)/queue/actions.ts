@@ -7,12 +7,17 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { getValetSession } from "@/lib/valet-auth/session";
 import { generateOtp } from "@/lib/otp";
 import { BUCKET, uploadTicketPhotos } from "@/lib/valet-photos";
-import { sendSms, sendWhatsApp, type CommunicationSettings } from "@/lib/messaging";
+import { fireTrigger } from "@/lib/communication-triggers";
 
 async function getBaseUrl() {
   const h = await headers();
   const host = h.get("host") ?? "localhost:3000";
   return `${host.startsWith("localhost") ? "http" : "https"}://${host}`;
+}
+
+async function getSiteName(supabase: ReturnType<typeof createServiceClient>, siteId: string) {
+  const { data } = await supabase.from("parking_spaces").select("name").eq("id", siteId).single();
+  return data?.name ?? "Valet parking";
 }
 
 const CHECKIN_PHOTO_FIELDS = [
@@ -75,38 +80,24 @@ export async function checkInVehicle(formData: FormData) {
     await supabase.from("slots").update({ status: "occupied" }).eq("id", slot_id);
   }
 
-  await sendTrackingLink(supabase, session.assignedSiteId, mobile_number, vehicle_number, ticketToken);
+  const siteName = await getSiteName(supabase, session.assignedSiteId);
+  await fireTrigger({
+    supabase,
+    siteId: session.assignedSiteId,
+    triggerKey: "vehicle_checked_in",
+    ticketId,
+    mobileNumber: mobile_number,
+    variables: {
+      vehicleNumber: vehicle_number,
+      vehicleType: vehicle_type,
+      mobileNumber: mobile_number,
+      siteName,
+      trackingUrl: `${await getBaseUrl()}/track/${ticketToken}`,
+    },
+  });
 
   revalidatePath(PATH);
   revalidatePath("/parking-admin/dashboard");
-}
-
-// Best-effort: check-in has already succeeded above, so a messaging failure (bad
-// credentials, provider outage) shouldn't fail the check-in itself -- staff still have
-// the "Guest link" copy button on the Live Queue as a fallback.
-async function sendTrackingLink(
-  supabase: ReturnType<typeof createServiceClient>,
-  siteId: string,
-  mobileNumber: string,
-  vehicleNumber: string,
-  ticketToken: string
-) {
-  try {
-    const { data: commSettings } = await supabase
-      .from("communication_settings")
-      .select("*")
-      .eq("parking_space_id", siteId)
-      .maybeSingle<CommunicationSettings>();
-    if (!commSettings || (!commSettings.sms_enabled && !commSettings.whatsapp_enabled)) return;
-
-    const trackingUrl = `${await getBaseUrl()}/track/${ticketToken}`;
-    const message = `Your vehicle ${vehicleNumber} is parked. Track status & request pickup: ${trackingUrl}`;
-
-    if (commSettings.sms_enabled) await sendSms(commSettings, mobileNumber, message);
-    if (commSettings.whatsapp_enabled) await sendWhatsApp(commSettings, mobileNumber, message);
-  } catch {
-    // swallow -- see comment above
-  }
 }
 
 export async function getTicketPhotoUrls(ticketId: string) {
@@ -142,7 +133,9 @@ export async function getTicketPhotoUrls(ticketId: string) {
 async function loadTicket(supabase: ReturnType<typeof createServiceClient>, id: string, siteId: string) {
   const { data } = await supabase
     .from("valet_tickets")
-    .select("id, status, otp, slot_id, parking_space_id")
+    .select(
+      "id, status, otp, slot_id, parking_space_id, vehicle_number, vehicle_type, mobile_number, ticket_token"
+    )
     .eq("id", id)
     .eq("parking_space_id", siteId)
     .single();
@@ -164,6 +157,20 @@ export async function requestVehicle(formData: FormData) {
     .eq("id", id);
   if (error) throw new Error(error.message);
 
+  const siteName = await getSiteName(supabase, session.assignedSiteId);
+  await fireTrigger({
+    supabase,
+    siteId: session.assignedSiteId,
+    triggerKey: "pickup_requested",
+    ticketId: id,
+    mobileNumber: ticket.mobile_number,
+    variables: {
+      vehicleNumber: ticket.vehicle_number,
+      siteName,
+      trackingUrl: `${await getBaseUrl()}/track/${ticket.ticket_token}`,
+    },
+  });
+
   revalidatePath(PATH);
   revalidatePath("/parking-admin/dashboard");
 }
@@ -184,6 +191,20 @@ export async function dispatchVehicle(formData: FormData) {
     .eq("id", id);
   if (error) throw new Error(error.message);
 
+  const siteName = await getSiteName(supabase, session.assignedSiteId);
+  await fireTrigger({
+    supabase,
+    siteId: session.assignedSiteId,
+    triggerKey: "vehicle_in_transit",
+    ticketId: id,
+    mobileNumber: ticket.mobile_number,
+    variables: {
+      vehicleNumber: ticket.vehicle_number,
+      siteName,
+      trackingUrl: `${await getBaseUrl()}/track/${ticket.ticket_token}`,
+    },
+  });
+
   revalidatePath(PATH);
   revalidatePath("/parking-admin/dashboard");
 }
@@ -202,6 +223,21 @@ export async function markArrived(formData: FormData) {
     .update({ status: "arrived", arrived_at: new Date().toISOString() })
     .eq("id", id);
   if (error) throw new Error(error.message);
+
+  const siteName = await getSiteName(supabase, session.assignedSiteId);
+  await fireTrigger({
+    supabase,
+    siteId: session.assignedSiteId,
+    triggerKey: "vehicle_arrived",
+    ticketId: id,
+    mobileNumber: ticket.mobile_number,
+    variables: {
+      vehicleNumber: ticket.vehicle_number,
+      siteName,
+      otp: ticket.otp ?? "",
+      trackingUrl: `${await getBaseUrl()}/track/${ticket.ticket_token}`,
+    },
+  });
 
   revalidatePath(PATH);
   revalidatePath("/parking-admin/dashboard");
@@ -244,6 +280,21 @@ export async function completeHandover(formData: FormData) {
   if (ticket.slot_id) {
     await supabase.from("slots").update({ status: "available" }).eq("id", ticket.slot_id);
   }
+
+  const siteName = await getSiteName(supabase, session.assignedSiteId);
+  await fireTrigger({
+    supabase,
+    siteId: session.assignedSiteId,
+    triggerKey: "handover_complete",
+    ticketId: id,
+    mobileNumber: ticket.mobile_number,
+    variables: {
+      vehicleNumber: ticket.vehicle_number,
+      siteName,
+      fareAmount: fareRaw ?? "0",
+      paymentStatus: payment_collected ? "paid" : "pending",
+    },
+  });
 
   revalidatePath(PATH);
   revalidatePath("/parking-admin/dashboard");
