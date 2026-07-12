@@ -1,10 +1,19 @@
 "use server";
 
-import { randomBytes } from "node:crypto";
+import { randomBytes, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getValetSession } from "@/lib/valet-auth/session";
 import { generateOtp } from "@/lib/otp";
+import { BUCKET, uploadTicketPhotos } from "@/lib/valet-photos";
+
+const CHECKIN_PHOTO_FIELDS = [
+  { name: "photo_front", label: "front" },
+  { name: "photo_back", label: "back" },
+  { name: "photo_left", label: "left" },
+  { name: "photo_right", label: "right" },
+  { name: "photo_odometer", label: "odometer" },
+];
 
 const PATH = "/parking-admin/queue";
 
@@ -29,7 +38,18 @@ export async function checkInVehicle(formData: FormData) {
   const session = await assertParkingAdmin();
   const supabase = createServiceClient();
 
+  const ticketId = randomUUID();
+  const photos = await uploadTicketPhotos(
+    supabase,
+    session.assignedSiteId,
+    ticketId,
+    "checkin",
+    formData,
+    CHECKIN_PHOTO_FIELDS
+  );
+
   const { error } = await supabase.from("valet_tickets").insert({
+    id: ticketId,
     parking_space_id: session.assignedSiteId,
     ticket_token: randomBytes(16).toString("hex"),
     vehicle_number,
@@ -38,6 +58,7 @@ export async function checkInVehicle(formData: FormData) {
     slot_id,
     status: "parked",
     checked_in_by: session.accountId,
+    check_in_photos: photos,
   });
   if (error) throw new Error(error.message);
 
@@ -47,6 +68,36 @@ export async function checkInVehicle(formData: FormData) {
 
   revalidatePath(PATH);
   revalidatePath("/parking-admin/dashboard");
+}
+
+export async function getTicketPhotoUrls(ticketId: string) {
+  const session = await assertParkingAdmin();
+  const supabase = createServiceClient();
+
+  const { data: ticket } = await supabase
+    .from("valet_tickets")
+    .select("check_in_photos, handover_photos")
+    .eq("id", ticketId)
+    .eq("parking_space_id", session.assignedSiteId)
+    .single<{
+      check_in_photos: { label: string; path: string }[];
+      handover_photos: { label: string; path: string }[];
+    }>();
+  if (!ticket) return [];
+
+  const all = [
+    ...ticket.check_in_photos.map((p) => ({ ...p, stage: "Check-in" })),
+    ...ticket.handover_photos.map((p) => ({ ...p, stage: "Handover" })),
+  ];
+
+  const signed = await Promise.all(
+    all.map(async (photo) => {
+      const { data } = await supabase.storage.from(BUCKET).createSignedUrl(photo.path, 300);
+      return { label: photo.label, stage: photo.stage, url: data?.signedUrl ?? null };
+    })
+  );
+
+  return signed.filter((p): p is { label: string; stage: string; url: string } => !!p.url);
 }
 
 async function loadTicket(supabase: ReturnType<typeof createServiceClient>, id: string, siteId: string) {
@@ -130,6 +181,15 @@ export async function completeHandover(formData: FormData) {
   if (!ticket || ticket.status !== "arrived") return;
   if (ticket.otp !== otpEntered) throw new Error("Incorrect OTP.");
 
+  const handoverPhotos = await uploadTicketPhotos(
+    supabase,
+    session.assignedSiteId,
+    id,
+    "handover",
+    formData,
+    [{ name: "photo_handover", label: "handover" }]
+  );
+
   const { error } = await supabase
     .from("valet_tickets")
     .update({
@@ -137,6 +197,7 @@ export async function completeHandover(formData: FormData) {
       completed_at: new Date().toISOString(),
       fare_amount: fareRaw ? Number(fareRaw) : null,
       payment_collected,
+      handover_photos: handoverPhotos,
     })
     .eq("id", id);
   if (error) throw new Error(error.message);

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field } from "../../components/field";
 import { FormDialog } from "../../components/form-dialog";
+import { PhotoInput } from "../../components/photo-input";
 import {
   checkInVehicle,
   completeHandover,
@@ -15,6 +16,7 @@ import {
 } from "./actions";
 import { CopyLinkButton } from "./copy-link-button";
 import { HandoverButton } from "./handover-button";
+import { PhotosButton } from "./photos-button";
 
 const STATUS_LABEL: Record<string, string> = {
   parked: "Parked",
@@ -42,6 +44,8 @@ type Ticket = {
   otp: string | null;
   checked_in_at: string;
   fare_amount: number | null;
+  check_in_photos: unknown[];
+  handover_photos: unknown[];
   slots: { slot_number: string } | null;
 };
 
@@ -57,7 +61,7 @@ export default async function LiveQueuePage() {
     supabase
       .from("valet_tickets")
       .select(
-        "id, ticket_token, vehicle_number, vehicle_type, mobile_number, status, otp, checked_in_at, fare_amount, slots(slot_number)"
+        "id, ticket_token, vehicle_number, vehicle_type, mobile_number, status, otp, checked_in_at, fare_amount, check_in_photos, handover_photos, slots(slot_number)"
       )
       .eq("parking_space_id", session.assignedSiteId)
       .neq("status", "completed")
@@ -133,6 +137,13 @@ export default async function LiveQueuePage() {
               ))}
             </select>
           </Field>
+          <div className="grid grid-cols-2 gap-3">
+            <PhotoInput name="photo_front" label="Front" />
+            <PhotoInput name="photo_back" label="Back" />
+            <PhotoInput name="photo_left" label="Left" />
+            <PhotoInput name="photo_right" label="Right" />
+            <PhotoInput name="photo_odometer" label="Odometer" />
+          </div>
         </FormDialog>
       </div>
 
@@ -160,6 +171,7 @@ export default async function LiveQueuePage() {
               <th className="p-3 font-medium">Status</th>
               <th className="p-3 font-medium">Checked in</th>
               <th className="p-3 font-medium">Link</th>
+              <th className="p-3 font-medium">Photos</th>
               <th className="p-3 font-medium">Action</th>
             </tr>
           </thead>
@@ -190,6 +202,12 @@ export default async function LiveQueuePage() {
                   </td>
                   <td className="p-3">
                     <CopyLinkButton token={t.ticket_token} />
+                  </td>
+                  <td className="p-3">
+                    <PhotosButton
+                      ticketId={t.id}
+                      count={t.check_in_photos.length + t.handover_photos.length}
+                    />
                   </td>
                   <td className="p-3">
                     {t.status === "parked" && (
@@ -230,7 +248,7 @@ export default async function LiveQueuePage() {
             })}
             {!tickets?.length && (
               <tr>
-                <td colSpan={7} className="p-6 text-center text-sm text-muted-foreground">
+                <td colSpan={8} className="p-6 text-center text-sm text-muted-foreground">
                   No active vehicles. Check one in to get started.
                 </td>
               </tr>

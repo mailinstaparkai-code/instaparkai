@@ -66,9 +66,19 @@ keys) to any file, including this one — reference where to find/reset them ins
   for staff to share the link — no SMS/WhatsApp delivery yet (that's Communication
   settings, still a stub).
 
-**Not started**: photo capture UI (check-in/handover, 4-side + odometer), SMS/WhatsApp
-delivery of the guest tracking link, the Android operator app, and all AI features
-(deferred by design — see below).
+- **Check-in/handover photo capture**: the check-in dialog has 5 optional photo inputs
+  (front/back/left/right/odometer); the handover dialog has 1 optional photo. Files are
+  compressed client-side (`src/lib/image-compress.ts`, canvas downscale to ≤1280px +
+  JPEG re-encode) before upload, since a raw phone-camera photo can be several MB and
+  Server Actions/Vercel have low request-body limits — this is why compression exists,
+  not as a nice-to-have. Uploaded via `src/lib/valet-photos.ts` to the `valet-photos`
+  bucket, paths stored in `check_in_photos`/`handover_photos` jsonb columns. A "Photos"
+  column on the Live Queue opens a dialog of signed-URL thumbnails
+  (`src/app/parking-admin/(authenticated)/queue/photos-button.tsx`). All optional — no
+  photos required to check in or hand over a vehicle.
+
+**Not started**: SMS/WhatsApp delivery of the guest tracking link, the Android operator
+app, and all AI features (deferred by design — see below).
 
 ## Architecture decisions worth knowing before you continue
 
@@ -99,8 +109,6 @@ delivery of the guest tracking link, the Android operator app, and all AI featur
   phased out in favor of `valet_accounts`.
 - No payment gateway integration anywhere yet (valet payment collection is manual — GPay
   screenshot + "mark collected" — by design, not a gap to fix).
-- Check-in/handover photo capture (4-side + odometer) isn't built — the `valet-photos`
-  Storage bucket exists but nothing uploads to it yet.
 - The guest tracking link (`/track/[token]`) has to be copied and sent manually today
   (Parking Admin clicks "Guest link" on the Live Queue row) — no automatic SMS/WhatsApp
   delivery at check-in yet (needs Communication settings + a messaging provider).
@@ -137,17 +145,15 @@ delivery of the guest tracking link, the Android operator app, and all AI featur
 
 Roughly in order (matches the phased plan this project has been following):
 
-1. **Check-in/handover photo capture** — wire the existing `valet-photos` Storage bucket
-   into the check-in and handover dialogs (4-side + odometer photos).
-2. **Reports & full vehicle log** — a `/parking-admin/vehicles` or similar page showing
+1. **Reports & full vehicle log** — a `/parking-admin/vehicles` or similar page showing
    all tickets (including completed), turnaround/operator stats; currently only the
    active Live Queue is surfaced.
-3. **Communication settings** (Phase C remainder): per-site WhatsApp/SMS/Email toggles +
+2. **Communication settings** (Phase C remainder): per-site WhatsApp/SMS/Email toggles +
    the site's own fresh Twilio/SendGrid/AiSensy credentials (never reuse anything from the
    old reference doc — see above) — needed to auto-send the `/track/[token]` link at
    check-in instead of staff copying it manually.
-4. **Android operator app** (Phase E): native Kotlin/Compose, consuming a small JSON API
+3. **Android operator app** (Phase E): native Kotlin/Compose, consuming a small JSON API
    under this Next.js app (bearer-token auth, since the Android app can't use Supabase's
    client SDK against the custom `valet_accounts` session model).
-5. AI enhancements — only after the above is live and there's real usage data to build
+4. AI enhancements — only after the above is live and there's real usage data to build
    against.

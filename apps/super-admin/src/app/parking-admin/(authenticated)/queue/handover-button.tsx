@@ -11,6 +11,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Field } from "../../components/field";
+import { PhotoInput } from "../../components/photo-input";
 
 export function HandoverButton({
   ticketId,
@@ -69,6 +70,7 @@ export function HandoverButton({
             <input type="checkbox" name="payment_collected" />
             Payment collected (GPay screenshot confirmed)
           </label>
+          <PhotoInput name="photo_handover" label="Handover photo (optional)" />
           {error && <p className="text-sm text-status-danger">{error}</p>}
           <Button type="submit" disabled={pending}>
             {pending ? "Completing…" : "Complete handover"}
