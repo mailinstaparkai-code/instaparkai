@@ -1,7 +1,12 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
-import { signOut } from "./actions";
+import {
+  ParkingSquare,
+  CircleParking,
+  CircleCheckBig,
+  IndianRupee,
+  Car,
+  Clock,
+} from "lucide-react";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -12,50 +17,43 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, role, assigned_site_id")
+    .select("full_name")
     .eq("id", user!.id)
     .single();
 
+  const { data: slots } = await supabase.from("slots").select("status");
+  const total = slots?.length ?? 0;
+  const occupied = slots?.filter((s) => s.status === "occupied").length ?? 0;
+  const available = slots?.filter((s) => s.status === "available").length ?? 0;
+
+  const kpis = [
+    { label: "Total Slots", value: total.toLocaleString(), icon: ParkingSquare },
+    { label: "Occupied", value: occupied.toLocaleString(), icon: CircleParking },
+    { label: "Available", value: available.toLocaleString(), icon: CircleCheckBig },
+    { label: "Revenue Today", value: "—", icon: IndianRupee },
+    { label: "Vehicles Today", value: "—", icon: Car },
+    { label: "Avg Stay Duration", value: "—", icon: Clock },
+  ];
+
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-background p-8 text-foreground">
-      <div className="glass-card w-full max-w-md p-8">
+    <div className="flex flex-col gap-6">
+      <div>
         <h1 className="text-xl font-semibold">
-          Insta<span className="text-brand-orange">Park</span> AI
+          Good morning, {profile?.full_name || "there"} 👋
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">Super Admin portal</p>
+        <p className="text-sm text-muted-foreground">
+          Here&apos;s what&apos;s happening across your sites.
+        </p>
+      </div>
 
-        <dl className="mt-6 space-y-2 text-sm">
-          <div className="flex justify-between">
-            <dt className="text-muted-foreground">Email</dt>
-            <dd>{user?.email}</dd>
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+        {kpis.map((kpi) => (
+          <div key={kpi.label} className="glass-card p-4">
+            <kpi.icon className="size-5 text-brand-orange" />
+            <p className="mt-3 font-numeric text-2xl">{kpi.value}</p>
+            <p className="text-xs text-muted-foreground">{kpi.label}</p>
           </div>
-          <div className="flex justify-between">
-            <dt className="text-muted-foreground">Name</dt>
-            <dd>{profile?.full_name ?? "—"}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-muted-foreground">Role</dt>
-            <dd className="rounded-full bg-status-success/15 px-3 py-0.5 font-medium text-status-success">
-              {profile?.role}
-            </dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-muted-foreground">Assigned site</dt>
-            <dd>{profile?.assigned_site_id ?? "— (global access)"}</dd>
-          </div>
-        </dl>
-
-        <Link href="/dashboard/parking-spaces" className="mt-6 block">
-          <Button variant="outline" className="w-full">
-            Manage parking spaces
-          </Button>
-        </Link>
-
-        <form action={signOut} className="mt-3">
-          <Button type="submit" variant="secondary" className="w-full">
-            Sign out
-          </Button>
-        </form>
+        ))}
       </div>
     </div>
   );

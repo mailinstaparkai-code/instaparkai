@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getValetSession } from "@/lib/valet-auth/session";
-import { Button } from "@/components/ui/button";
-import { logoutParkingAdmin } from "./actions";
+import { ParkingSquare, Car, CircleCheckBig, Clock } from "lucide-react";
 
 export default async function ParkingAdminDashboardPage() {
   const session = await getValetSession();
@@ -17,45 +16,43 @@ export default async function ParkingAdminDashboardPage() {
     .eq("id", session.assignedSiteId)
     .single();
 
+  const kpis = [
+    { label: "Self-drive", value: "—", icon: ParkingSquare },
+    { label: "Valet", value: "—", icon: Car },
+    { label: "Arrived", value: "—", icon: CircleCheckBig },
+    { label: "Avg Turnaround", value: "—", icon: Clock },
+  ];
+
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-center gap-6 bg-background p-8 text-foreground">
-      <div className="glass-card w-full max-w-md p-8">
+    <div className="flex flex-col gap-6">
+      <div>
         <h1 className="text-xl font-semibold">
-          Insta<span className="text-brand-orange">Park</span> AI
+          Good morning, {session.fullName || session.username} 👋
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">Parking Admin dashboard</p>
-
-        <dl className="mt-6 space-y-2 text-sm">
-          <div className="flex justify-between">
-            <dt className="text-muted-foreground">Username</dt>
-            <dd>{session.username}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-muted-foreground">Name</dt>
-            <dd>{session.fullName ?? "—"}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-muted-foreground">Role</dt>
-            <dd className="rounded-full bg-status-success/15 px-3 py-0.5 font-medium text-status-success">
-              {session.role}
-            </dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-muted-foreground">Site</dt>
-            <dd>{site?.name ?? "—"}</dd>
-          </div>
-          <div className="flex justify-between">
-            <dt className="text-muted-foreground">Valet parking</dt>
-            <dd>{site?.valet_parking_enabled ? "Enabled" : "Disabled"}</dd>
-          </div>
-        </dl>
-
-        <form action={logoutParkingAdmin} className="mt-6">
-          <Button type="submit" variant="secondary" className="w-full">
-            Sign out
-          </Button>
-        </form>
+        <p className="text-sm text-muted-foreground">
+          {site?.name ?? "Your site"}
+          {site?.valet_parking_enabled && (
+            <span className="ml-2 rounded-full bg-status-success/15 px-2 py-0.5 text-xs font-medium text-status-success">
+              Valet enabled
+            </span>
+          )}
+        </p>
       </div>
+
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        {kpis.map((kpi) => (
+          <div key={kpi.label} className="glass-card p-4">
+            <kpi.icon className="size-5 text-brand-orange" />
+            <p className="mt-3 font-numeric text-2xl">{kpi.value}</p>
+            <p className="text-xs text-muted-foreground">{kpi.label}</p>
+          </div>
+        ))}
+      </div>
+
+      <p className="text-sm text-muted-foreground">
+        Live queue, vehicle check-in, and valet operator management are coming in the next
+        build phase.
+      </p>
     </div>
   );
 }

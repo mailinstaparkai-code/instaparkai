@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { Button } from "@/components/ui/button";
@@ -50,53 +49,46 @@ export default async function ParkingSpacesPage() {
   }
 
   return (
-    <div className="min-h-dvh bg-background p-8 text-foreground">
-      <div className="mx-auto flex max-w-4xl flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-semibold">Parking Spaces</h1>
-            <p className="text-sm text-muted-foreground">
-              Organization → Parking Space → Zone → Slot
-            </p>
-          </div>
-          <Link href="/dashboard" className="text-sm text-brand-orange">
-            Back to dashboard
-          </Link>
-        </div>
+    <div className="mx-auto flex max-w-4xl flex-col gap-6">
+      <div>
+        <h1 className="text-xl font-semibold">Parking Spaces</h1>
+        <p className="text-sm text-muted-foreground">
+          Organization → Parking Space → Zone → Slot
+        </p>
+      </div>
 
-        {isSuperAdmin && (
-          <details className="glass-card p-4">
-            <summary className="cursor-pointer text-sm text-brand-orange">
-              + New organization
-            </summary>
-            <form action={createOrganization} className="mt-3 flex items-end gap-2">
-              <div className="flex flex-col gap-1">
-                <Label>Name</Label>
-                <Input name="name" required />
-              </div>
-              <Button type="submit" size="sm">
-                Create
-              </Button>
-            </form>
-          </details>
+      {isSuperAdmin && (
+        <details className="glass-card p-4">
+          <summary className="cursor-pointer text-sm text-brand-orange">
+            + New organization
+          </summary>
+          <form action={createOrganization} className="mt-3 flex items-end gap-2">
+            <div className="flex flex-col gap-1">
+              <Label>Name</Label>
+              <Input name="name" required />
+            </div>
+            <Button type="submit" size="sm">
+              Create
+            </Button>
+          </form>
+        </details>
+      )}
+
+      <div className="flex flex-col gap-4">
+        {organizations?.map((org) => (
+          <OrganizationNode
+            key={org.id}
+            org={org}
+            isSuperAdmin={isSuperAdmin}
+            parkingAdminsBySite={parkingAdminsBySite}
+          />
+        ))}
+        {!organizations?.length && (
+          <p className="text-sm text-muted-foreground">
+            No organizations yet.
+            {isSuperAdmin ? " Create one above to get started." : ""}
+          </p>
         )}
-
-        <div className="flex flex-col gap-4">
-          {organizations?.map((org) => (
-            <OrganizationNode
-              key={org.id}
-              org={org}
-              isSuperAdmin={isSuperAdmin}
-              parkingAdminsBySite={parkingAdminsBySite}
-            />
-          ))}
-          {!organizations?.length && (
-            <p className="text-sm text-muted-foreground">
-              No organizations yet.
-              {isSuperAdmin ? " Create one above to get started." : ""}
-            </p>
-          )}
-        </div>
       </div>
     </div>
   );
