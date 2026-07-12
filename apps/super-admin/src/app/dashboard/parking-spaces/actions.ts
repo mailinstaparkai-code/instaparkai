@@ -148,17 +148,37 @@ export async function createTariffRule(formData: FormData) {
   const parking_space_id = formData.get("parking_space_id")?.toString();
   const vehicle_category = formData.get("vehicle_category")?.toString().trim() || "car";
   const pricing_type = formData.get("pricing_type")?.toString();
-  const rateRaw = formData.get("rate")?.toString().trim();
   const surgeRaw = formData.get("surge_multiplier")?.toString().trim();
-  if (!parking_space_id || !pricing_type || !rateRaw) return;
+  if (!parking_space_id || !pricing_type) return;
+
+  let rate: number;
+  let slab_tiers: { upto_minutes: number | null; rate: number }[] | null = null;
+
+  if (pricing_type === "slab") {
+    slab_tiers = [0, 1, 2]
+      .map((i) => {
+        const rateRaw = formData.get(`slab_rate_${i}`)?.toString().trim();
+        if (!rateRaw) return null;
+        const uptoRaw = formData.get(`slab_upto_minutes_${i}`)?.toString().trim();
+        return { upto_minutes: uptoRaw ? Number(uptoRaw) : null, rate: Number(rateRaw) };
+      })
+      .filter((t): t is { upto_minutes: number | null; rate: number } => t !== null);
+    if (!slab_tiers.length) return;
+    rate = slab_tiers[0].rate;
+  } else {
+    const rateRaw = formData.get("rate")?.toString().trim();
+    if (!rateRaw) return;
+    rate = Number(rateRaw);
+  }
 
   const supabase = await createClient();
   const { error } = await supabase.from("tariff_rules").insert({
     parking_space_id,
     vehicle_category,
     pricing_type,
-    rate: Number(rateRaw),
+    rate,
     surge_multiplier: surgeRaw ? Number(surgeRaw) : null,
+    slab_tiers,
   });
   if (error) throw new Error(error.message);
 

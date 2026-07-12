@@ -18,6 +18,7 @@ import { DeleteButton } from "../../components/delete-button";
 import { EntityCard } from "../../components/entity-card";
 import { FormDialog } from "../../components/form-dialog";
 import { Field, ParkingSpaceFields } from "../../components/parking-space-fields";
+import { TariffRuleFields } from "../../components/tariff-rule-fields";
 import type { AccessMethod } from "../../types";
 
 const methodLabels: Record<AccessMethod, string> = {
@@ -41,9 +42,10 @@ type SpaceDetail = {
   tariff_rules: {
     id: string;
     vehicle_category: string;
-    pricing_type: "flat" | "hourly" | "surge";
+    pricing_type: "flat" | "hourly" | "surge" | "slab";
     rate: number;
     surge_multiplier: number | null;
+    slab_tiers: { upto_minutes: number | null; rate: number }[] | null;
   }[];
   zones: { id: string; name: string; slots: { count: number }[] }[];
 };
@@ -74,7 +76,7 @@ export default async function ParkingSpaceDetailPage({
       "id, name, type, address, latitude, longitude, timezone, valet_parking_enabled, organization_id, " +
         "organizations(name), " +
         "access_workflows(id, methods), " +
-        "tariff_rules(id, vehicle_category, pricing_type, rate, surge_multiplier), " +
+        "tariff_rules(id, vehicle_category, pricing_type, rate, surge_multiplier, slab_tiers), " +
         "zones(id, name, slots(count))"
     )
     .eq("id", spaceId)
@@ -215,40 +217,35 @@ export default async function ParkingSpaceDetailPage({
                 submitLabel="Create"
               >
                 <input type="hidden" name="parking_space_id" value={space.id} />
-                <Field label="Vehicle category">
-                  <Input name="vehicle_category" defaultValue="car" placeholder="car" />
-                </Field>
-                <Field label="Pricing type">
-                  <select
-                    name="pricing_type"
-                    defaultValue="hourly"
-                    className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-                  >
-                    <option value="flat">Flat</option>
-                    <option value="hourly">Hourly</option>
-                    <option value="surge">Surge</option>
-                  </select>
-                </Field>
-                <Field label="Rate (₹)">
-                  <Input name="rate" type="number" step="0.01" required />
-                </Field>
-                <Field label="Surge multiplier (surge only)">
-                  <Input name="surge_multiplier" type="number" step="0.01" />
-                </Field>
+                <TariffRuleFields />
               </FormDialog>
             )}
           </div>
           {space.tariff_rules.length > 0 ? (
-            <ul className="mt-2 flex flex-col gap-1 text-sm">
+            <ul className="mt-2 flex flex-col gap-2 text-sm">
               {space.tariff_rules.map((rule) => (
-                <li key={rule.id} className="flex items-center gap-2">
-                  <span className="rounded-full bg-status-warning/15 px-2 py-0.5 text-xs font-medium text-status-warning">
-                    {rule.vehicle_category}
-                  </span>
-                  <span className="text-muted-foreground">{rule.pricing_type}</span>
-                  <span className="font-numeric">₹{rule.rate}</span>
-                  {rule.pricing_type === "surge" && rule.surge_multiplier && (
-                    <span className="text-muted-foreground">× {rule.surge_multiplier}</span>
+                <li key={rule.id} className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-full bg-status-warning/15 px-2 py-0.5 text-xs font-medium text-status-warning">
+                      {rule.vehicle_category}
+                    </span>
+                    <span className="text-muted-foreground">{rule.pricing_type}</span>
+                    {rule.pricing_type !== "slab" && (
+                      <span className="font-numeric">₹{rule.rate}</span>
+                    )}
+                    {rule.pricing_type === "surge" && rule.surge_multiplier && (
+                      <span className="text-muted-foreground">× {rule.surge_multiplier}</span>
+                    )}
+                  </div>
+                  {rule.pricing_type === "slab" && rule.slab_tiers && (
+                    <ul className="ml-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
+                      {rule.slab_tiers.map((tier, i) => (
+                        <li key={i}>
+                          {tier.upto_minutes ? `Up to ${tier.upto_minutes}m` : "Beyond"}:{" "}
+                          <span className="font-numeric text-foreground">₹{tier.rate}</span>
+                        </li>
+                      ))}
+                    </ul>
                   )}
                 </li>
               ))}

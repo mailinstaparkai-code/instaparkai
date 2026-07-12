@@ -23,9 +23,10 @@ export type AccessWorkflow = {
 export type TariffRule = {
   id: string;
   vehicle_category: string;
-  pricing_type: "flat" | "hourly" | "surge";
+  pricing_type: "flat" | "hourly" | "surge" | "slab";
   rate: number;
   surge_multiplier: number | null;
+  slab_tiers: { upto_minutes: number | null; rate: number }[] | null;
 };
 
 export type ParkingAdmin = {

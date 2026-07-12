@@ -1,0 +1,80 @@
+"use client";
+
+import { useState, type FormEvent } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Field } from "../../components/field";
+
+export function HandoverButton({
+  ticketId,
+  otp,
+  suggestedFare,
+  action,
+}: {
+  ticketId: string;
+  otp: string | null;
+  suggestedFare: number | null;
+  action: (formData: FormData) => Promise<void> | void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPending(true);
+    setError(null);
+    try {
+      await action(new FormData(event.currentTarget));
+      setOpen(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger render={<Button size="sm">Complete handover</Button>} />
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Complete handover</DialogTitle>
+        </DialogHeader>
+        <p className="text-sm text-muted-foreground">
+          Guest&apos;s OTP: <span className="font-numeric font-semibold text-foreground">{otp}</span> —
+          confirm it matches what the guest tells you.
+        </p>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <input type="hidden" name="id" value={ticketId} />
+          <Field label="Enter OTP to confirm">
+            <Input name="otp" required maxLength={4} placeholder="0000" />
+          </Field>
+          <Field label="Fare amount (₹)">
+            <Input
+              name="fare_amount"
+              type="number"
+              step="0.01"
+              defaultValue={suggestedFare ?? undefined}
+            />
+          </Field>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="payment_collected" />
+            Payment collected (GPay screenshot confirmed)
+          </label>
+          {error && <p className="text-sm text-status-danger">{error}</p>}
+          <Button type="submit" disabled={pending}>
+            {pending ? "Completing…" : "Complete handover"}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

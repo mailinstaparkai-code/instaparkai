@@ -28,20 +28,38 @@ keys) to any file, including this one — reference where to find/reset them ins
   (ANPR/RFID/HID primary+fallback), Dynamic Tariff Engine (flat/hourly/surge)
 - App shell: sidebar + topbar per `design.md`, working light/dark theme toggle
 
-**Valet Parking Application — Phase A only** (auth foundation):
+**Valet Parking Application — Phase A + B + C (core workflow)**:
 - Separate username/password auth for `parking_admin` / `valet_operator` roles
   (`valet_accounts` / `valet_sessions` tables), independent of Supabase Auth — see
-  `CLAUDE.md` for why and how this works
+  `CLAUDE.md` for why and how this works. Verified: `valet_operator` accounts are blocked
+  from this web dashboard (parking_admin-only) since they're Android-app-only per plan.
 - `valet_parking_enabled` feature flag per parking space; Super Admin can toggle it and
   create the first Parking Admin account for a site
 - A seeded test site ("Hotel Parking Test") with a Parking Admin account — see **Test
   accounts** below
-- Parking Admin dashboard is currently a stub (greeting + placeholder KPI cards) — no
-  real queue/check-in/reporting functionality yet
+- **Slab-based tariff pricing** (`tariff_rules.slab_tiers` jsonb, `pricing_type = 'slab'`)
+  alongside flat/hourly/surge, configurable from the site detail page in the Super Admin
+  portal.
+- **`valet_tickets` table** (Phase B data model): vehicle_number, vehicle_type,
+  mobile_number, slot assignment, status (`parked → requested → in_transit → arrived →
+  completed`), OTP, fare_amount, payment_collected. Private `valet-photos` Storage bucket
+  created for check-in/handover photos, but photo upload UI isn't built yet (see Known
+  gaps).
+- **Parking Admin dashboard** (`/parking-admin/*`, Phase C): real KPIs (active vehicles,
+  arrived, completed today, avg turnaround) on the dashboard home; a **Live Queue** page
+  (`/parking-admin/queue`) with vehicle check-in, slot assignment, and the full status
+  lifecycle (guest-requested → dispatch operator → mark arrived → complete handover with
+  OTP verification + fare/payment capture); a **Valet Operators** page
+  (`/parking-admin/operators`) for the Parking Admin to create/deactivate/delete
+  `valet_operator` accounts for their site. Fare is auto-suggested at handover from the
+  site's tariff rules (`src/lib/tariff.ts`) but always operator-editable — no payment
+  gateway, matches the "GPay screenshot + mark collected" design.
+- "Vehicles" (full vehicle log/reports), "Reports", "Communication", and "Settings" nav
+  items are still stubs (`href: null` in `src/components/shell/nav-config.ts`).
 
-**Not started**: valet vehicle data model (check-in/status/OTP/photos), the full Parking
-Admin operations dashboard, the guest tracking page, the Android operator app, and all AI
-features (deferred by design — see below).
+**Not started**: photo capture UI (check-in/handover, 4-side + odometer), the guest
+tracking page, the Android operator app, and all AI features (deferred by design — see
+below).
 
 ## Architecture decisions worth knowing before you continue
 
@@ -70,10 +88,15 @@ features (deferred by design — see below).
   session sees an empty Organizations list on `/dashboard/parking-spaces`. Not a
   regression from recent work; pre-existing, and low-priority since `site_admin` is being
   phased out in favor of `valet_accounts`.
-- Tariff Engine doesn't yet support slab-based pricing (e.g. "first hour ₹20, next hour
-  ₹40") — only flat/hourly/surge. Needed for the valet Phase B build.
-- No payment gateway integration anywhere yet (valet payment collection is planned to be
-  manual — GPay screenshot + "mark collected" — not a gateway integration).
+- No payment gateway integration anywhere yet (valet payment collection is manual — GPay
+  screenshot + "mark collected" — by design, not a gap to fix).
+- Check-in/handover photo capture (4-side + odometer) isn't built — the `valet-photos`
+  Storage bucket exists but nothing uploads to it yet.
+- No guest-facing tracking page yet, so the Parking Admin currently triggers "Guest
+  requested" on the guest's behalf from the Live Queue page rather than the guest
+  self-serving via a link.
+- Fare suggestion at handover (`src/lib/tariff.ts`) is best-effort (duration × tariff
+  rule) and always operator-editable — it isn't wired into any billing/ledger system.
 
 ## Accounts & access
 
@@ -105,13 +128,17 @@ features (deferred by design — see below).
 
 Roughly in order (matches the phased plan this project has been following):
 
-1. **Slab-based tariff pricing** — small schema + UI addition to the existing Tariff
-   Engine.
-2. **Valet vehicle data model** (Phase B): check-in/status lifecycle, OTP, photos in
-   Supabase Storage.
-3. **Parking Admin operations dashboard** (Phase C): replace the current stub with the
-   real live queue, Valet Operator user management, reports, communication settings.
-4. **Guest tracking page** (Phase D): public `/track/[token]` route.
+1. **Check-in/handover photo capture** — wire the existing `valet-photos` Storage bucket
+   into the check-in and handover dialogs (4-side + odometer photos).
+2. **Reports & full vehicle log** — a `/parking-admin/vehicles` or similar page showing
+   all tickets (including completed), turnaround/operator stats; currently only the
+   active Live Queue is surfaced.
+3. **Guest tracking page** (Phase D): public `/track/[ticket_token]` route — no login,
+   live status, one-tap "Request Vehicle," OTP display on arrival. `valet_tickets` already
+   has `ticket_token` for this.
+4. **Communication settings** (Phase C remainder): per-site WhatsApp/SMS/Email toggles +
+   the site's own fresh Twilio/SendGrid/AiSensy credentials (never reuse anything from the
+   old reference doc — see above).
 5. **Android operator app** (Phase E): native Kotlin/Compose, consuming a small JSON API
    under this Next.js app (bearer-token auth, since the Android app can't use Supabase's
    client SDK against the custom `valet_accounts` session model).
