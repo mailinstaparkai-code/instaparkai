@@ -1,11 +1,19 @@
 "use server";
 
 import { randomBytes, randomUUID } from "node:crypto";
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getValetSession } from "@/lib/valet-auth/session";
 import { generateOtp } from "@/lib/otp";
 import { BUCKET, uploadTicketPhotos } from "@/lib/valet-photos";
+import { sendSms, sendWhatsApp, type CommunicationSettings } from "@/lib/messaging";
+
+async function getBaseUrl() {
+  const h = await headers();
+  const host = h.get("host") ?? "localhost:3000";
+  return `${host.startsWith("localhost") ? "http" : "https"}://${host}`;
+}
 
 const CHECKIN_PHOTO_FIELDS = [
   { name: "photo_front", label: "front" },
@@ -48,10 +56,11 @@ export async function checkInVehicle(formData: FormData) {
     CHECKIN_PHOTO_FIELDS
   );
 
+  const ticketToken = randomBytes(16).toString("hex");
   const { error } = await supabase.from("valet_tickets").insert({
     id: ticketId,
     parking_space_id: session.assignedSiteId,
-    ticket_token: randomBytes(16).toString("hex"),
+    ticket_token: ticketToken,
     vehicle_number,
     vehicle_type,
     mobile_number,
@@ -66,8 +75,38 @@ export async function checkInVehicle(formData: FormData) {
     await supabase.from("slots").update({ status: "occupied" }).eq("id", slot_id);
   }
 
+  await sendTrackingLink(supabase, session.assignedSiteId, mobile_number, vehicle_number, ticketToken);
+
   revalidatePath(PATH);
   revalidatePath("/parking-admin/dashboard");
+}
+
+// Best-effort: check-in has already succeeded above, so a messaging failure (bad
+// credentials, provider outage) shouldn't fail the check-in itself -- staff still have
+// the "Guest link" copy button on the Live Queue as a fallback.
+async function sendTrackingLink(
+  supabase: ReturnType<typeof createServiceClient>,
+  siteId: string,
+  mobileNumber: string,
+  vehicleNumber: string,
+  ticketToken: string
+) {
+  try {
+    const { data: commSettings } = await supabase
+      .from("communication_settings")
+      .select("*")
+      .eq("parking_space_id", siteId)
+      .maybeSingle<CommunicationSettings>();
+    if (!commSettings || (!commSettings.sms_enabled && !commSettings.whatsapp_enabled)) return;
+
+    const trackingUrl = `${await getBaseUrl()}/track/${ticketToken}`;
+    const message = `Your vehicle ${vehicleNumber} is parked. Track status & request pickup: ${trackingUrl}`;
+
+    if (commSettings.sms_enabled) await sendSms(commSettings, mobileNumber, message);
+    if (commSettings.whatsapp_enabled) await sendWhatsApp(commSettings, mobileNumber, message);
+  } catch {
+    // swallow -- see comment above
+  }
 }
 
 export async function getTicketPhotoUrls(ticketId: string) {

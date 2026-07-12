@@ -54,6 +54,6 @@ export const parkingAdminNav: NavItem[] = [
   { label: "Vehicles", href: "/parking-admin/vehicles", icon: Car },
   { label: "Valet Operators", href: "/parking-admin/operators", icon: Users },
   { label: "Reports", href: null, icon: FileText },
-  { label: "Communication", href: null, icon: MessageSquare },
+  { label: "Communication", href: "/parking-admin/communication", icon: MessageSquare },
   { label: "Settings", href: null, icon: Settings },
 ];

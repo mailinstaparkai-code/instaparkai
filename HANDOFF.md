@@ -62,10 +62,25 @@ keys) to any file, including this one — reference where to find/reset them ins
   `valet_tickets` — see the `checked_in_operator`/`delivered_operator` aliased embeds if
   you need the pattern elsewhere) plus the same guest-link and photo-viewer affordances
   as the Live Queue.
-- "Reports" (as a distinct analytics page) and "Communication" and "Settings" nav items
-  are still stubs (`href: null` in `src/components/shell/nav-config.ts`) — the Vehicles
-  page above covers the "reports" need for now (revenue/turnaround/operator visibility),
-  just not as a dedicated analytics dashboard.
+- "Reports" (as a distinct analytics page) and "Settings" nav items are still stubs
+  (`href: null` in `src/components/shell/nav-config.ts`) — the Vehicles page above covers
+  the "reports" need for now (revenue/turnaround/operator visibility), just not as a
+  dedicated analytics dashboard.
+- **Communication settings** (`/parking-admin/communication`): per-site SMS/WhatsApp
+  (Twilio) and Email (SendGrid) toggles + credentials, entered fresh per site — never
+  reused from the leaked reference doc. Secrets are masked on redisplay (`•••• last4`)
+  and a blank field on save means "keep the existing value," so credentials are never
+  echoed back into the DOM. Deliberate simplification: WhatsApp goes through **Twilio's**
+  WhatsApp API (a second, WhatsApp-enabled Twilio sender number) rather than AiSensy —
+  same account/credentials as SMS, avoiding an unverified second provider integration.
+  `checkInVehicle` now auto-sends the `/track/[token]` link via SMS/WhatsApp if either
+  channel is enabled and configured (`src/lib/messaging.ts`, `sendTrackingLink` in
+  `queue/actions.ts`) — best-effort: a send failure (bad credentials, provider outage)
+  does **not** fail the check-in, and the manual "Guest link" copy button remains as a
+  fallback either way. Verified the settings save/mask/reload round-trip and that
+  check-in still succeeds even when the configured Twilio credentials are invalid; actual
+  message delivery is unverified since there's no real Twilio/SendGrid account connected
+  in this environment.
 - **Guest tracking page** (Phase D): public `/track/[ticket_token]` route, no login. Shows
   a status timeline (Parked → Requested → On the way → Arrived), a "Request my vehicle"
   button (parked stage only), the handover OTP once the vehicle has arrived, and a
@@ -155,12 +170,13 @@ app, and all AI features (deferred by design — see below).
 
 Roughly in order (matches the phased plan this project has been following):
 
-1. **Communication settings** (Phase C remainder): per-site WhatsApp/SMS/Email toggles +
-   the site's own fresh Twilio/SendGrid/AiSensy credentials (never reuse anything from the
-   old reference doc — see above) — needed to auto-send the `/track/[token]` link at
-   check-in instead of staff copying it manually.
-2. **Android operator app** (Phase E): native Kotlin/Compose, consuming a small JSON API
+1. **Android operator app** (Phase E): native Kotlin/Compose, consuming a small JSON API
    under this Next.js app (bearer-token auth, since the Android app can't use Supabase's
-   client SDK against the custom `valet_accounts` session model).
+   client SDK against the custom `valet_accounts` session model). This is the next
+   unbuilt piece of the original plan and a much larger effort than anything so far —
+   new language/toolchain, Android Studio/emulator work.
+2. Email delivery of the tracking link (SendGrid is wired in `messaging.ts` and
+   configurable in Communication settings, but nothing calls `sendEmail` yet since the
+   check-in form doesn't collect an email address — would need a small form field added).
 3. AI enhancements — only after the above is live and there's real usage data to build
    against.
