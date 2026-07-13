@@ -154,7 +154,12 @@ export async function requestVehicle(formData: FormData) {
 
   const { error } = await supabase
     .from("valet_tickets")
-    .update({ status: "requested", requested_at: new Date().toISOString(), otp: generateOtp() })
+    .update({
+      status: "requested",
+      requested_at: new Date().toISOString(),
+      otp: generateOtp(),
+      requested_by: session.accountId,
+    })
     .eq("id", id);
   if (error) throw new Error(error.message);
 
@@ -178,7 +183,6 @@ export async function requestVehicle(formData: FormData) {
 
 export async function dispatchVehicle(formData: FormData) {
   const id = formData.get("id")?.toString();
-  const delivered_by = formData.get("delivered_by")?.toString() || null;
   if (!id) return;
 
   const session = await assertValetStaff();
@@ -188,7 +192,11 @@ export async function dispatchVehicle(formData: FormData) {
 
   const { error } = await supabase
     .from("valet_tickets")
-    .update({ status: "in_transit", in_transit_at: new Date().toISOString(), delivered_by })
+    .update({
+      status: "in_transit",
+      in_transit_at: new Date().toISOString(),
+      dispatched_by: session.accountId,
+    })
     .eq("id", id);
   if (error) throw new Error(error.message);
 
@@ -221,7 +229,11 @@ export async function markArrived(formData: FormData) {
 
   const { error } = await supabase
     .from("valet_tickets")
-    .update({ status: "arrived", arrived_at: new Date().toISOString() })
+    .update({
+      status: "arrived",
+      arrived_at: new Date().toISOString(),
+      arrived_by: session.accountId,
+    })
     .eq("id", id);
   if (error) throw new Error(error.message);
 
@@ -274,6 +286,7 @@ export async function completeHandover(formData: FormData) {
       fare_amount: fareRaw ? Number(fareRaw) : null,
       payment_collected,
       handover_photos: handoverPhotos,
+      delivered_by: session.accountId,
     })
     .eq("id", id);
   if (error) throw new Error(error.message);
