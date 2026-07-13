@@ -138,6 +138,26 @@ keys) to any file, including this one — reference where to find/reset them ins
   (`src/app/parking-admin/(authenticated)/queue/photos-button.tsx`). All optional — no
   photos required to check in or hand over a vehicle.
 
+- **Reports** (`/parking-admin/reports`): a card-grid landing page — two live cards
+  (**Vehicle Transaction Report**, new; **Vehicle Log**, the existing `/parking-admin/vehicles`
+  page reframed as a report card) plus grayed "Coming soon" placeholders (Operator
+  Performance, Revenue, Peak Hours, Slot Utilization, Repeat Customers, Cancellation),
+  matching a reference product UI the user shared. `parking_admin`-only, same
+  wrong-role-redirects-to-dashboard pattern as Operators/Communication.
+  **Vehicle Transaction Report** (`/parking-admin/reports/vehicle-transactions`)
+  unpivots each `valet_tickets` row into up to 5 transaction rows — Checked In / Pickup
+  Requested / Dispatched / Arrived / Handover Complete — each with its own timestamp and
+  operator, filterable by type/operator/date range (`?type=&operator=&from=&to=`),
+  capped at 500 rows, with client-side CSV export (no new backend endpoint). Building
+  this surfaced a real bug: `valet_tickets.delivered_by` was **dead** —
+  `dispatchVehicle()` read a form field the Live Queue UI never submitted (always
+  `null`), and `completeHandover()` (the action that should set it) never touched it at
+  all. Fixed by stamping `session.accountId` into `completeHandover` instead. Also added
+  `requested_by`/`dispatched_by`/`arrived_by` columns (new migration) and wired them into
+  `requestVehicle`/`dispatchVehicle`/`markArrived` — without this, "who performed it" was
+  unanswerable for 3 of 5 ticket stages. Tickets created before this fix show `—` for
+  those columns (honest gap, not backfilled).
+
 **Not started**: the Android operator app, and all AI features (deferred by design — see
 below).
 
