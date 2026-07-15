@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
-import { Menu, X, Search, Sparkles, Bell, Sun, Moon, LogOut } from "lucide-react";
+import { Menu, X, Search, Sparkles, Bell, Sun, Moon, LogOut, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { superAdminNav, parkingAdminNav, valetOperatorNav } from "./nav-config";
 import { NotificationsBell } from "./notifications-bell";
@@ -150,6 +150,16 @@ export function AppShell({
                   <p className="truncate text-sm font-medium">{userLabel}</p>
                   {userSubLabel && (
                     <p className="truncate text-xs text-muted-foreground">{userSubLabel}</p>
+                  )}
+                  {nav !== "super-admin" && (
+                    <Link
+                      href="/parking-admin/m/dashboard"
+                      className="mt-3 flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-muted"
+                      onClick={() => setUserMenuOpen(false)}
+                    >
+                      <Smartphone className="size-4" />
+                      Switch to mobile view
+                    </Link>
                   )}
                   <form action={signOutAction} className="mt-3">
                     <Button type="submit" variant="secondary" size="sm" className="w-full">
