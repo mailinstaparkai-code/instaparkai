@@ -158,8 +158,61 @@ keys) to any file, including this one — reference where to find/reset them ins
   unanswerable for 3 of 5 ticket stages. Tickets created before this fix show `—` for
   those columns (honest gap, not backfilled).
 
+- **V1 Changes batch** — five phases built from a punch-list doc the project owner
+  shared (`Valet Parking App V1 Changes.docx`), in this order:
+  - **Phase A — Operator assignment & availability**: dispatch now requires picking a
+    genuinely *available* operator (`src/lib/operator-availability.ts`'s
+    `getAvailableOperators()` — active `valet_operator`s for the site minus whoever's
+    currently `dispatched_by` on an `in_transit`/`arrived` ticket), not auto-stamping
+    whoever clicked the button. This is a semantic change to `dispatched_by` (added in
+    the Reports work above): it now means "the assigned operator," not "who clicked
+    dispatch." Sites can flip on **full auto-allocation**
+    (`parking_spaces.auto_allocate_operator`, toggle on Live Queue, `parking_admin`-only)
+    — when on, `requestVehicle()` immediately round-robins to the least-recently-assigned
+    available operator and dispatches in the same call, no manual picker shown; if no
+    operator is free, the ticket just stays `requested` until one is (or an admin
+    dispatches manually as a fallback — the picker still works on auto-allocate sites).
+  - **Phase B — Self-service Configuration** (`/parking-admin/configuration`,
+    `parking_admin`-only, wired to the "Settings" nav item): three tabs, all following
+    the `operators/actions.ts` service-client + manual-site-scoping pattern (the
+    equivalent Super Admin CRUD for zones/slots/tariffs is RLS-gated to `super_admin`
+    and wasn't reusable as-is). **Zones & Slots** — create/delete, reusing the existing
+    `zones`/`slots` tables. **Vehicle Types** — `vehicle_types` is a new site-scoped
+    table; `valet_tickets.vehicle_type` was previously a hardcoded 4-value Postgres
+    CHECK constraint (`car`/`bike`/`suv`/`xuv`), now free text validated only by this
+    table's contents (backfilled with the original 4 values for every existing site so
+    check-in didn't break). The check-in dropdown reads live from it. **Payments** —
+    reuses `tariff_rules` as-is (already vehicle-type-capable at the data level); the
+    only real change is a `Select` populated from Vehicle Types instead of a freeform
+    text input for `vehicle_category`.
+  - **Phase C — Notifications widget**: the top-bar bell was purely decorative since
+    the shell was built — now backed by a real `valet_notifications` table
+    (`src/lib/valet-notifications.ts`'s `notify()`, best-effort, fired alongside the
+    existing `fireTrigger()` calls at all 5 ticket-lifecycle stages). Site-wide (every
+    `parking_admin`/`valet_operator` on the site sees it, not just whoever's assigned),
+    unread badge, opening the dropdown marks everything read, polls every 20s
+    (`NotificationsBell`, same plain-polling pattern as the guest tracker — no Supabase
+    Realtime elsewhere in this app). Super Admin's bell is untouched; no notification
+    data model exists for that surface.
+  - **Phase E — Per-vehicle timeline**: click a vehicle number (Live Queue or Vehicles)
+    to open its full journey in a dialog — same unpivot logic as the Vehicle Transaction
+    Report, extracted into `src/lib/ticket-timeline.ts` so both stay in sync
+    (`TicketTimelineDialog`, `getTicketTimeline()` action).
+  - **Phase D — Dedicated mobile routes**: new `/parking-admin/m/*` route tree
+    (dashboard, queue, vehicles, profile) with its own `MobileAppShell` — bottom tab bar
+    (Home/Queue/Vehicles/Profile, `design.md` §6's spec minus Scan/Earnings, which have
+    no backend to point at), safe-area padding, card-per-row lists instead of the
+    desktop pages' tables. Reuses every existing Server Action and dialog component
+    as-is (check-in, dispatch, handover, timeline) — this phase is new UI only, no new
+    backend logic. "Switch to mobile view" / "Switch to desktop view" links in each
+    shell's user menu / Profile tab. **The original desktop Live Queue/Vehicles pages
+    are unchanged** — still raw tables, still not mobile-responsive on their own (see
+    Known Gaps) — the mobile fix is the new `/m/` routes, not a retrofit of the desktop
+    ones.
+
 **Not started**: the Android operator app, and all AI features (deferred by design — see
-below).
+below). The new `/parking-admin/m/*` mobile web routes (Phase D above) are a stopgap,
+not a replacement for the native app in the original plan.
 
 ## Architecture decisions worth knowing before you continue
 
@@ -199,13 +252,18 @@ below).
   column is the natural fast-follow.
 - No true delivered/read message tracking (see Communication bullet above) — would need
   Twilio status-callback + SendGrid event-webhook endpoints, a separate future piece.
-- **Not mweb-friendly yet**: Live Queue, Vehicles, and the Communication Message Log all
-  render their data as a raw `<table>` in `overflow-x-auto`, which contradicts
-  `design.md` §4's "no horizontal scroll — card-per-row on narrow viewports" rule.
-  Confirmed by resizing to a 375px viewport: both KPI cards and the table scroll
-  horizontally instead of reflowing. The Operators list (card rows, not a table) and all
-  dialogs/forms are already responsive. Not fixed as part of the operator-login work —
-  would need a per-page card-view fallback below a breakpoint.
+- **Desktop pages still aren't mweb-friendly** (mitigated, not fixed): Live Queue,
+  Vehicles, and the Communication Message Log all render as raw `<table>`s in
+  `overflow-x-auto`, which still scroll horizontally on a narrow viewport instead of
+  reflowing. The V1 Changes Phase D above adds separate, genuinely mobile-friendly
+  routes (`/parking-admin/m/*`) as the intended way to use this app on a phone — but the
+  *original* desktop routes were deliberately left as-is (out of scope for that phase),
+  so visiting `/parking-admin/queue` (not `/m/queue`) on a phone still has this problem.
+- Two Vercel deploys in this batch hit a stale `.next/dev` cache after a local
+  `rm -rf .next && npm run build` collided with the still-running dev preview server
+  (`ENOENT ... pages-manifest.json` / `Cannot find module '.../[turbopack]_runtime.js'`)
+  — not an app bug, just restart the dev server (`preview_stop` + `preview_start`) if a
+  local preview 500s after a manual production build.
 
 ## Accounts & access
 
@@ -233,20 +291,24 @@ below).
   (not built yet) — reset it directly via `npx supabase db query --linked` by generating
   a new hash with `src/lib/valet-auth/password.ts`'s `hashPassword()`, or delete and
   recreate the account from the parking space's detail page in the Super Admin portal.
-- **Valet Operator** (same test site): username `testoperator`, created during operator-
-  login verification to confirm the new login/nav/lifecycle-action flow end-to-end.
-  Password was shared with the project owner directly, not stored in this repo. Safe to
-  delete from the Valet Operators tab if no longer needed.
+- **Valet Operators** (same test site): `testoperator` (Test Operator Final) and `valet1`
+  (Ravi Kumar) — both created during verification (operator-login flow, then reused for
+  Phase A's round-robin/availability testing, which needed 2+ operators). Passwords
+  shared with the project owner directly, not stored in this repo. Safe to delete from
+  the Valet Operators tab if no longer needed.
 
 ## Suggested next steps
 
 Roughly in order (matches the phased plan this project has been following):
 
-1. **Android operator app** (Phase E): native Kotlin/Compose, consuming a small JSON API
-   under this Next.js app (bearer-token auth, since the Android app can't use Supabase's
-   client SDK against the custom `valet_accounts` session model). This is the next
-   unbuilt piece of the original plan and a much larger effort than anything so far —
-   new language/toolchain, Android Studio/emulator work.
+1. **Android operator app**: native Kotlin/Compose, consuming a small JSON API under
+   this Next.js app (bearer-token auth, since the Android app can't use Supabase's
+   client SDK against the custom `valet_accounts` session model). Still the largest
+   unbuilt piece of the original plan and a much bigger effort than anything so far —
+   new language/toolchain, Android Studio/emulator work. The new `/parking-admin/m/*`
+   mobile web routes cover the same ground for now (usable in any phone browser, no
+   install) — worth checking whether that's sufficient before investing in the native
+   app.
 2. Collect a guest email at check-in (+ `valet_tickets.guest_email` column) so the
    already-built Email channel in Communication triggers can actually fire.
 3. Delivered/read message tracking via Twilio status-callback + SendGrid event webhooks.
