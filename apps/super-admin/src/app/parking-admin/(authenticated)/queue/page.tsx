@@ -61,8 +61,14 @@ export default async function LiveQueuePage() {
 
   const supabase = createServiceClient();
 
-  const [{ data: tickets }, { data: zones }, { data: tariffRules }, { data: site }, availableOperators] =
-    await Promise.all([
+  const [
+    { data: tickets },
+    { data: zones },
+    { data: tariffRules },
+    { data: site },
+    availableOperators,
+    { data: vehicleTypes },
+  ] = await Promise.all([
       supabase
         .from("valet_tickets")
         .select(
@@ -87,6 +93,11 @@ export default async function LiveQueuePage() {
         .eq("id", session.assignedSiteId)
         .single(),
       getAvailableOperators(supabase, session.assignedSiteId),
+      supabase
+        .from("vehicle_types")
+        .select("id, name")
+        .eq("parking_space_id", session.assignedSiteId)
+        .order("name"),
     ]);
 
   const operatorOptions = availableOperators.map((op) => ({
@@ -127,13 +138,14 @@ export default async function LiveQueuePage() {
           <Field label="Vehicle type">
             <select
               name="vehicle_type"
-              defaultValue="car"
+              defaultValue={vehicleTypes?.[0]?.name ?? "car"}
               className="h-9 rounded-md border border-input bg-background px-3 text-sm"
             >
-              <option value="car">Car</option>
-              <option value="bike">Bike</option>
-              <option value="suv">SUV</option>
-              <option value="xuv">XUV</option>
+              {(vehicleTypes ?? []).map((vt) => (
+                <option key={vt.id} value={vt.name}>
+                  {vt.name}
+                </option>
+              ))}
             </select>
           </Field>
           <Field label="Mobile number">

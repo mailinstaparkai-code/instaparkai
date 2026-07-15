@@ -55,7 +55,7 @@ export const parkingAdminNav: NavItem[] = [
   { label: "Valet Operators", href: "/parking-admin/operators", icon: Users },
   { label: "Reports", href: "/parking-admin/reports", icon: FileText },
   { label: "Communication", href: "/parking-admin/communication", icon: MessageSquare },
-  { label: "Settings", href: null, icon: Settings },
+  { label: "Settings", href: "/parking-admin/configuration", icon: Settings },
 ];
 
 // valet_operator sidebar — a restricted subset of parkingAdminNav. No account
