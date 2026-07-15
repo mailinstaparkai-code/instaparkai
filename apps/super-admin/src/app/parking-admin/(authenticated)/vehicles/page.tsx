@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { getValetSession } from "@/lib/valet-auth/session";
 import { CopyLinkButton } from "../queue/copy-link-button";
 import { PhotosButton } from "../queue/photos-button";
+import { TicketTimelineDialog } from "../queue/ticket-timeline-dialog";
 
 const STATUS_LABEL: Record<string, string> = {
   parked: "Parked",
@@ -168,7 +169,7 @@ export default async function VehicleLogPage({
               return (
                 <tr key={t.id} className="border-b border-border last:border-0">
                   <td className="p-3">
-                    <p className="font-medium">{t.vehicle_number}</p>
+                    <TicketTimelineDialog ticketId={t.id} vehicleNumber={t.vehicle_number} />
                     <p className="text-xs capitalize text-muted-foreground">{t.vehicle_type}</p>
                   </td>
                   <td className="p-3">{t.mobile_number}</td>

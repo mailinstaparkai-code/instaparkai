@@ -9,6 +9,7 @@ import { generateOtp } from "@/lib/otp";
 import { BUCKET, uploadTicketPhotos } from "@/lib/valet-photos";
 import { fireTrigger } from "@/lib/communication-triggers";
 import { getAvailableOperators } from "@/lib/operator-availability";
+import { TICKET_TIMELINE_SELECT, unpivot, type TicketRow, type Transaction } from "@/lib/ticket-timeline";
 
 async function getBaseUrl() {
   const h = await headers();
@@ -194,6 +195,23 @@ export async function getTicketPhotoUrls(ticketId: string) {
   );
 
   return signed.filter((p): p is { label: string; stage: string; url: string } => !!p.url);
+}
+
+export async function getTicketTimeline(ticketId: string): Promise<Transaction[]> {
+  const session = await assertValetStaff();
+  const supabase = createServiceClient();
+
+  const { data: ticket } = await supabase
+    .from("valet_tickets")
+    .select(TICKET_TIMELINE_SELECT)
+    .eq("id", ticketId)
+    .eq("parking_space_id", session.assignedSiteId)
+    .single<TicketRow>();
+  if (!ticket) return [];
+
+  return unpivot(ticket).sort(
+    (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+  );
 }
 
 async function loadTicket(supabase: ReturnType<typeof createServiceClient>, id: string, siteId: string) {
