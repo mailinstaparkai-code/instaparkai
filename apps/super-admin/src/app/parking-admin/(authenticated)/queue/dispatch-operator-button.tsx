@@ -1,0 +1,84 @@
+"use client";
+
+import { useState, type FormEvent } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Field } from "../../components/field";
+
+export function DispatchOperatorButton({
+  ticketId,
+  operators,
+  action,
+}: {
+  ticketId: string;
+  operators: { id: string; label: string }[];
+  action: (formData: FormData) => Promise<void> | void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPending(true);
+    setError(null);
+    try {
+      await action(new FormData(event.currentTarget));
+      setOpen(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger
+        render={
+          <Button size="sm" variant="outline" disabled={!operators.length}>
+            Dispatch operator
+          </Button>
+        }
+      />
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Dispatch operator</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <input type="hidden" name="id" value={ticketId} />
+          {operators.length ? (
+            <Field label="Available operators">
+              <select
+                name="operator_id"
+                required
+                defaultValue={operators[0]?.id}
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm"
+              >
+                {operators.map((op) => (
+                  <option key={op.id} value={op.id}>
+                    {op.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              No operators are currently available.
+            </p>
+          )}
+          {error && <p className="text-sm text-status-danger">{error}</p>}
+          <Button type="submit" disabled={pending || !operators.length}>
+            {pending ? "Dispatching…" : "Dispatch"}
+          </Button>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

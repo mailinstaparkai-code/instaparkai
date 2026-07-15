@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getValetSession } from "@/lib/valet-auth/session";
 import { computeFare, type TariffRule } from "@/lib/tariff";
+import { getAvailableOperators } from "@/lib/operator-availability";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field } from "../../components/field";
@@ -13,10 +14,13 @@ import {
   dispatchVehicle,
   markArrived,
   requestVehicle,
+  updateAutoAllocate,
 } from "./actions";
 import { CopyLinkButton } from "./copy-link-button";
 import { HandoverButton } from "./handover-button";
 import { PhotosButton } from "./photos-button";
+import { DispatchOperatorButton } from "./dispatch-operator-button";
+import { AutoAllocateToggle } from "./auto-allocate-toggle";
 
 const STATUS_LABEL: Record<string, string> = {
   parked: "Parked",
@@ -57,26 +61,38 @@ export default async function LiveQueuePage() {
 
   const supabase = createServiceClient();
 
-  const [{ data: tickets }, { data: zones }, { data: tariffRules }] = await Promise.all([
-    supabase
-      .from("valet_tickets")
-      .select(
-        "id, ticket_token, vehicle_number, vehicle_type, mobile_number, status, otp, checked_in_at, fare_amount, check_in_photos, handover_photos, slots(slot_number)"
-      )
-      .eq("parking_space_id", session.assignedSiteId)
-      .neq("status", "completed")
-      .order("checked_in_at", { ascending: true })
-      .returns<Ticket[]>(),
-    supabase
-      .from("zones")
-      .select("id, name, slots(id, slot_number, status)")
-      .eq("parking_space_id", session.assignedSiteId),
-    supabase
-      .from("tariff_rules")
-      .select("vehicle_category, pricing_type, rate, surge_multiplier, slab_tiers")
-      .eq("parking_space_id", session.assignedSiteId)
-      .returns<TariffRule[]>(),
-  ]);
+  const [{ data: tickets }, { data: zones }, { data: tariffRules }, { data: site }, availableOperators] =
+    await Promise.all([
+      supabase
+        .from("valet_tickets")
+        .select(
+          "id, ticket_token, vehicle_number, vehicle_type, mobile_number, status, otp, checked_in_at, fare_amount, check_in_photos, handover_photos, slots(slot_number)"
+        )
+        .eq("parking_space_id", session.assignedSiteId)
+        .neq("status", "completed")
+        .order("checked_in_at", { ascending: true })
+        .returns<Ticket[]>(),
+      supabase
+        .from("zones")
+        .select("id, name, slots(id, slot_number, status)")
+        .eq("parking_space_id", session.assignedSiteId),
+      supabase
+        .from("tariff_rules")
+        .select("vehicle_category, pricing_type, rate, surge_multiplier, slab_tiers")
+        .eq("parking_space_id", session.assignedSiteId)
+        .returns<TariffRule[]>(),
+      supabase
+        .from("parking_spaces")
+        .select("auto_allocate_operator")
+        .eq("id", session.assignedSiteId)
+        .single(),
+      getAvailableOperators(supabase, session.assignedSiteId),
+    ]);
+
+  const operatorOptions = availableOperators.map((op) => ({
+    id: op.id,
+    label: op.full_name || op.username,
+  }));
 
   const availableSlots =
     zones?.flatMap((z) =>
@@ -146,6 +162,13 @@ export default async function LiveQueuePage() {
           </div>
         </FormDialog>
       </div>
+
+      {session.role === "parking_admin" && (
+        <AutoAllocateToggle
+          defaultChecked={site?.auto_allocate_operator ?? false}
+          action={updateAutoAllocate}
+        />
+      )}
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         {[
@@ -219,12 +242,11 @@ export default async function LiveQueuePage() {
                       </form>
                     )}
                     {t.status === "requested" && (
-                      <form action={dispatchVehicle}>
-                        <input type="hidden" name="id" value={t.id} />
-                        <Button type="submit" size="sm" variant="outline">
-                          Dispatch operator
-                        </Button>
-                      </form>
+                      <DispatchOperatorButton
+                        ticketId={t.id}
+                        operators={operatorOptions}
+                        action={dispatchVehicle}
+                      />
                     )}
                     {t.status === "in_transit" && (
                       <form action={markArrived}>

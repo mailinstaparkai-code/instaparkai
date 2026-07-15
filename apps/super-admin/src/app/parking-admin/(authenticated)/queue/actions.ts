@@ -8,6 +8,7 @@ import { getValetSession } from "@/lib/valet-auth/session";
 import { generateOtp } from "@/lib/otp";
 import { BUCKET, uploadTicketPhotos } from "@/lib/valet-photos";
 import { fireTrigger } from "@/lib/communication-triggers";
+import { getAvailableOperators } from "@/lib/operator-availability";
 
 async function getBaseUrl() {
   const h = await headers();
@@ -18,6 +19,48 @@ async function getBaseUrl() {
 async function getSiteName(supabase: ReturnType<typeof createServiceClient>, siteId: string) {
   const { data } = await supabase.from("parking_spaces").select("name").eq("id", siteId).single();
   return data?.name ?? "Valet parking";
+}
+
+async function isAutoAllocateEnabled(supabase: ReturnType<typeof createServiceClient>, siteId: string) {
+  const { data } = await supabase
+    .from("parking_spaces")
+    .select("auto_allocate_operator")
+    .eq("id", siteId)
+    .single();
+  return data?.auto_allocate_operator ?? false;
+}
+
+// Shared by the manual dispatch picker and auto-allocation -- moves a "requested"
+// ticket to "in_transit" under the given operator and fires the guest-facing trigger.
+async function dispatchToOperator(
+  supabase: ReturnType<typeof createServiceClient>,
+  siteId: string,
+  ticket: { id: string; vehicle_number: string; mobile_number: string; ticket_token: string },
+  operatorId: string
+) {
+  const { error } = await supabase
+    .from("valet_tickets")
+    .update({
+      status: "in_transit",
+      in_transit_at: new Date().toISOString(),
+      dispatched_by: operatorId,
+    })
+    .eq("id", ticket.id);
+  if (error) throw new Error(error.message);
+
+  const siteName = await getSiteName(supabase, siteId);
+  await fireTrigger({
+    supabase,
+    siteId,
+    triggerKey: "vehicle_in_transit",
+    ticketId: ticket.id,
+    mobileNumber: ticket.mobile_number,
+    variables: {
+      vehicleNumber: ticket.vehicle_number,
+      siteName,
+      trackingUrl: `${await getBaseUrl()}/track/${ticket.ticket_token}`,
+    },
+  });
 }
 
 const CHECKIN_PHOTO_FIELDS = [
@@ -40,6 +83,28 @@ async function assertValetStaff() {
     throw new Error("Sign-in required.");
   }
   return session;
+}
+
+async function assertParkingAdmin() {
+  const session = await getValetSession();
+  if (!session || session.role !== "parking_admin") {
+    throw new Error("Parking Admin access required.");
+  }
+  return session;
+}
+
+export async function updateAutoAllocate(formData: FormData) {
+  const enabled = formData.get("auto_allocate_operator") === "on";
+  const session = await assertParkingAdmin();
+  const supabase = createServiceClient();
+
+  const { error } = await supabase
+    .from("parking_spaces")
+    .update({ auto_allocate_operator: enabled })
+    .eq("id", session.assignedSiteId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(PATH);
 }
 
 export async function checkInVehicle(formData: FormData) {
@@ -177,42 +242,40 @@ export async function requestVehicle(formData: FormData) {
     },
   });
 
+  if (await isAutoAllocateEnabled(supabase, session.assignedSiteId)) {
+    const available = await getAvailableOperators(supabase, session.assignedSiteId);
+    if (available.length > 0) {
+      await dispatchToOperator(supabase, session.assignedSiteId, ticket, available[0].id);
+    }
+    // No operator available right now -- ticket stays "requested"; a manual dispatch
+    // (or the next request once someone frees up) can still pick it up from there.
+  }
+
   revalidatePath(PATH);
   revalidatePath("/parking-admin/dashboard");
 }
 
 export async function dispatchVehicle(formData: FormData) {
   const id = formData.get("id")?.toString();
-  if (!id) return;
+  const operator_id = formData.get("operator_id")?.toString();
+  if (!id || !operator_id) return;
 
   const session = await assertValetStaff();
   const supabase = createServiceClient();
   const ticket = await loadTicket(supabase, id, session.assignedSiteId);
   if (!ticket || ticket.status !== "requested") return;
 
-  const { error } = await supabase
-    .from("valet_tickets")
-    .update({
-      status: "in_transit",
-      in_transit_at: new Date().toISOString(),
-      dispatched_by: session.accountId,
-    })
-    .eq("id", id);
-  if (error) throw new Error(error.message);
+  const { data: operator } = await supabase
+    .from("valet_accounts")
+    .select("id")
+    .eq("id", operator_id)
+    .eq("assigned_site_id", session.assignedSiteId)
+    .eq("role", "valet_operator")
+    .eq("is_active", true)
+    .maybeSingle();
+  if (!operator) throw new Error("Selected operator is not available.");
 
-  const siteName = await getSiteName(supabase, session.assignedSiteId);
-  await fireTrigger({
-    supabase,
-    siteId: session.assignedSiteId,
-    triggerKey: "vehicle_in_transit",
-    ticketId: id,
-    mobileNumber: ticket.mobile_number,
-    variables: {
-      vehicleNumber: ticket.vehicle_number,
-      siteName,
-      trackingUrl: `${await getBaseUrl()}/track/${ticket.ticket_token}`,
-    },
-  });
+  await dispatchToOperator(supabase, session.assignedSiteId, ticket, operator_id);
 
   revalidatePath(PATH);
   revalidatePath("/parking-admin/dashboard");
