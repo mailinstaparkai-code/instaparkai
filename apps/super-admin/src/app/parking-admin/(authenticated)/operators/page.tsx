@@ -4,10 +4,21 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { getValetSession } from "@/lib/valet-auth/session";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { createOperator, deleteOperator, setOperatorActive, updateOperator } from "./actions";
+import {
+  createOperator,
+  deleteOperator,
+  setOperatorActive,
+  setOperatorDailyStatus,
+  updateOperator,
+} from "./actions";
 import { DeleteButton } from "../../components/delete-button";
 import { Field } from "../../components/field";
 import { FormDialog } from "../../components/form-dialog";
+import { DailyStatusSelect } from "./daily-status-select";
+
+function todayIST(): string {
+  return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+}
 
 export default async function ValetOperatorsPage() {
   const session = await getValetSession();
@@ -19,12 +30,22 @@ export default async function ValetOperatorsPage() {
   }
 
   const supabase = createServiceClient();
-  const { data: operators } = await supabase
-    .from("valet_accounts")
-    .select("id, username, full_name, employee_id, is_active")
-    .eq("role", "valet_operator")
-    .eq("assigned_site_id", session.assignedSiteId)
-    .order("created_at", { ascending: false });
+  const [{ data: operators }, { data: dailyStatusRows }] = await Promise.all([
+    supabase
+      .from("valet_accounts")
+      .select("id, username, full_name, employee_id, is_active")
+      .eq("role", "valet_operator")
+      .eq("assigned_site_id", session.assignedSiteId)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("operator_daily_status")
+      .select("operator_id, status")
+      .eq("status_date", todayIST()),
+  ]);
+
+  const dailyStatusById = new Map(
+    (dailyStatusRows ?? []).map((row) => [row.operator_id, row.status as string])
+  );
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
@@ -78,6 +99,11 @@ export default async function ValetOperatorsPage() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <DailyStatusSelect
+                operatorId={op.id}
+                value={dailyStatusById.get(op.id) ?? null}
+                action={setOperatorDailyStatus}
+              />
               <FormDialog
                 key={`${op.username}-${op.full_name}-${op.employee_id}`}
                 trigger={

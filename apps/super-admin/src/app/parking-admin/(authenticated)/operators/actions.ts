@@ -85,6 +85,41 @@ export async function setOperatorActive(formData: FormData) {
   revalidatePath(PATH);
 }
 
+function todayIST(): string {
+  return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+}
+
+export async function setOperatorDailyStatus(formData: FormData) {
+  const operator_id = formData.get("operator_id")?.toString();
+  const status = formData.get("status")?.toString();
+  if (!operator_id || !status) return;
+
+  const session = await assertParkingAdmin();
+  const supabase = createServiceClient();
+
+  const { data: operator } = await supabase
+    .from("valet_accounts")
+    .select("id")
+    .eq("id", operator_id)
+    .eq("assigned_site_id", session.assignedSiteId)
+    .eq("role", "valet_operator")
+    .maybeSingle();
+  if (!operator) throw new Error("Operator not found.");
+
+  const { error } = await supabase.from("operator_daily_status").upsert(
+    {
+      operator_id,
+      status_date: todayIST(),
+      status,
+      set_by: session.accountId,
+    },
+    { onConflict: "operator_id,status_date" }
+  );
+  if (error) throw new Error(error.message);
+
+  revalidatePath(PATH);
+}
+
 export async function deleteOperator(formData: FormData) {
   const id = formData.get("id")?.toString();
   if (!id) return;

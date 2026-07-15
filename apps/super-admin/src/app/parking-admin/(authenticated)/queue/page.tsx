@@ -44,6 +44,12 @@ const STATUS_COLOR: Record<string, string> = {
   completed: "bg-muted text-muted-foreground",
 };
 
+const DAILY_STATUS_BADGE: Record<string, string> = {
+  out: "Marked out",
+  leave: "On leave",
+  break: "On break",
+};
+
 type Ticket = {
   id: string;
   ticket_token: string;
@@ -98,7 +104,7 @@ export default async function LiveQueuePage() {
         .select("auto_allocate_operator")
         .eq("id", session.assignedSiteId)
         .single(),
-      getAvailableOperators(supabase, session.assignedSiteId),
+      getAvailableOperators(supabase, session.assignedSiteId, { respectDailyStatus: false }),
       supabase
         .from("vehicle_types")
         .select("id, name")
@@ -106,10 +112,18 @@ export default async function LiveQueuePage() {
         .order("name"),
     ]);
 
-  const operatorOptions = availableOperators.map((op) => ({
-    id: op.id,
-    label: op.full_name || op.username,
-  }));
+  const operatorOptions = availableOperators.map((op) => {
+    const badge =
+      op.dailyStatus && op.dailyStatus !== "in"
+        ? DAILY_STATUS_BADGE[op.dailyStatus]
+        : !op.dailyStatus
+          ? "Not marked in"
+          : null;
+    return {
+      id: op.id,
+      label: badge ? `${op.full_name || op.username} — ${badge}` : op.full_name || op.username,
+    };
+  });
 
   const availableSlots =
     zones?.flatMap((z) =>
