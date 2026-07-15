@@ -120,7 +120,6 @@ export async function checkInVehicle(formData: FormData) {
   const vehicle_number = formData.get("vehicle_number")?.toString().trim().toUpperCase();
   const vehicle_type = formData.get("vehicle_type")?.toString() || "car";
   const mobile_number = formData.get("mobile_number")?.toString().trim();
-  const slot_id = formData.get("slot_id")?.toString() || null;
   if (!vehicle_number || !mobile_number) return;
 
   const session = await assertValetStaff();
@@ -137,6 +136,8 @@ export async function checkInVehicle(formData: FormData) {
   );
 
   const ticketToken = randomBytes(16).toString("hex");
+  // Slot assignment happens later, when the operator has actually parked the car
+  // (see markAsParked) -- check-in only covers arrival at reception.
   const { error } = await supabase.from("valet_tickets").insert({
     id: ticketId,
     parking_space_id: session.assignedSiteId,
@@ -144,16 +145,11 @@ export async function checkInVehicle(formData: FormData) {
     vehicle_number,
     vehicle_type,
     mobile_number,
-    slot_id,
-    status: "parked",
+    status: "checked_in",
     checked_in_by: session.accountId,
     check_in_photos: photos,
   });
   if (error) throw new Error(error.message);
-
-  if (slot_id) {
-    await supabase.from("slots").update({ status: "occupied" }).eq("id", slot_id);
-  }
 
   const siteName = await getSiteName(supabase, session.assignedSiteId);
   await fireTrigger({
@@ -176,6 +172,41 @@ export async function checkInVehicle(formData: FormData) {
     ticketId,
     kind: "vehicle_checked_in",
     message: `${vehicle_number} checked in`,
+  });
+
+  revalidatePath(PATH);
+  revalidatePath("/parking-admin/dashboard");
+}
+
+export async function markAsParked(formData: FormData) {
+  const id = formData.get("id")?.toString();
+  const slot_id = formData.get("slot_id")?.toString();
+  if (!id || !slot_id) return;
+
+  const session = await assertValetStaff();
+  const supabase = createServiceClient();
+  const ticket = await loadTicket(supabase, id, session.assignedSiteId);
+  if (!ticket || ticket.status !== "checked_in") return;
+
+  const { error } = await supabase
+    .from("valet_tickets")
+    .update({
+      status: "parked",
+      slot_id,
+      parked_at: new Date().toISOString(),
+      parked_by: session.accountId,
+    })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+
+  await supabase.from("slots").update({ status: "occupied" }).eq("id", slot_id);
+
+  await notify({
+    supabase,
+    siteId: session.assignedSiteId,
+    ticketId: id,
+    kind: "vehicle_parked",
+    message: `${ticket.vehicle_number} parked`,
   });
 
   revalidatePath(PATH);

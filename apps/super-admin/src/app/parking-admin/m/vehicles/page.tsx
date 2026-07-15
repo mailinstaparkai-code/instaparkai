@@ -7,6 +7,7 @@ import { PhotosButton } from "../../(authenticated)/queue/photos-button";
 import { TicketTimelineDialog } from "../../(authenticated)/queue/ticket-timeline-dialog";
 
 const STATUS_LABEL: Record<string, string> = {
+  checked_in: "Checked in",
   parked: "Parked",
   requested: "Requested",
   in_transit: "In transit",
@@ -15,6 +16,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_COLOR: Record<string, string> = {
+  checked_in: "bg-status-disabled/15 text-status-disabled",
   parked: "bg-status-info/15 text-status-info",
   requested: "bg-status-warning/15 text-status-warning",
   in_transit: "bg-brand-orange/15 text-brand-orange",
@@ -22,7 +24,15 @@ const STATUS_COLOR: Record<string, string> = {
   completed: "bg-muted text-muted-foreground",
 };
 
-const FILTERS = ["all", "parked", "requested", "in_transit", "arrived", "completed"] as const;
+const FILTERS = [
+  "all",
+  "checked_in",
+  "parked",
+  "requested",
+  "in_transit",
+  "arrived",
+  "completed",
+] as const;
 
 type Ticket = {
   id: string;

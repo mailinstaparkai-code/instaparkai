@@ -5,6 +5,7 @@ export type TicketRow = {
   vehicle_number: string;
   vehicle_type: string;
   checked_in_at: string;
+  parked_at: string | null;
   requested_at: string | null;
   in_transit_at: string | null;
   arrived_at: string | null;
@@ -12,13 +13,20 @@ export type TicketRow = {
   fare_amount: number | null;
   payment_collected: boolean;
   checked_in_operator: OperatorRef;
+  parked_operator: OperatorRef;
   requested_operator: OperatorRef;
   dispatched_operator: OperatorRef;
   arrived_operator: OperatorRef;
   delivered_operator: OperatorRef;
 };
 
-export type TransactionType = "checked_in" | "requested" | "dispatched" | "arrived" | "completed";
+export type TransactionType =
+  | "checked_in"
+  | "parked"
+  | "requested"
+  | "dispatched"
+  | "arrived"
+  | "completed";
 
 export type Transaction = {
   key: string;
@@ -31,7 +39,8 @@ export type Transaction = {
 };
 
 export const TRANSACTION_META: Record<TransactionType, { label: string; color: string }> = {
-  checked_in: { label: "Checked In", color: "bg-status-info/15 text-status-info" },
+  checked_in: { label: "Checked In", color: "bg-status-disabled/15 text-status-disabled" },
+  parked: { label: "Parked", color: "bg-status-info/15 text-status-info" },
   requested: { label: "Pickup Requested", color: "bg-status-warning/15 text-status-warning" },
   dispatched: { label: "Dispatched", color: "bg-brand-orange/15 text-brand-orange" },
   arrived: { label: "Arrived", color: "bg-status-success/15 text-status-success" },
@@ -44,8 +53,9 @@ export const TRANSACTION_TYPES = Object.keys(TRANSACTION_META) as TransactionTyp
 // every call site -- kept in one place so the report and the per-ticket timeline never
 // drift out of sync on which columns/joins they select.
 export const TICKET_TIMELINE_SELECT =
-  "id, vehicle_number, vehicle_type, checked_in_at, requested_at, in_transit_at, arrived_at, completed_at, fare_amount, payment_collected, " +
+  "id, vehicle_number, vehicle_type, checked_in_at, parked_at, requested_at, in_transit_at, arrived_at, completed_at, fare_amount, payment_collected, " +
   "checked_in_operator:valet_accounts!valet_tickets_checked_in_by_fkey(id, username, full_name), " +
+  "parked_operator:valet_accounts!valet_tickets_parked_by_fkey(id, username, full_name), " +
   "requested_operator:valet_accounts!valet_tickets_requested_by_fkey(id, username, full_name), " +
   "dispatched_operator:valet_accounts!valet_tickets_dispatched_by_fkey(id, username, full_name), " +
   "arrived_operator:valet_accounts!valet_tickets_arrived_by_fkey(id, username, full_name), " +
@@ -67,6 +77,17 @@ export function unpivot(ticket: TicketRow): Transaction[] {
     fare: null,
     paymentCollected: null,
   });
+  if (ticket.parked_at) {
+    rows.push({
+      key: `${ticket.id}-parked`,
+      type: "parked",
+      timestamp: ticket.parked_at,
+      vehicleNumber: ticket.vehicle_number,
+      operator: ticket.parked_operator,
+      fare: null,
+      paymentCollected: null,
+    });
+  }
   if (ticket.requested_at) {
     rows.push({
       key: `${ticket.id}-requested`,

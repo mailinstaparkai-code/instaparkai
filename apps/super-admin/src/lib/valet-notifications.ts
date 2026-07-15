@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 
 export type NotificationKind =
   | "vehicle_checked_in"
+  | "vehicle_parked"
   | "vehicle_requested"
   | "vehicle_dispatched"
   | "vehicle_arrived"

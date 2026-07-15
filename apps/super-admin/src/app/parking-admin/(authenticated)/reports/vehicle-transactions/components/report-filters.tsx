@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 const TYPE_OPTIONS = [
   { value: "all", label: "All Transactions" },
   { value: "checked_in", label: "Checked In" },
+  { value: "parked", label: "Parked" },
   { value: "requested", label: "Pickup Requested" },
   { value: "dispatched", label: "Dispatched" },
   { value: "arrived", label: "Arrived" },

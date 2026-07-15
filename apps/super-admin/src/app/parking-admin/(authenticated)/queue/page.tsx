@@ -13,6 +13,7 @@ import {
   completeHandover,
   dispatchVehicle,
   markArrived,
+  markAsParked,
   requestVehicle,
   updateAutoAllocate,
 } from "./actions";
@@ -20,10 +21,12 @@ import { CopyLinkButton } from "./copy-link-button";
 import { HandoverButton } from "./handover-button";
 import { PhotosButton } from "./photos-button";
 import { DispatchOperatorButton } from "./dispatch-operator-button";
+import { MarkParkedButton } from "./mark-parked-button";
 import { AutoAllocateToggle } from "./auto-allocate-toggle";
 import { TicketTimelineDialog } from "./ticket-timeline-dialog";
 
 const STATUS_LABEL: Record<string, string> = {
+  checked_in: "Checked in",
   parked: "Parked",
   requested: "Requested",
   in_transit: "In transit",
@@ -32,6 +35,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_COLOR: Record<string, string> = {
+  checked_in: "bg-status-disabled/15 text-status-disabled",
   parked: "bg-status-info/15 text-status-info",
   requested: "bg-status-warning/15 text-status-warning",
   in_transit: "bg-brand-orange/15 text-brand-orange",
@@ -114,6 +118,7 @@ export default async function LiveQueuePage() {
     ) ?? [];
 
   const counts = {
+    checked_in: tickets?.filter((t) => t.status === "checked_in").length ?? 0,
     parked: tickets?.filter((t) => t.status === "parked").length ?? 0,
     requested: tickets?.filter((t) => t.status === "requested").length ?? 0,
     in_transit: tickets?.filter((t) => t.status === "in_transit").length ?? 0,
@@ -152,20 +157,6 @@ export default async function LiveQueuePage() {
           <Field label="Mobile number">
             <Input name="mobile_number" required placeholder="9876543210" />
           </Field>
-          <Field label="Assign slot (optional)">
-            <select
-              name="slot_id"
-              defaultValue=""
-              className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-            >
-              <option value="">Unassigned</option>
-              {availableSlots.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </Field>
           <div className="grid grid-cols-2 gap-3">
             <PhotoInput name="photo_front" label="Front" />
             <PhotoInput name="photo_back" label="Back" />
@@ -183,8 +174,9 @@ export default async function LiveQueuePage() {
         />
       )}
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
         {[
+          { label: "Checked in", value: counts.checked_in },
           { label: "Parked", value: counts.parked },
           { label: "Requested", value: counts.requested },
           { label: "In transit", value: counts.in_transit },
@@ -246,6 +238,13 @@ export default async function LiveQueuePage() {
                     />
                   </td>
                   <td className="p-3">
+                    {t.status === "checked_in" && (
+                      <MarkParkedButton
+                        ticketId={t.id}
+                        slots={availableSlots}
+                        action={markAsParked}
+                      />
+                    )}
                     {t.status === "parked" && (
                       <form action={requestVehicle}>
                         <input type="hidden" name="id" value={t.id} />

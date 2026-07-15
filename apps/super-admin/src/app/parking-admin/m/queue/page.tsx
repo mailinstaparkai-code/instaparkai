@@ -13,6 +13,7 @@ import {
   completeHandover,
   dispatchVehicle,
   markArrived,
+  markAsParked,
   requestVehicle,
   updateAutoAllocate,
 } from "../../(authenticated)/queue/actions";
@@ -20,10 +21,12 @@ import { CopyLinkButton } from "../../(authenticated)/queue/copy-link-button";
 import { HandoverButton } from "../../(authenticated)/queue/handover-button";
 import { PhotosButton } from "../../(authenticated)/queue/photos-button";
 import { DispatchOperatorButton } from "../../(authenticated)/queue/dispatch-operator-button";
+import { MarkParkedButton } from "../../(authenticated)/queue/mark-parked-button";
 import { AutoAllocateToggle } from "../../(authenticated)/queue/auto-allocate-toggle";
 import { TicketTimelineDialog } from "../../(authenticated)/queue/ticket-timeline-dialog";
 
 const STATUS_LABEL: Record<string, string> = {
+  checked_in: "Checked in",
   parked: "Parked",
   requested: "Requested",
   in_transit: "In transit",
@@ -32,6 +35,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_COLOR: Record<string, string> = {
+  checked_in: "bg-status-disabled/15 text-status-disabled",
   parked: "bg-status-info/15 text-status-info",
   requested: "bg-status-warning/15 text-status-warning",
   in_transit: "bg-brand-orange/15 text-brand-orange",
@@ -145,20 +149,6 @@ export default async function MobileQueuePage() {
           <Field label="Mobile number">
             <Input name="mobile_number" required placeholder="9876543210" />
           </Field>
-          <Field label="Assign slot (optional)">
-            <select
-              name="slot_id"
-              defaultValue=""
-              className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-            >
-              <option value="">Unassigned</option>
-              {availableSlots.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-          </Field>
           <div className="grid grid-cols-2 gap-3">
             <PhotoInput name="photo_front" label="Front" />
             <PhotoInput name="photo_back" label="Back" />
@@ -213,6 +203,13 @@ export default async function MobileQueuePage() {
               </div>
 
               <div>
+                {t.status === "checked_in" && (
+                  <MarkParkedButton
+                    ticketId={t.id}
+                    slots={availableSlots}
+                    action={markAsParked}
+                  />
+                )}
                 {t.status === "parked" && (
                   <form action={requestVehicle}>
                     <input type="hidden" name="id" value={t.id} />
