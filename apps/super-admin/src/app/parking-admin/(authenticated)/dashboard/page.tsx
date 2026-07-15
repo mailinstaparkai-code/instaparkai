@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getValetSession } from "@/lib/valet-auth/session";
 import { Car, ListOrdered, CircleCheckBig, Clock } from "lucide-react";
+import { ParkingMap } from "./parking-map";
 
 export default async function ParkingAdminDashboardPage() {
   const session = await getValetSession();
@@ -13,7 +14,7 @@ export default async function ParkingAdminDashboardPage() {
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
-  const [{ data: site }, { data: tickets }] = await Promise.all([
+  const [{ data: site }, { data: tickets }, { data: zones }, { data: parkedTickets }] = await Promise.all([
     supabase
       .from("parking_spaces")
       .select("name, valet_parking_enabled")
@@ -24,6 +25,17 @@ export default async function ParkingAdminDashboardPage() {
       .select("status, checked_in_at, completed_at")
       .eq("parking_space_id", session.assignedSiteId)
       .gte("checked_in_at", startOfToday.toISOString()),
+    supabase
+      .from("zones")
+      .select("id, name, slots(id, slot_number, status)")
+      .eq("parking_space_id", session.assignedSiteId)
+      .order("name"),
+    supabase
+      .from("valet_tickets")
+      .select("id, slot_id, vehicle_number")
+      .eq("parking_space_id", session.assignedSiteId)
+      .eq("status", "parked")
+      .not("slot_id", "is", null),
   ]);
 
   const activeCount = tickets?.filter((t) => t.status !== "completed").length ?? 0;
@@ -82,6 +94,17 @@ export default async function ParkingAdminDashboardPage() {
         Head to <span className="font-medium text-foreground">Live Queue</span> to check in a
         vehicle or manage the active queue.
       </p>
+
+      <ParkingMap
+        zones={
+          (zones ?? []) as {
+            id: string;
+            name: string;
+            slots: { id: string; slot_number: string; status: string }[];
+          }[]
+        }
+        parkedTickets={parkedTickets ?? []}
+      />
     </div>
   );
 }
