@@ -10,6 +10,7 @@ import { BUCKET, uploadTicketPhotos } from "@/lib/valet-photos";
 import { fireTrigger } from "@/lib/communication-triggers";
 import { getAvailableOperators } from "@/lib/operator-availability";
 import { TICKET_TIMELINE_SELECT, unpivot, type TicketRow, type Transaction } from "@/lib/ticket-timeline";
+import { notify } from "@/lib/valet-notifications";
 
 async function getBaseUrl() {
   const h = await headers();
@@ -61,6 +62,13 @@ async function dispatchToOperator(
       siteName,
       trackingUrl: `${await getBaseUrl()}/track/${ticket.ticket_token}`,
     },
+  });
+  await notify({
+    supabase,
+    siteId,
+    ticketId: ticket.id,
+    kind: "vehicle_dispatched",
+    message: `${ticket.vehicle_number} dispatched to an operator`,
   });
 }
 
@@ -162,6 +170,13 @@ export async function checkInVehicle(formData: FormData) {
       trackingUrl: `${await getBaseUrl()}/track/${ticketToken}`,
     },
   });
+  await notify({
+    supabase,
+    siteId: session.assignedSiteId,
+    ticketId,
+    kind: "vehicle_checked_in",
+    message: `${vehicle_number} checked in`,
+  });
 
   revalidatePath(PATH);
   revalidatePath("/parking-admin/dashboard");
@@ -259,6 +274,13 @@ export async function requestVehicle(formData: FormData) {
       trackingUrl: `${await getBaseUrl()}/track/${ticket.ticket_token}`,
     },
   });
+  await notify({
+    supabase,
+    siteId: session.assignedSiteId,
+    ticketId: id,
+    kind: "vehicle_requested",
+    message: `${ticket.vehicle_number} pickup requested`,
+  });
 
   if (await isAutoAllocateEnabled(supabase, session.assignedSiteId)) {
     const available = await getAvailableOperators(supabase, session.assignedSiteId);
@@ -332,6 +354,13 @@ export async function markArrived(formData: FormData) {
       trackingUrl: `${await getBaseUrl()}/track/${ticket.ticket_token}`,
     },
   });
+  await notify({
+    supabase,
+    siteId: session.assignedSiteId,
+    ticketId: id,
+    kind: "vehicle_arrived",
+    message: `${ticket.vehicle_number} has arrived`,
+  });
 
   revalidatePath(PATH);
   revalidatePath("/parking-admin/dashboard");
@@ -389,6 +418,13 @@ export async function completeHandover(formData: FormData) {
       fareAmount: fareRaw ?? "0",
       paymentStatus: payment_collected ? "paid" : "pending",
     },
+  });
+  await notify({
+    supabase,
+    siteId: session.assignedSiteId,
+    ticketId: id,
+    kind: "handover_complete",
+    message: `${ticket.vehicle_number} handover complete`,
   });
 
   revalidatePath(PATH);

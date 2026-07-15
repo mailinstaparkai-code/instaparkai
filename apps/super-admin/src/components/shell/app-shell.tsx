@@ -7,6 +7,7 @@ import { useTheme } from "next-themes";
 import { Menu, X, Search, Sparkles, Bell, Sun, Moon, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { superAdminNav, parkingAdminNav, valetOperatorNav } from "./nav-config";
+import { NotificationsBell } from "./notifications-bell";
 
 export function AppShell({
   nav,
@@ -115,12 +116,16 @@ export function AppShell({
             AI Copilot
           </span>
 
-          <button
-            aria-label="Notifications"
-            className="relative rounded-lg p-2 hover:bg-muted"
-          >
-            <Bell className="size-5" />
-          </button>
+          {nav === "super-admin" ? (
+            <button
+              aria-label="Notifications"
+              className="relative rounded-lg p-2 hover:bg-muted"
+            >
+              <Bell className="size-5" />
+            </button>
+          ) : (
+            <NotificationsBell />
+          )}
 
           <ThemeToggle />
 
