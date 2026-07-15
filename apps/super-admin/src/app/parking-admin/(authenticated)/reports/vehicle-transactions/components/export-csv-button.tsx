@@ -2,6 +2,7 @@
 
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatIST } from "@/lib/format-date";
 
 type Row = {
   timestamp: string;
@@ -24,7 +25,7 @@ export function ExportCsvButton({ rows }: { rows: Row[] }) {
     const header = ["Timestamp", "Vehicle", "Transaction", "Operator", "Fare", "Payment"];
     const lines = rows.map((r) =>
       [
-        new Date(r.timestamp).toLocaleString(),
+        formatIST(r.timestamp),
         r.vehicleNumber,
         r.label,
         r.operatorLabel,

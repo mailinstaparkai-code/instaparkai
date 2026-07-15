@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { getValetSession } from "@/lib/valet-auth/session";
 import { computeFare, type TariffRule } from "@/lib/tariff";
 import { getAvailableOperators } from "@/lib/operator-availability";
+import { formatISTTime } from "@/lib/format-date";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field } from "../../components/field";
@@ -226,7 +227,7 @@ export default async function LiveQueuePage() {
                     </span>
                   </td>
                   <td className="p-3 text-xs text-muted-foreground">
-                    {new Date(t.checked_in_at).toLocaleTimeString()}
+                    {formatISTTime(t.checked_in_at)}
                   </td>
                   <td className="p-3">
                     <CopyLinkButton token={t.ticket_token} />

@@ -9,6 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { TRANSACTION_META, operatorLabel, type Transaction } from "@/lib/ticket-timeline";
+import { formatIST } from "@/lib/format-date";
 import { getTicketTimeline } from "./actions";
 
 export function TicketTimelineDialog({
@@ -56,7 +57,7 @@ export function TicketTimelineDialog({
                     {TRANSACTION_META[t.type].label}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    {new Date(t.timestamp).toLocaleString()}
+                    {formatIST(t.timestamp)}
                   </span>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">

@@ -1,4 +1,5 @@
 import { TRIGGER_DEFINITIONS, type Channel, type TriggerKey } from "@/lib/communication-triggers";
+import { formatIST } from "@/lib/format-date";
 
 type LogRow = {
   id: string;
@@ -52,7 +53,7 @@ export function MessageLogTable({ rows }: { rows: LogRow[] }) {
                 )}
               </td>
               <td className="p-3 text-xs text-muted-foreground">
-                {new Date(row.created_at).toLocaleString()}
+                {formatIST(row.created_at)}
               </td>
             </tr>
           ))}

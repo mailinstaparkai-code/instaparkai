@@ -5,6 +5,7 @@ import { getValetSession } from "@/lib/valet-auth/session";
 import { CopyLinkButton } from "../queue/copy-link-button";
 import { PhotosButton } from "../queue/photos-button";
 import { TicketTimelineDialog } from "../queue/ticket-timeline-dialog";
+import { formatIST } from "@/lib/format-date";
 
 const STATUS_LABEL: Record<string, string> = {
   checked_in: "Checked in",
@@ -192,7 +193,7 @@ export default async function VehicleLogPage({
                     </span>
                   </td>
                   <td className="p-3 text-xs text-muted-foreground">
-                    {new Date(t.checked_in_at).toLocaleString()}
+                    {formatIST(t.checked_in_at)}
                   </td>
                   <td className="p-3 text-xs text-muted-foreground">
                     {turnaroundMinutes !== null ? formatDuration(turnaroundMinutes) : "—"}

@@ -12,6 +12,7 @@ import {
   type TicketRow,
   type TransactionType,
 } from "@/lib/ticket-timeline";
+import { formatIST } from "@/lib/format-date";
 import { ReportFilters } from "./components/report-filters";
 import { ExportCsvButton } from "./components/export-csv-button";
 
@@ -161,7 +162,7 @@ export default async function VehicleTransactionReportPage({
             {shown.map((t) => (
               <tr key={t.key} className="border-b border-border last:border-0">
                 <td className="p-3 text-xs text-muted-foreground">
-                  {new Date(t.timestamp).toLocaleString()}
+                  {formatIST(t.timestamp)}
                 </td>
                 <td className="p-3 font-medium">{t.vehicleNumber}</td>
                 <td className="p-3">

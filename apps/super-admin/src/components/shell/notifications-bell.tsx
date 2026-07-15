@@ -7,11 +7,13 @@ import {
   markAllNotificationsRead,
   type NotificationRow,
 } from "@/app/parking-admin/(authenticated)/actions";
+import { formatISTTime } from "@/lib/format-date";
 
 const POLL_MS = 20000;
 
 const KIND_LABEL: Record<string, string> = {
   vehicle_checked_in: "Checked in",
+  vehicle_parked: "Parked",
   vehicle_requested: "Pickup requested",
   vehicle_dispatched: "Dispatched",
   vehicle_arrived: "Arrived",
@@ -85,7 +87,7 @@ export function NotificationsBell() {
                   {n.message}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {KIND_LABEL[n.kind] ?? n.kind} · {new Date(n.created_at).toLocaleTimeString()}
+                  {KIND_LABEL[n.kind] ?? n.kind} · {formatISTTime(n.created_at)}
                 </p>
               </div>
             ))}
