@@ -146,7 +146,7 @@ export function AppShell({
                   className="fixed inset-0 z-40 cursor-default"
                   onClick={() => setUserMenuOpen(false)}
                 />
-                <div className="glass-card absolute right-0 z-50 mt-2 w-56 p-3">
+                <div className="absolute right-0 z-50 mt-2 w-56 rounded-lg bg-popover p-3 text-popover-foreground shadow-md ring-1 ring-foreground/10">
                   <p className="truncate text-sm font-medium">{userLabel}</p>
                   {userSubLabel && (
                     <p className="truncate text-xs text-muted-foreground">{userSubLabel}</p>

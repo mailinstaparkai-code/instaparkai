@@ -95,7 +95,7 @@ export function NotificationsBell() {
             className="fixed inset-0 z-40 cursor-default"
             onClick={() => setOpen(false)}
           />
-          <div className="glass-card absolute right-0 z-50 mt-2 max-h-96 w-80 overflow-y-auto p-2">
+          <div className="absolute right-0 z-50 mt-2 max-h-96 w-80 overflow-y-auto rounded-lg bg-popover p-2 text-popover-foreground shadow-md ring-1 ring-foreground/10">
             <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
               Notifications
             </p>

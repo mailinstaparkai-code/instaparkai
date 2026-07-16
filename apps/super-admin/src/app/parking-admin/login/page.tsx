@@ -25,7 +25,8 @@ export default function ParkingAdminLoginPage() {
       return;
     }
 
-    router.replace("/parking-admin/dashboard");
+    const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+    router.replace(isMobile ? "/parking-admin/m/dashboard" : "/parking-admin/dashboard");
     router.refresh();
   }
 

@@ -53,7 +53,7 @@ export function MultiSelect({
             className="fixed inset-0 z-40 cursor-default"
             onClick={() => setOpen(false)}
           />
-          <div className="glass-card absolute left-0 z-50 mt-1.5 max-h-64 w-48 overflow-y-auto p-2">
+          <div className="absolute left-0 z-50 mt-1.5 max-h-64 w-48 overflow-y-auto rounded-lg bg-popover p-2 text-popover-foreground shadow-md ring-1 ring-foreground/10">
             {options.map((opt) => (
               <label
                 key={opt.value}
