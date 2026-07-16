@@ -44,8 +44,10 @@ keys) to any file, including this one — reference where to find/reset them ins
   alongside flat/hourly/surge, configurable from the site detail page in the Super Admin
   portal.
 - **`valet_tickets` table** (Phase B data model): vehicle_number, vehicle_type,
-  mobile_number, slot assignment, status (`parked → requested → in_transit → arrived →
-  completed`), OTP, fare_amount, payment_collected. Private `valet-photos` Storage bucket
+  mobile_number, slot assignment, status (`checked_in → parked → requested → in_transit →
+  arrived → completed` — the `checked_in`/`parked` split was added in the V2 Changes batch
+  below; originally just `parked → requested → in_transit → arrived → completed`), OTP,
+  fare_amount, payment_collected. Private `valet-photos` Storage bucket
   created for check-in/handover photos, but photo upload UI isn't built yet (see Known
   gaps).
 - **Parking Admin dashboard** (`/parking-admin/*`, Phase C): real KPIs (active vehicles,
@@ -210,6 +212,67 @@ keys) to any file, including this one — reference where to find/reset them ins
     Known Gaps) — the mobile fix is the new `/m/` routes, not a retrofit of the desktop
     ones.
 
+- **V2 Changes batch** — six phases built from a second punch-list doc the project owner
+  shared (`Valet Parking App V2 Changes.docx`), describing the end-to-end valet journey
+  in detail. Research up front found several of the doc's items already satisfied by the
+  V1 batch (mobile check-in with photos, staff-triggerable "Guest requested," the
+  notifications bell already rendering on mobile) — only the genuinely new gaps became
+  phases:
+  - **V2 Phase 1 — Two-step check-in/parking split**: check-in and "car is actually
+    parked" used to be the same action (`checkInVehicle` set status straight to `parked`,
+    slot optional). Now a new `checked_in` status sits between them
+    (`valet_ticket_status` enum + `parked_at`/`parked_by` columns) — check-in only covers
+    arrival at reception (no slot picker anymore); a new `markAsParked()` action + "Mark
+    as parked" UI trigger lets the operator enter the slot once the car is physically
+    parked. `src/lib/ticket-timeline.ts` gained a matching `"parked"` transaction stage
+    (distinct from `"checked_in"`, which now means "arrived at reception," not "car is
+    parked") — every hardcoded status list in the app (`STATUS_LABEL`/`STATUS_COLOR`
+    maps, `FILTERS` arrays, the Reports stage-type filter) needed the new member added.
+  - **V2 Phase 2 — IST timestamps everywhere**: every timestamp render site used bare
+    `.toLocaleString()`/`.toLocaleTimeString()`, silently following the *browser's* local
+    timezone rather than IST — wrong for a fleet of India-based sites viewed from
+    anywhere. New `src/lib/format-date.ts` (`formatIST()`/`formatISTTime()`, `Asia/Kolkata`
+    via `Intl.DateTimeFormat`) swapped into all 10 render sites. No shared date helper
+    existed before this; use `formatIST`/`formatISTTime` for any new timestamp UI, not a
+    raw `.toLocaleString()`.
+  - **V2 Phase 3 — Operator daily availability**: new `operator_daily_status` table
+    (per-operator, per-IST-date, `in`/`out`/`leave`/`break`, upserted by
+    `setOperatorDailyStatus()`) — Parking Admins set it from a quick-set dropdown on the
+    Operators page. **Deliberately opt-in by design decision** (not the default this
+    session recommended): an operator with no explicit row for today is *not*
+    auto-allocation-eligible. `getAvailableOperators()` gained a `respectDailyStatus`
+    param (default `true`, used by auto-allocation) — when `false` (the manual dispatch
+    picker's call site), the daily-status filter is skipped entirely and each operator's
+    status shows as an inline badge instead, so a human admin can still deliberately
+    dispatch someone marked out/leave/break. The migration backfills `in` for every
+    then-active operator for the ship date specifically to avoid the opt-in default
+    instantly starving auto-allocation the moment it deployed — from the next calendar
+    day on, admins must actively mark operators `in` each day.
+  - **V2 Phase 4 — 2D slot-wise parking map**: new section on the Parking Admin dashboard
+    (`dashboard/parking-map.tsx`) — an auto-generated grid (zones as sections, slots as
+    colored cells by live status), a zone filter, and click-through from an occupied cell
+    straight into that vehicle's `TicketTimelineDialog`. Deliberately *not* a
+    drag-and-drop custom-layout editor (explicit scope decision) — no slot-position data
+    exists or was added.
+  - **V2 Phase 5 — Multi-select filters, pagination, loading states**: new
+    `components/ui/multi-select.tsx` (checkbox-list popover; `components/ui/select.tsx`
+    is single-select only and wasn't extended) wired into Live Queue, Vehicles, Reports,
+    and Operators — comma-separated query params (`?status=parked,requested`) instead of
+    single-value ones. Vehicles and Reports gained real pagination (25/page,
+    `.range()` + `count: "exact"` for Vehicles; client-side slicing over the
+    already-unpivoted+capped transaction list for Reports, since transactions aren't raw
+    DB rows) replacing the previous unbounded `.limit(100)`/500-row cap with no way to
+    see the rest. New `components/ui/skeleton.tsx` + a `loading.tsx` per main data route
+    (and its `m/` counterpart), plus `useTransition` wrapping every filter's
+    `router.push` so changing a filter shows a pending state instead of feeling frozen.
+  - **V2 Phase 6 — Foreground haptic on new notifications**: `notifications-bell.tsx`
+    now calls `navigator.vibrate(200)` when a poll tick's unread count is higher than the
+    previous tick's (tracked via a `ref`, not state, to avoid an extra re-render). No-ops
+    silently on browsers without the Vibration API (iOS Safari, desktop) — no permission
+    prompt needed, unlike the Notification API. Deliberately foreground-only per an
+    explicit scope decision (no Service Worker/Push API/PWA manifest) — doesn't fire when
+    the tab is closed or backgrounded.
+
 **Not started**: the Android operator app, and all AI features (deferred by design — see
 below). The new `/parking-admin/m/*` mobile web routes (Phase D above) are a stopgap,
 not a replacement for the native app in the original plan.
@@ -259,6 +322,14 @@ not a replacement for the native app in the original plan.
   routes (`/parking-admin/m/*`) as the intended way to use this app on a phone — but the
   *original* desktop routes were deliberately left as-is (out of scope for that phase),
   so visiting `/parking-admin/queue` (not `/m/queue`) on a phone still has this problem.
+- **Operator daily availability is opt-in, not opt-out** (V2 Phase 3, explicit decision):
+  if nobody visits the Operators page to mark an operator `in` on a given IST calendar
+  day, that operator is invisible to auto-allocation for the whole day (manual dispatch
+  still sees them, with a badge). The ship-day migration backfilled `in` for that one
+  day only — this is a real day-to-day operational risk if a site relies on
+  auto-allocation and nobody remembers to set daily status each morning. Worth watching
+  for real-world reports of "auto-allocate isn't picking anyone" before assuming it's a
+  bug — check `operator_daily_status` for that date first.
 - Two Vercel deploys in this batch hit a stale `.next/dev` cache after a local
   `rm -rf .next && npm run build` collided with the still-running dev preview server
   (`ENOENT ... pages-manifest.json` / `Cannot find module '.../[turbopack]_runtime.js'`)
