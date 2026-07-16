@@ -17,6 +17,7 @@ import { ReportFilters } from "./components/report-filters";
 import { ExportCsvButton } from "./components/export-csv-button";
 
 const MAX_ROWS = 500;
+const PAGE_SIZE = 25;
 
 function defaultDateRange() {
   const to = new Date();
@@ -25,10 +26,14 @@ function defaultDateRange() {
   return { from: from.toISOString().slice(0, 10), to: to.toISOString().slice(0, 10) };
 }
 
+function parseCsv(value: string | undefined): string[] {
+  return value ? value.split(",").filter(Boolean) : [];
+}
+
 export default async function VehicleTransactionReportPage({
   searchParams,
 }: {
-  searchParams: Promise<{ type?: string; operator?: string; from?: string; to?: string }>;
+  searchParams: Promise<{ type?: string; operator?: string; from?: string; to?: string; page?: string }>;
 }) {
   const session = await getValetSession();
   if (!session) {
@@ -42,10 +47,9 @@ export default async function VehicleTransactionReportPage({
   const defaults = defaultDateRange();
   const from = params.from || defaults.from;
   const to = params.to || defaults.to;
-  const type = TRANSACTION_TYPES.includes(params.type as TransactionType)
-    ? (params.type as TransactionType)
-    : "all";
-  const operatorFilter = params.operator || "all";
+  const typeFilter = parseCsv(params.type).filter((t) => TRANSACTION_TYPES.includes(t as TransactionType));
+  const operatorFilter = parseCsv(params.operator);
+  const page = Math.max(1, Number(params.page) || 1);
 
   const supabase = createServiceClient();
 
@@ -67,26 +71,38 @@ export default async function VehicleTransactionReportPage({
 
   let transactions = (tickets ?? []).flatMap(unpivot);
 
-  if (type !== "all") {
-    transactions = transactions.filter((t) => t.type === type);
+  if (typeFilter.length) {
+    transactions = transactions.filter((t) => typeFilter.includes(t.type));
   }
-  if (operatorFilter !== "all") {
-    transactions = transactions.filter((t) => t.operator?.id === operatorFilter);
+  if (operatorFilter.length) {
+    transactions = transactions.filter((t) => t.operator && operatorFilter.includes(t.operator.id));
   }
 
   transactions.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-  const shown = transactions.slice(0, MAX_ROWS);
+  const capped = transactions.slice(0, MAX_ROWS);
+  const totalPages = Math.max(1, Math.ceil(capped.length / PAGE_SIZE));
+  const shown = capped.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const checkIns = shown.filter((t) => t.type === "checked_in").length;
-  const handovers = shown.filter((t) => t.type === "completed").length;
+  const checkIns = capped.filter((t) => t.type === "checked_in").length;
+  const handovers = capped.filter((t) => t.type === "completed").length;
   const activeOperators = new Set(
-    shown.filter((t) => t.operator).map((t) => t.operator!.id)
+    capped.filter((t) => t.operator).map((t) => t.operator!.id)
   ).size;
 
   const operatorOptions = (operatorAccounts ?? []).map((o) => ({
     id: o.id,
     label: o.full_name || o.username,
   }));
+
+  function pageHref(targetPage: number): string {
+    const p = new URLSearchParams();
+    if (typeFilter.length) p.set("type", typeFilter.join(","));
+    if (operatorFilter.length) p.set("operator", operatorFilter.join(","));
+    p.set("from", from);
+    p.set("to", to);
+    if (targetPage > 1) p.set("page", String(targetPage));
+    return `/parking-admin/reports/vehicle-transactions?${p.toString()}`;
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -106,7 +122,7 @@ export default async function VehicleTransactionReportPage({
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <div className="glass-card p-4">
-          <p className="font-numeric text-2xl">{shown.length}</p>
+          <p className="font-numeric text-2xl">{capped.length}</p>
           <p className="text-xs text-muted-foreground">Total transactions</p>
         </div>
         <div className="glass-card p-4">
@@ -125,7 +141,7 @@ export default async function VehicleTransactionReportPage({
 
       <ReportFilters
         operators={operatorOptions}
-        type={type}
+        type={typeFilter}
         operator={operatorFilter}
         from={from}
         to={to}
@@ -133,7 +149,7 @@ export default async function VehicleTransactionReportPage({
 
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
-          {shown.length} row(s){transactions.length > MAX_ROWS && ` (capped at ${MAX_ROWS} — narrow the date range for more)`}
+          {capped.length} row(s){transactions.length > MAX_ROWS && ` (capped at ${MAX_ROWS} — narrow the date range for more)`}
         </p>
         <ExportCsvButton
           rows={shown.map((t) => ({
@@ -199,6 +215,34 @@ export default async function VehicleTransactionReportPage({
           </tbody>
         </table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-muted-foreground">
+            Page {page} of {totalPages}
+          </p>
+          <div className="flex gap-2">
+            <Link
+              href={pageHref(page - 1)}
+              aria-disabled={page <= 1}
+              className={`rounded-md border border-input px-3 py-1.5 text-xs font-medium ${
+                page <= 1 ? "pointer-events-none opacity-40" : "hover:bg-muted"
+              }`}
+            >
+              Prev
+            </Link>
+            <Link
+              href={pageHref(page + 1)}
+              aria-disabled={page >= totalPages}
+              className={`rounded-md border border-input px-3 py-1.5 text-xs font-medium ${
+                page >= totalPages ? "pointer-events-none opacity-40" : "hover:bg-muted"
+              }`}
+            >
+              Next
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

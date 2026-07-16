@@ -25,6 +25,7 @@ import { DispatchOperatorButton } from "./dispatch-operator-button";
 import { MarkParkedButton } from "./mark-parked-button";
 import { AutoAllocateToggle } from "./auto-allocate-toggle";
 import { TicketTimelineDialog } from "./ticket-timeline-dialog";
+import { QueueFilters } from "../../components/queue-filters";
 
 const STATUS_LABEL: Record<string, string> = {
   checked_in: "Checked in",
@@ -50,6 +51,12 @@ const DAILY_STATUS_BADGE: Record<string, string> = {
   break: "On break",
 };
 
+const ACTIVE_STATUSES = ["checked_in", "parked", "requested", "in_transit", "arrived"];
+
+function parseCsv(value: string | undefined): string[] {
+  return value ? value.split(",").filter(Boolean) : [];
+}
+
 type Ticket = {
   id: string;
   ticket_token: string;
@@ -65,13 +72,31 @@ type Ticket = {
   slots: { slot_number: string } | null;
 };
 
-export default async function LiveQueuePage() {
+export default async function LiveQueuePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string; vehicle_type?: string }>;
+}) {
   const session = await getValetSession();
   if (!session) {
     redirect("/parking-admin/login");
   }
 
+  const params = await searchParams;
+  const statusFilter = parseCsv(params.status).filter((s) => ACTIVE_STATUSES.includes(s));
+  const vehicleTypeFilter = parseCsv(params.vehicle_type);
+
   const supabase = createServiceClient();
+
+  let ticketsQuery = supabase
+    .from("valet_tickets")
+    .select(
+      "id, ticket_token, vehicle_number, vehicle_type, mobile_number, status, otp, checked_in_at, fare_amount, check_in_photos, handover_photos, slots(slot_number)"
+    )
+    .eq("parking_space_id", session.assignedSiteId)
+    .neq("status", "completed");
+  if (statusFilter.length) ticketsQuery = ticketsQuery.in("status", statusFilter);
+  if (vehicleTypeFilter.length) ticketsQuery = ticketsQuery.in("vehicle_type", vehicleTypeFilter);
 
   const [
     { data: tickets },
@@ -81,15 +106,7 @@ export default async function LiveQueuePage() {
     availableOperators,
     { data: vehicleTypes },
   ] = await Promise.all([
-      supabase
-        .from("valet_tickets")
-        .select(
-          "id, ticket_token, vehicle_number, vehicle_type, mobile_number, status, otp, checked_in_at, fare_amount, check_in_photos, handover_photos, slots(slot_number)"
-        )
-        .eq("parking_space_id", session.assignedSiteId)
-        .neq("status", "completed")
-        .order("checked_in_at", { ascending: true })
-        .returns<Ticket[]>(),
+      ticketsQuery.order("checked_in_at", { ascending: true }).returns<Ticket[]>(),
       supabase
         .from("zones")
         .select("id, name, slots(id, slot_number, status)")
@@ -140,6 +157,12 @@ export default async function LiveQueuePage() {
     arrived: tickets?.filter((t) => t.status === "arrived").length ?? 0,
   };
 
+  const statusFilterOptions = ACTIVE_STATUSES.map((s) => ({ value: s, label: STATUS_LABEL[s] }));
+  const vehicleTypeFilterOptions = (vehicleTypes ?? []).map((vt) => ({
+    value: vt.name,
+    label: vt.name,
+  }));
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
@@ -188,6 +211,13 @@ export default async function LiveQueuePage() {
           action={updateAutoAllocate}
         />
       )}
+
+      <QueueFilters
+        statusOptions={statusFilterOptions}
+        vehicleTypeOptions={vehicleTypeFilterOptions}
+        status={statusFilter}
+        vehicleType={vehicleTypeFilter}
+      />
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
         {[

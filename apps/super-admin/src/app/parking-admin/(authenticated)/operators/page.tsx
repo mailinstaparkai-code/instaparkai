@@ -15,12 +15,21 @@ import { DeleteButton } from "../../components/delete-button";
 import { Field } from "../../components/field";
 import { FormDialog } from "../../components/form-dialog";
 import { DailyStatusSelect } from "./daily-status-select";
+import { OperatorFilters } from "./operator-filters";
 
 function todayIST(): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 }
 
-export default async function ValetOperatorsPage() {
+function parseCsv(value: string | undefined): string[] {
+  return value ? value.split(",").filter(Boolean) : [];
+}
+
+export default async function ValetOperatorsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ active?: string; daily_status?: string }>;
+}) {
   const session = await getValetSession();
   if (!session) {
     redirect("/parking-admin/login");
@@ -29,8 +38,12 @@ export default async function ValetOperatorsPage() {
     redirect("/parking-admin/dashboard");
   }
 
+  const params = await searchParams;
+  const activeFilter = parseCsv(params.active);
+  const dailyStatusFilter = parseCsv(params.daily_status);
+
   const supabase = createServiceClient();
-  const [{ data: operators }, { data: dailyStatusRows }] = await Promise.all([
+  const [{ data: allOperators }, { data: dailyStatusRows }] = await Promise.all([
     supabase
       .from("valet_accounts")
       .select("id, username, full_name, employee_id, is_active")
@@ -47,13 +60,25 @@ export default async function ValetOperatorsPage() {
     (dailyStatusRows ?? []).map((row) => [row.operator_id, row.status as string])
   );
 
+  const operators = (allOperators ?? []).filter((op) => {
+    if (activeFilter.length) {
+      const label = op.is_active ? "active" : "inactive";
+      if (!activeFilter.includes(label)) return false;
+    }
+    if (dailyStatusFilter.length) {
+      const status = dailyStatusById.get(op.id) ?? "unset";
+      if (!dailyStatusFilter.includes(status)) return false;
+    }
+    return true;
+  });
+
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold">Valet Operators</h1>
           <p className="text-sm text-muted-foreground">
-            {operators?.length ?? 0} operator account(s) for your site
+            {operators.length} operator account(s) for your site
           </p>
         </div>
         <FormDialog
@@ -77,8 +102,10 @@ export default async function ValetOperatorsPage() {
         </FormDialog>
       </div>
 
+      <OperatorFilters active={activeFilter} dailyStatus={dailyStatusFilter} />
+
       <div className="flex flex-col gap-2">
-        {operators?.map((op) => (
+        {operators.map((op) => (
           <div key={op.id} className="glass-card flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
               <span className="flex size-9 items-center justify-center rounded-full bg-muted">
@@ -140,8 +167,10 @@ export default async function ValetOperatorsPage() {
             </div>
           </div>
         ))}
-        {!operators?.length && (
-          <p className="text-sm text-muted-foreground">No valet operators yet.</p>
+        {!operators.length && (
+          <p className="text-sm text-muted-foreground">
+            {allOperators?.length ? "No operators match this filter." : "No valet operators yet."}
+          </p>
         )}
       </div>
     </div>
