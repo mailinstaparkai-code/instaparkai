@@ -15,12 +15,10 @@ import { PhotoInput } from "../../components/photo-input";
 
 export function HandoverButton({
   ticketId,
-  otp,
   suggestedFare,
   action,
 }: {
   ticketId: string;
-  otp: string | null;
   suggestedFare: number | null;
   action: (formData: FormData) => Promise<void> | void;
 }) {
@@ -50,8 +48,7 @@ export function HandoverButton({
           <DialogTitle>Complete handover</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-muted-foreground">
-          Guest&apos;s OTP: <span className="font-numeric font-semibold text-foreground">{otp}</span> —
-          confirm it matches what the guest tells you.
+          Ask the guest for the OTP sent to their phone and enter it below to confirm the handover.
         </p>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <input type="hidden" name="id" value={ticketId} />

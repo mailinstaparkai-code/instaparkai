@@ -7,7 +7,8 @@ export type NotificationKind =
   | "vehicle_requested"
   | "vehicle_dispatched"
   | "vehicle_arrived"
-  | "handover_complete";
+  | "handover_complete"
+  | "vehicle_voided";
 
 // Best-effort, never throws -- same guarantee as fireTrigger(), sits right alongside
 // it at each lifecycle call site. Site-wide: every parking_admin/valet_operator on the

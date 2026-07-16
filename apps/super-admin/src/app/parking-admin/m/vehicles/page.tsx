@@ -15,18 +15,28 @@ const STATUS_LABEL: Record<string, string> = {
   in_transit: "In transit",
   arrived: "Arrived",
   completed: "Completed",
+  voided: "Voided",
 };
 
 const STATUS_COLOR: Record<string, string> = {
-  checked_in: "bg-status-disabled/15 text-status-disabled",
+  checked_in: "bg-brand-blue/15 text-brand-blue",
   parked: "bg-status-info/15 text-status-info",
   requested: "bg-status-warning/15 text-status-warning",
   in_transit: "bg-brand-orange/15 text-brand-orange",
   arrived: "bg-status-success/15 text-status-success",
   completed: "bg-muted text-muted-foreground",
+  voided: "bg-status-danger/15 text-status-danger",
 };
 
-const ALL_STATUSES = ["checked_in", "parked", "requested", "in_transit", "arrived", "completed"];
+const ALL_STATUSES = [
+  "checked_in",
+  "parked",
+  "requested",
+  "in_transit",
+  "arrived",
+  "completed",
+  "voided",
+];
 const PAGE_SIZE = 25;
 
 function parseCsv(value: string | undefined): string[] {

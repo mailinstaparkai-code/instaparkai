@@ -39,13 +39,18 @@ export function AppShell({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 shrink-0 -translate-x-full border-r border-border bg-sidebar p-4 transition-transform lg:sticky lg:top-0 lg:h-dvh lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 w-64 shrink-0 -translate-x-full border-r border-border bg-sidebar p-4 transition-transform lg:sticky lg:top-0 lg:h-dvh lg:w-16 lg:translate-x-0 lg:p-2 xl:w-64 xl:p-4 ${
           drawerOpen ? "translate-x-0" : ""
         }`}
       >
-        <div className="flex items-center justify-between px-2">
-          <span className="text-lg font-semibold">
+        {/* Full label at xl+ (1280px); collapses to an icon-only rail between 1024
+            and 1280 (design.md §5: "collapses to icon-only under 1280px"). */}
+        <div className="flex items-center justify-between px-2 lg:justify-center xl:justify-between">
+          <span className="text-lg font-semibold lg:hidden xl:inline">
             Insta<span className="text-brand-orange">Park</span> AI
+          </span>
+          <span className="hidden text-lg font-semibold text-brand-orange lg:inline xl:hidden">
+            IP
           </span>
           <button
             aria-label="Close menu"
@@ -65,11 +70,11 @@ export function AppShell({
               return (
                 <span
                   key={item.label}
-                  className="flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground/50"
+                  className="flex cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground/50 lg:justify-center lg:px-2 xl:justify-start xl:px-3"
                   title="Coming soon"
                 >
                   <Icon className="size-4" />
-                  {item.label}
+                  <span className="lg:hidden xl:inline">{item.label}</span>
                 </span>
               );
             }
@@ -79,14 +84,15 @@ export function AppShell({
                 key={item.label}
                 href={item.href}
                 onClick={() => setDrawerOpen(false)}
-                className={`flex items-center gap-3 rounded-lg border-l-2 px-3 py-2 text-sm transition-colors ${
+                title={item.label}
+                className={`flex items-center gap-3 rounded-lg border-l-2 px-3 py-2 text-sm transition-colors lg:justify-center lg:px-2 xl:justify-start xl:px-3 ${
                   active
                     ? "border-brand-orange bg-sidebar-accent font-medium text-sidebar-accent-foreground"
                     : "border-transparent text-sidebar-foreground hover:bg-sidebar-accent/60"
                 }`}
               >
                 <Icon className="size-4" />
-                {item.label}
+                <span className="lg:hidden xl:inline">{item.label}</span>
               </Link>
             );
           })}

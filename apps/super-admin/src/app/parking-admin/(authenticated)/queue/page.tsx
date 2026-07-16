@@ -17,6 +17,8 @@ import {
   markAsParked,
   requestVehicle,
   updateAutoAllocate,
+  updateTicketDetails,
+  voidTicket,
 } from "./actions";
 import { CopyLinkButton } from "./copy-link-button";
 import { HandoverButton } from "./handover-button";
@@ -25,6 +27,7 @@ import { DispatchOperatorButton } from "./dispatch-operator-button";
 import { MarkParkedButton } from "./mark-parked-button";
 import { AutoAllocateToggle } from "./auto-allocate-toggle";
 import { TicketTimelineDialog } from "./ticket-timeline-dialog";
+import { TicketActionsMenu } from "./ticket-actions-menu";
 import { QueueFilters } from "../../components/queue-filters";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -37,7 +40,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_COLOR: Record<string, string> = {
-  checked_in: "bg-status-disabled/15 text-status-disabled",
+  checked_in: "bg-brand-blue/15 text-brand-blue",
   parked: "bg-status-info/15 text-status-info",
   requested: "bg-status-warning/15 text-status-warning",
   in_transit: "bg-brand-orange/15 text-brand-orange",
@@ -57,6 +60,62 @@ function parseCsv(value: string | undefined): string[] {
   return value ? value.split(",").filter(Boolean) : [];
 }
 
+// Shared between the desktop table's Action column and the narrow-viewport card
+// fallback below -- one status-transition branch set, rendered twice at different
+// breakpoints, rather than duplicating the five conditions in two places.
+function TicketRowActions({
+  ticket,
+  suggestedFare,
+  availableSlots,
+  operatorOptions,
+}: {
+  ticket: Ticket;
+  suggestedFare: number | null;
+  availableSlots: { id: string; label: string }[];
+  operatorOptions: { id: string; label: string }[];
+}) {
+  return (
+    <div className="flex items-center gap-1">
+      {ticket.status === "checked_in" && (
+        <MarkParkedButton ticketId={ticket.id} slots={availableSlots} action={markAsParked} />
+      )}
+      {ticket.status === "parked" && (
+        <form action={requestVehicle}>
+          <input type="hidden" name="id" value={ticket.id} />
+          <Button type="submit" size="sm" variant="outline">
+            Guest requested
+          </Button>
+        </form>
+      )}
+      {ticket.status === "requested" && (
+        <DispatchOperatorButton
+          ticketId={ticket.id}
+          operators={operatorOptions}
+          action={dispatchVehicle}
+        />
+      )}
+      {ticket.status === "in_transit" && (
+        <form action={markArrived}>
+          <input type="hidden" name="id" value={ticket.id} />
+          <Button type="submit" size="sm" variant="outline">
+            Mark arrived
+          </Button>
+        </form>
+      )}
+      {ticket.status === "arrived" && (
+        <HandoverButton ticketId={ticket.id} suggestedFare={suggestedFare} action={completeHandover} />
+      )}
+      <TicketActionsMenu
+        ticketId={ticket.id}
+        vehicleNumber={ticket.vehicle_number}
+        mobileNumber={ticket.mobile_number}
+        updateAction={updateTicketDetails}
+        voidAction={voidTicket}
+      />
+    </div>
+  );
+}
+
 type Ticket = {
   id: string;
   ticket_token: string;
@@ -64,7 +123,6 @@ type Ticket = {
   vehicle_type: string;
   mobile_number: string;
   status: keyof typeof STATUS_LABEL;
-  otp: string | null;
   checked_in_at: string;
   fare_amount: number | null;
   check_in_photos: unknown[];
@@ -91,10 +149,10 @@ export default async function LiveQueuePage({
   let ticketsQuery = supabase
     .from("valet_tickets")
     .select(
-      "id, ticket_token, vehicle_number, vehicle_type, mobile_number, status, otp, checked_in_at, fare_amount, check_in_photos, handover_photos, slots(slot_number)"
+      "id, ticket_token, vehicle_number, vehicle_type, mobile_number, status, checked_in_at, fare_amount, check_in_photos, handover_photos, slots(slot_number)"
     )
     .eq("parking_space_id", session.assignedSiteId)
-    .neq("status", "completed");
+    .in("status", ACTIVE_STATUSES);
   if (statusFilter.length) ticketsQuery = ticketsQuery.in("status", statusFilter);
   if (vehicleTypeFilter.length) ticketsQuery = ticketsQuery.in("vehicle_type", vehicleTypeFilter);
 
@@ -234,7 +292,10 @@ export default async function LiveQueuePage({
         ))}
       </div>
 
-      <div className="glass-card overflow-x-auto p-0">
+      {/* Table on md+ (768px); below that, a table crushes into unreadable wrapped
+          columns, so narrow viewports get the card list instead (design.md §4: "no
+          horizontal scroll anywhere... tables switch to a card-per-row layout"). */}
+      <div className="glass-card hidden overflow-x-auto p-0 md:block">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border text-left text-xs text-muted-foreground">
@@ -283,44 +344,12 @@ export default async function LiveQueuePage({
                     />
                   </td>
                   <td className="p-3">
-                    {t.status === "checked_in" && (
-                      <MarkParkedButton
-                        ticketId={t.id}
-                        slots={availableSlots}
-                        action={markAsParked}
-                      />
-                    )}
-                    {t.status === "parked" && (
-                      <form action={requestVehicle}>
-                        <input type="hidden" name="id" value={t.id} />
-                        <Button type="submit" size="sm" variant="outline">
-                          Guest requested
-                        </Button>
-                      </form>
-                    )}
-                    {t.status === "requested" && (
-                      <DispatchOperatorButton
-                        ticketId={t.id}
-                        operators={operatorOptions}
-                        action={dispatchVehicle}
-                      />
-                    )}
-                    {t.status === "in_transit" && (
-                      <form action={markArrived}>
-                        <input type="hidden" name="id" value={t.id} />
-                        <Button type="submit" size="sm" variant="outline">
-                          Mark arrived
-                        </Button>
-                      </form>
-                    )}
-                    {t.status === "arrived" && (
-                      <HandoverButton
-                        ticketId={t.id}
-                        otp={t.otp}
-                        suggestedFare={suggestedFare}
-                        action={completeHandover}
-                      />
-                    )}
+                    <TicketRowActions
+                      ticket={t}
+                      suggestedFare={suggestedFare}
+                      availableSlots={availableSlots}
+                      operatorOptions={operatorOptions}
+                    />
                   </td>
                 </tr>
               );
@@ -334,6 +363,57 @@ export default async function LiveQueuePage({
             )}
           </tbody>
         </table>
+      </div>
+
+      <div className="flex flex-col gap-3 md:hidden">
+        {tickets?.map((t) => {
+          const minutesParked = Math.round(
+            (new Date().getTime() - new Date(t.checked_in_at).getTime()) / 60000
+          );
+          const suggestedFare = computeFare(tariffRules ?? [], t.vehicle_type, minutesParked);
+
+          return (
+            <div key={t.id} className="glass-card flex flex-col gap-3 p-4">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <TicketTimelineDialog ticketId={t.id} vehicleNumber={t.vehicle_number} />
+                  <p className="text-xs capitalize text-muted-foreground">
+                    {t.vehicle_type} · {t.mobile_number}
+                  </p>
+                </div>
+                <span
+                  className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLOR[t.status]}`}
+                >
+                  {STATUS_LABEL[t.status]}
+                </span>
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                Slot: {t.slots?.slot_number ?? "—"} · Checked in {formatISTTime(t.checked_in_at)}
+              </p>
+
+              <div className="flex items-center gap-4">
+                <CopyLinkButton token={t.ticket_token} />
+                <PhotosButton
+                  ticketId={t.id}
+                  count={t.check_in_photos.length + t.handover_photos.length}
+                />
+              </div>
+
+              <TicketRowActions
+                ticket={t}
+                suggestedFare={suggestedFare}
+                availableSlots={availableSlots}
+                operatorOptions={operatorOptions}
+              />
+            </div>
+          );
+        })}
+        {!tickets?.length && (
+          <p className="glass-card p-6 text-center text-sm text-muted-foreground">
+            No active vehicles. Check one in to get started.
+          </p>
+        )}
       </div>
     </div>
   );

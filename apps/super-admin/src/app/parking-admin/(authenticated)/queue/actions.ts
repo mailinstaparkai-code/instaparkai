@@ -397,6 +397,65 @@ export async function markArrived(formData: FormData) {
   revalidatePath("/parking-admin/dashboard");
 }
 
+export async function updateTicketDetails(formData: FormData) {
+  const id = formData.get("id")?.toString();
+  const vehicle_number = formData.get("vehicle_number")?.toString().trim().toUpperCase();
+  const mobile_number = formData.get("mobile_number")?.toString().trim();
+  if (!id || !vehicle_number || !mobile_number) return;
+
+  const session = await assertValetStaff();
+  const supabase = createServiceClient();
+  const ticket = await loadTicket(supabase, id, session.assignedSiteId);
+  if (!ticket || ticket.status === "completed" || ticket.status === "voided") return;
+
+  const { error } = await supabase
+    .from("valet_tickets")
+    .update({ vehicle_number, mobile_number })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(PATH);
+  revalidatePath("/parking-admin/vehicles");
+}
+
+export async function voidTicket(formData: FormData) {
+  const id = formData.get("id")?.toString();
+  const void_reason = formData.get("void_reason")?.toString().trim() || null;
+  if (!id) return;
+
+  const session = await assertValetStaff();
+  const supabase = createServiceClient();
+  const ticket = await loadTicket(supabase, id, session.assignedSiteId);
+  if (!ticket || ticket.status === "completed" || ticket.status === "voided") return;
+
+  const { error } = await supabase
+    .from("valet_tickets")
+    .update({
+      status: "voided",
+      voided_at: new Date().toISOString(),
+      voided_by: session.accountId,
+      void_reason,
+    })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+
+  if (ticket.slot_id) {
+    await supabase.from("slots").update({ status: "available" }).eq("id", ticket.slot_id);
+  }
+
+  await notify({
+    supabase,
+    siteId: session.assignedSiteId,
+    ticketId: id,
+    kind: "vehicle_voided",
+    message: `${ticket.vehicle_number} voided`,
+  });
+
+  revalidatePath(PATH);
+  revalidatePath("/parking-admin/dashboard");
+  revalidatePath("/parking-admin/vehicles");
+}
+
 export async function completeHandover(formData: FormData) {
   const id = formData.get("id")?.toString();
   const otpEntered = formData.get("otp")?.toString().trim();

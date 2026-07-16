@@ -38,7 +38,8 @@ export default async function ParkingAdminDashboardPage() {
       .not("slot_id", "is", null),
   ]);
 
-  const activeCount = tickets?.filter((t) => t.status !== "completed").length ?? 0;
+  const activeCount =
+    tickets?.filter((t) => t.status !== "completed" && t.status !== "voided").length ?? 0;
   const arrivedCount = tickets?.filter((t) => t.status === "arrived").length ?? 0;
   const completedToday = tickets?.filter((t) => t.status === "completed") ?? [];
 

@@ -39,7 +39,7 @@ export type Transaction = {
 };
 
 export const TRANSACTION_META: Record<TransactionType, { label: string; color: string }> = {
-  checked_in: { label: "Checked In", color: "bg-status-disabled/15 text-status-disabled" },
+  checked_in: { label: "Checked In", color: "bg-brand-blue/15 text-brand-blue" },
   parked: { label: "Parked", color: "bg-status-info/15 text-status-info" },
   requested: { label: "Pickup Requested", color: "bg-status-warning/15 text-status-warning" },
   dispatched: { label: "Dispatched", color: "bg-brand-orange/15 text-brand-orange" },

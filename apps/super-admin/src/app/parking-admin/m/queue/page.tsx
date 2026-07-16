@@ -17,6 +17,8 @@ import {
   markAsParked,
   requestVehicle,
   updateAutoAllocate,
+  updateTicketDetails,
+  voidTicket,
 } from "../../(authenticated)/queue/actions";
 import { CopyLinkButton } from "../../(authenticated)/queue/copy-link-button";
 import { HandoverButton } from "../../(authenticated)/queue/handover-button";
@@ -25,6 +27,7 @@ import { DispatchOperatorButton } from "../../(authenticated)/queue/dispatch-ope
 import { MarkParkedButton } from "../../(authenticated)/queue/mark-parked-button";
 import { AutoAllocateToggle } from "../../(authenticated)/queue/auto-allocate-toggle";
 import { TicketTimelineDialog } from "../../(authenticated)/queue/ticket-timeline-dialog";
+import { TicketActionsMenu } from "../../(authenticated)/queue/ticket-actions-menu";
 import { QueueFilters } from "../../components/queue-filters";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -37,7 +40,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 const STATUS_COLOR: Record<string, string> = {
-  checked_in: "bg-status-disabled/15 text-status-disabled",
+  checked_in: "bg-brand-blue/15 text-brand-blue",
   parked: "bg-status-info/15 text-status-info",
   requested: "bg-status-warning/15 text-status-warning",
   in_transit: "bg-brand-orange/15 text-brand-orange",
@@ -64,7 +67,6 @@ type Ticket = {
   vehicle_type: string;
   mobile_number: string;
   status: keyof typeof STATUS_LABEL;
-  otp: string | null;
   checked_in_at: string;
   fare_amount: number | null;
   check_in_photos: unknown[];
@@ -91,10 +93,10 @@ export default async function MobileQueuePage({
   let ticketsQuery = supabase
     .from("valet_tickets")
     .select(
-      "id, ticket_token, vehicle_number, vehicle_type, mobile_number, status, otp, checked_in_at, fare_amount, check_in_photos, handover_photos, slots(slot_number)"
+      "id, ticket_token, vehicle_number, vehicle_type, mobile_number, status, checked_in_at, fare_amount, check_in_photos, handover_photos, slots(slot_number)"
     )
     .eq("parking_space_id", session.assignedSiteId)
-    .neq("status", "completed");
+    .in("status", ACTIVE_STATUSES);
   if (statusFilter.length) ticketsQuery = ticketsQuery.in("status", statusFilter);
   if (vehicleTypeFilter.length) ticketsQuery = ticketsQuery.in("vehicle_type", vehicleTypeFilter);
 
@@ -227,11 +229,20 @@ export default async function MobileQueuePage({
                     {t.vehicle_type} · {t.mobile_number}
                   </p>
                 </div>
-                <span
-                  className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLOR[t.status]}`}
-                >
-                  {STATUS_LABEL[t.status]}
-                </span>
+                <div className="flex items-center gap-1">
+                  <span
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLOR[t.status]}`}
+                  >
+                    {STATUS_LABEL[t.status]}
+                  </span>
+                  <TicketActionsMenu
+                    ticketId={t.id}
+                    vehicleNumber={t.vehicle_number}
+                    mobileNumber={t.mobile_number}
+                    updateAction={updateTicketDetails}
+                    voidAction={voidTicket}
+                  />
+                </div>
               </div>
 
               <p className="text-xs text-muted-foreground">
@@ -281,7 +292,6 @@ export default async function MobileQueuePage({
                 {t.status === "arrived" && (
                   <HandoverButton
                     ticketId={t.id}
-                    otp={t.otp}
                     suggestedFare={suggestedFare}
                     action={completeHandover}
                   />

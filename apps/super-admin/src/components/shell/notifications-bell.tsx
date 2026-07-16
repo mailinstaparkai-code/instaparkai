@@ -18,6 +18,7 @@ const KIND_LABEL: Record<string, string> = {
   vehicle_dispatched: "Dispatched",
   vehicle_arrived: "Arrived",
   handover_complete: "Handover complete",
+  vehicle_voided: "Voided",
 };
 
 // Foreground-only haptic feedback: vibrates when a poll tick finds MORE unread
