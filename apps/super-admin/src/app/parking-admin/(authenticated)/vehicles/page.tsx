@@ -43,11 +43,18 @@ function parseCsv(value: string | undefined): string[] {
   return value ? value.split(",").filter(Boolean) : [];
 }
 
-function pageHref(page: number, status: string[], vehicleType: string[], operator: string[]): string {
+function pageHref(
+  page: number,
+  status: string[],
+  vehicleType: string[],
+  operator: string[],
+  q: string
+): string {
   const params = new URLSearchParams();
   if (status.length) params.set("status", status.join(","));
   if (vehicleType.length) params.set("vehicle_type", vehicleType.join(","));
   if (operator.length) params.set("operator", operator.join(","));
+  if (q) params.set("q", q);
   if (page > 1) params.set("page", String(page));
   const qs = params.toString();
   return qs ? `/parking-admin/vehicles?${qs}` : "/parking-admin/vehicles";
@@ -80,7 +87,13 @@ function formatDuration(minutes: number): string {
 export default async function VehicleLogPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; vehicle_type?: string; operator?: string; page?: string }>;
+  searchParams: Promise<{
+    status?: string;
+    vehicle_type?: string;
+    operator?: string;
+    page?: string;
+    q?: string;
+  }>;
 }) {
   const session = await getValetSession();
   if (!session) {
@@ -91,6 +104,7 @@ export default async function VehicleLogPage({
   const statusFilter = parseCsv(params.status).filter((s) => ALL_STATUSES.includes(s));
   const vehicleTypeFilter = parseCsv(params.vehicle_type);
   const operatorFilter = parseCsv(params.operator);
+  const q = (params.q ?? "").trim().replace(/[%,()]/g, "");
   const page = Math.max(1, Number(params.page) || 1);
 
   const supabase = createServiceClient();
@@ -124,6 +138,9 @@ export default async function VehicleLogPage({
   if (operatorFilter.length) {
     const list = operatorFilter.join(",");
     baseQuery = baseQuery.or(`checked_in_by.in.(${list}),delivered_by.in.(${list})`);
+  }
+  if (q) {
+    baseQuery = baseQuery.or(`vehicle_number.ilike.%${q}%,mobile_number.ilike.%${q}%`);
   }
 
   const from = (page - 1) * PAGE_SIZE;
@@ -293,7 +310,7 @@ export default async function VehicleLogPage({
             {!tickets?.length && (
               <tr>
                 <td colSpan={10} className="p-6 text-center text-sm text-muted-foreground">
-                  No records for this filter.
+                  No matching records.
                 </td>
               </tr>
             )}
@@ -308,7 +325,7 @@ export default async function VehicleLogPage({
           </p>
           <div className="flex gap-2">
             <Link
-              href={pageHref(page - 1, statusFilter, vehicleTypeFilter, operatorFilter)}
+              href={pageHref(page - 1, statusFilter, vehicleTypeFilter, operatorFilter, q)}
               aria-disabled={page <= 1}
               className={`rounded-md border border-input px-3 py-1.5 text-xs font-medium ${
                 page <= 1 ? "pointer-events-none opacity-40" : "hover:bg-muted"
@@ -317,7 +334,7 @@ export default async function VehicleLogPage({
               Prev
             </Link>
             <Link
-              href={pageHref(page + 1, statusFilter, vehicleTypeFilter, operatorFilter)}
+              href={pageHref(page + 1, statusFilter, vehicleTypeFilter, operatorFilter, q)}
               aria-disabled={page >= totalPages}
               className={`rounded-md border border-input px-3 py-1.5 text-xs font-medium ${
                 page >= totalPages ? "pointer-events-none opacity-40" : "hover:bg-muted"

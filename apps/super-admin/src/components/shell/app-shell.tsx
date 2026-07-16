@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Menu, X, Search, Sparkles, Bell, Sun, Moon, LogOut, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -25,8 +25,29 @@ export function AppShell({
   const navItems =
     nav === "super-admin" ? superAdminNav : nav === "valet-operator" ? valetOperatorNav : parkingAdminNav;
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const initialSearchQuery = searchParams.get("q") ?? "";
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  function handleSearchSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const trimmed = (searchInputRef.current?.value ?? "").trim();
+    router.push(trimmed ? `/parking-admin/vehicles?q=${encodeURIComponent(trimmed)}` : "/parking-admin/vehicles");
+  }
 
   return (
     <div className="flex min-h-dvh bg-background text-foreground">
@@ -109,13 +130,27 @@ export function AppShell({
             <Menu className="size-5" />
           </button>
 
-          <div className="flex flex-1 items-center gap-2 rounded-lg border border-input bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground">
-            <Search className="size-4" />
-            <span className="flex-1">Search vehicles, plates, passes…</span>
-            <kbd className="rounded border border-border bg-background px-1.5 py-0.5 text-xs">
-              ⌘K
-            </kbd>
-          </div>
+          {nav === "super-admin" ? (
+            <div className="flex-1" />
+          ) : (
+            <form
+              onSubmit={handleSearchSubmit}
+              className="flex flex-1 items-center gap-2 rounded-lg border border-input bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground focus-within:text-foreground"
+            >
+              <Search className="size-4 shrink-0" />
+              <input
+                key={initialSearchQuery}
+                ref={searchInputRef}
+                type="text"
+                defaultValue={initialSearchQuery}
+                placeholder="Search vehicles…"
+                className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+              />
+              <kbd className="hidden rounded border border-border bg-background px-1.5 py-0.5 text-xs sm:inline">
+                ⌘K
+              </kbd>
+            </form>
+          )}
 
           <span className="hidden items-center gap-1.5 rounded-full bg-status-info/15 px-3 py-1.5 text-sm font-medium text-status-info sm:flex">
             <Sparkles className="size-4" />
