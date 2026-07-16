@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Bell } from "lucide-react";
 import {
   getRecentNotifications,
@@ -20,9 +20,20 @@ const KIND_LABEL: Record<string, string> = {
   handover_complete: "Handover complete",
 };
 
+// Foreground-only haptic feedback: vibrates when a poll tick finds MORE unread
+// notifications than the previous tick. Android Chrome only (no-op elsewhere, e.g.
+// iOS Safari) and requires no permission prompt, unlike the Notification API. Doesn't
+// fire on the very first load (only on genuine increments while the page stays open).
+function vibrateIfSupported() {
+  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+    navigator.vibrate(200);
+  }
+}
+
 export function NotificationsBell() {
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
   const [open, setOpen] = useState(false);
+  const lastUnreadCount = useRef<number | null>(null);
 
   async function refresh() {
     setNotifications(await getRecentNotifications());
@@ -30,13 +41,20 @@ export function NotificationsBell() {
 
   useEffect(() => {
     let cancelled = false;
-    getRecentNotifications().then((data) => {
-      if (!cancelled) setNotifications(data);
-    });
+
+    function applyData(data: NotificationRow[]) {
+      if (cancelled) return;
+      const unread = data.filter((n) => !n.read_at).length;
+      if (lastUnreadCount.current !== null && unread > lastUnreadCount.current) {
+        vibrateIfSupported();
+      }
+      lastUnreadCount.current = unread;
+      setNotifications(data);
+    }
+
+    getRecentNotifications().then(applyData);
     const interval = setInterval(() => {
-      getRecentNotifications().then((data) => {
-        if (!cancelled) setNotifications(data);
-      });
+      getRecentNotifications().then(applyData);
     }, POLL_MS);
     return () => {
       cancelled = true;
