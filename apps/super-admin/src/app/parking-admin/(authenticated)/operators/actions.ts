@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/service";
 import { hashPassword } from "@/lib/valet-auth/password";
 import { getValetSession } from "@/lib/valet-auth/session";
+import { uploadOperatorPhoto } from "@/lib/valet-photos";
 
 const PATH = "/parking-admin/operators";
 
@@ -20,21 +21,34 @@ export async function createOperator(formData: FormData) {
   const password = formData.get("password")?.toString();
   const full_name = formData.get("full_name")?.toString().trim() || null;
   const employee_id = formData.get("employee_id")?.toString().trim() || null;
+  const email = formData.get("email")?.toString().trim() || null;
+  const phone = formData.get("phone")?.toString().trim() || null;
   if (!username || !password) return;
 
   const session = await assertParkingAdmin();
-
   const supabase = createServiceClient();
-  const { error } = await supabase.from("valet_accounts").insert({
-    username,
-    password_hash: hashPassword(password),
-    role: "valet_operator",
-    assigned_site_id: session.assignedSiteId,
-    full_name,
-    employee_id,
-    created_by: session.accountId,
-  });
+
+  const { data: created, error } = await supabase
+    .from("valet_accounts")
+    .insert({
+      username,
+      password_hash: hashPassword(password),
+      role: "valet_operator",
+      assigned_site_id: session.assignedSiteId,
+      full_name,
+      employee_id,
+      email,
+      phone,
+      created_by: session.accountId,
+    })
+    .select("id")
+    .single();
   if (error) throw new Error(error.message);
+
+  const photo_path = await uploadOperatorPhoto(supabase, session.assignedSiteId, created.id, formData);
+  if (photo_path) {
+    await supabase.from("valet_accounts").update({ photo_path }).eq("id", created.id);
+  }
 
   revalidatePath(PATH);
 }
@@ -45,16 +59,23 @@ export async function updateOperator(formData: FormData) {
   const password = formData.get("password")?.toString();
   const full_name = formData.get("full_name")?.toString().trim() || null;
   const employee_id = formData.get("employee_id")?.toString().trim() || null;
+  const email = formData.get("email")?.toString().trim() || null;
+  const phone = formData.get("phone")?.toString().trim() || null;
   if (!id || !username) return;
 
   const session = await assertParkingAdmin();
+  const supabase = createServiceClient();
 
-  const update: Record<string, unknown> = { username, full_name, employee_id };
+  const update: Record<string, unknown> = { username, full_name, employee_id, email, phone };
   if (password) {
     update.password_hash = hashPassword(password);
   }
 
-  const supabase = createServiceClient();
+  const photo_path = await uploadOperatorPhoto(supabase, session.assignedSiteId, id, formData);
+  if (photo_path) {
+    update.photo_path = photo_path;
+  }
+
   const { error } = await supabase
     .from("valet_accounts")
     .update(update)
@@ -113,6 +134,50 @@ export async function setOperatorDailyStatus(formData: FormData) {
       status,
       set_by: session.accountId,
     },
+    { onConflict: "operator_id,status_date" }
+  );
+  if (error) throw new Error(error.message);
+
+  revalidatePath(PATH);
+}
+
+const MAX_LEAVE_DAYS = 90;
+
+export async function setOperatorLeave(formData: FormData) {
+  const operator_id = formData.get("operator_id")?.toString();
+  const start_date = formData.get("start_date")?.toString();
+  const end_date = formData.get("end_date")?.toString();
+  if (!operator_id || !start_date || !end_date) return;
+  if (end_date < start_date) return;
+
+  const session = await assertParkingAdmin();
+  const supabase = createServiceClient();
+
+  const { data: operator } = await supabase
+    .from("valet_accounts")
+    .select("id")
+    .eq("id", operator_id)
+    .eq("assigned_site_id", session.assignedSiteId)
+    .eq("role", "valet_operator")
+    .maybeSingle();
+  if (!operator) throw new Error("Operator not found.");
+
+  const dates: string[] = [];
+  const cursor = new Date(`${start_date}T00:00:00Z`);
+  const end = new Date(`${end_date}T00:00:00Z`);
+  while (cursor <= end) {
+    dates.push(cursor.toISOString().slice(0, 10));
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+    if (dates.length > MAX_LEAVE_DAYS) return;
+  }
+
+  const { error } = await supabase.from("operator_daily_status").upsert(
+    dates.map((status_date) => ({
+      operator_id,
+      status_date,
+      status: "leave",
+      set_by: session.accountId,
+    })),
     { onConflict: "operator_id,status_date" }
   );
   if (error) throw new Error(error.message);

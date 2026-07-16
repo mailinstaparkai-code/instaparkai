@@ -1,20 +1,19 @@
 import { redirect } from "next/navigation";
-import { UserRound } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getValetSession } from "@/lib/valet-auth/session";
+import { BUCKET } from "@/lib/valet-photos";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   createOperator,
   deleteOperator,
   setOperatorActive,
   setOperatorDailyStatus,
+  setOperatorLeave,
   updateOperator,
 } from "./actions";
-import { DeleteButton } from "../../components/delete-button";
-import { Field } from "../../components/field";
 import { FormDialog } from "../../components/form-dialog";
-import { DailyStatusSelect } from "./daily-status-select";
+import { OperatorFormFields } from "./operator-form-fields";
+import { OperatorCard } from "./operator-card";
 import { OperatorFilters } from "./operator-filters";
 
 function todayIST(): string {
@@ -46,7 +45,7 @@ export default async function ValetOperatorsPage({
   const [{ data: allOperators }, { data: dailyStatusRows }] = await Promise.all([
     supabase
       .from("valet_accounts")
-      .select("id, username, full_name, employee_id, is_active")
+      .select("id, username, full_name, employee_id, email, phone, photo_path, is_active")
       .eq("role", "valet_operator")
       .eq("assigned_site_id", session.assignedSiteId)
       .order("created_at", { ascending: false }),
@@ -58,6 +57,21 @@ export default async function ValetOperatorsPage({
 
   const dailyStatusById = new Map(
     (dailyStatusRows ?? []).map((row) => [row.operator_id, row.status as string])
+  );
+
+  const photoUrlById = new Map(
+    (
+      await Promise.all(
+        (allOperators ?? [])
+          .filter((op) => op.photo_path)
+          .map(async (op) => {
+            const { data } = await supabase.storage
+              .from(BUCKET)
+              .createSignedUrl(op.photo_path!, 3600);
+            return [op.id, data?.signedUrl ?? null] as const;
+          })
+      )
+    ).filter((entry): entry is [string, string] => !!entry[1])
   );
 
   const operators = (allOperators ?? []).filter((op) => {
@@ -73,7 +87,7 @@ export default async function ValetOperatorsPage({
   });
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-6">
+    <div className="mx-auto flex max-w-6xl flex-col gap-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold">Valet Operators</h1>
@@ -87,92 +101,32 @@ export default async function ValetOperatorsPage({
           action={createOperator}
           submitLabel="Create"
         >
-          <Field label="Username">
-            <Input name="username" required />
-          </Field>
-          <Field label="Password">
-            <Input name="password" type="password" required />
-          </Field>
-          <Field label="Full name">
-            <Input name="full_name" />
-          </Field>
-          <Field label="Employee ID">
-            <Input name="employee_id" />
-          </Field>
+          <OperatorFormFields />
         </FormDialog>
       </div>
 
       <OperatorFilters active={activeFilter} dailyStatus={dailyStatusFilter} />
 
-      <div className="flex flex-col gap-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {operators.map((op) => (
-          <div key={op.id} className="glass-card flex items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-              <span className="flex size-9 items-center justify-center rounded-full bg-muted">
-                <UserRound className="size-4" />
-              </span>
-              <div>
-                <p className="text-sm font-medium">
-                  {op.username}
-                  {!op.is_active && (
-                    <span className="ml-2 rounded-full bg-status-danger/15 px-2 py-0.5 text-xs font-medium text-status-danger">
-                      Inactive
-                    </span>
-                  )}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {[op.full_name, op.employee_id].filter(Boolean).join(" · ") || "—"}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <DailyStatusSelect
-                operatorId={op.id}
-                value={dailyStatusById.get(op.id) ?? null}
-                action={setOperatorDailyStatus}
-              />
-              <FormDialog
-                key={`${op.username}-${op.full_name}-${op.employee_id}`}
-                trigger={
-                  <Button variant="outline" size="sm">
-                    Edit
-                  </Button>
-                }
-                title="Edit valet operator"
-                action={updateOperator}
-                submitLabel="Save"
-              >
-                <input type="hidden" name="id" value={op.id} />
-                <Field label="Username">
-                  <Input name="username" defaultValue={op.username} required />
-                </Field>
-                <Field label="New password">
-                  <Input name="password" type="password" placeholder="Leave blank to keep current" />
-                </Field>
-                <Field label="Full name">
-                  <Input name="full_name" defaultValue={op.full_name ?? ""} />
-                </Field>
-                <Field label="Employee ID">
-                  <Input name="employee_id" defaultValue={op.employee_id ?? ""} />
-                </Field>
-              </FormDialog>
-              <form action={setOperatorActive}>
-                <input type="hidden" name="id" value={op.id} />
-                <input type="hidden" name="is_active" value={(!op.is_active).toString()} />
-                <Button type="submit" variant="outline" size="sm">
-                  {op.is_active ? "Deactivate" : "Activate"}
-                </Button>
-              </form>
-              <DeleteButton title={op.username} action={deleteOperator} hiddenFields={{ id: op.id }} />
-            </div>
-          </div>
+          <OperatorCard
+            key={op.id}
+            operator={op}
+            photoUrl={photoUrlById.get(op.id) ?? null}
+            dailyStatus={dailyStatusById.get(op.id) ?? null}
+            updateAction={updateOperator}
+            leaveAction={setOperatorLeave}
+            activeAction={setOperatorActive}
+            deleteAction={deleteOperator}
+            dailyStatusAction={setOperatorDailyStatus}
+          />
         ))}
-        {!operators.length && (
-          <p className="text-sm text-muted-foreground">
-            {allOperators?.length ? "No operators match this filter." : "No valet operators yet."}
-          </p>
-        )}
       </div>
+      {!operators.length && (
+        <p className="text-sm text-muted-foreground">
+          {allOperators?.length ? "No operators match this filter." : "No valet operators yet."}
+        </p>
+      )}
     </div>
   );
 }

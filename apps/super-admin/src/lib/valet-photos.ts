@@ -27,3 +27,21 @@ export async function uploadTicketPhotos(
 
   return uploaded;
 }
+
+export async function uploadOperatorPhoto(
+  supabase: ReturnType<typeof createServiceClient>,
+  siteId: string,
+  operatorId: string,
+  formData: FormData
+): Promise<string | null> {
+  const file = formData.get("photo");
+  if (!(file instanceof File) || file.size === 0) return null;
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const path = `${siteId}/operators/${operatorId}-${Date.now()}.jpg`;
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(path, buffer, { contentType: file.type || "image/jpeg" });
+
+  return error ? null : path;
+}
