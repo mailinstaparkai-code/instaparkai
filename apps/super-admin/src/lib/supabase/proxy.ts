@@ -4,6 +4,14 @@ import { NextResponse, type NextRequest } from "next/server";
 const VALET_SESSION_COOKIE = "valet_session";
 
 export async function updateSession(request: NextRequest) {
+  // JSON API routes (e.g. the native Android app) authenticate per-request via a
+  // bearer token in each route handler -- skip both the cookie-redirect logic below
+  // and the Supabase-Auth getUser() branch, which would otherwise run on every
+  // request for no reason (neither auth model applies to /api/*).
+  if (request.nextUrl.pathname.startsWith("/api/")) {
+    return NextResponse.next({ request });
+  }
+
   // Parking Admin / Valet Operator custom-auth routes: this is only a cheap
   // presence check (no DB lookup -- node:crypto/scrypt isn't available at
   // the edge). The real, DB-verified session check happens server-side in
