@@ -2,21 +2,12 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getValetSession } from "@/lib/valet-auth/session";
+import { ALL_STATUSES, listVehicles, STATUS_LABEL } from "@/lib/parking-admin/vehicles";
 import { CopyLinkButton } from "../../(authenticated)/queue/copy-link-button";
 import { PhotosButton } from "../../(authenticated)/queue/photos-button";
 import { TicketTimelineDialog } from "../../(authenticated)/queue/ticket-timeline-dialog";
 import { formatIST } from "@/lib/format-date";
 import { VehicleFilters } from "../../components/vehicle-filters";
-
-const STATUS_LABEL: Record<string, string> = {
-  checked_in: "Checked in",
-  parked: "Parked",
-  requested: "Requested",
-  in_transit: "In transit",
-  arrived: "Arrived",
-  completed: "Completed",
-  voided: "Voided",
-};
 
 const STATUS_COLOR: Record<string, string> = {
   checked_in: "bg-brand-blue/15 text-brand-blue",
@@ -27,17 +18,6 @@ const STATUS_COLOR: Record<string, string> = {
   completed: "bg-muted text-muted-foreground",
   voided: "bg-status-danger/15 text-status-danger",
 };
-
-const ALL_STATUSES = [
-  "checked_in",
-  "parked",
-  "requested",
-  "in_transit",
-  "arrived",
-  "completed",
-  "voided",
-];
-const PAGE_SIZE = 25;
 
 function parseCsv(value: string | undefined): string[] {
   return value ? value.split(",").filter(Boolean) : [];
@@ -52,24 +32,6 @@ function pageHref(page: number, status: string[], vehicleType: string[], operato
   const qs = params.toString();
   return qs ? `/parking-admin/m/vehicles?${qs}` : "/parking-admin/m/vehicles";
 }
-
-type Ticket = {
-  id: string;
-  ticket_token: string;
-  vehicle_number: string;
-  vehicle_type: string;
-  mobile_number: string;
-  status: keyof typeof STATUS_LABEL;
-  checked_in_at: string;
-  completed_at: string | null;
-  fare_amount: number | null;
-  payment_collected: boolean;
-  check_in_photos: unknown[];
-  handover_photos: unknown[];
-  slots: { slot_number: string } | null;
-  checked_in_operator: { username: string; full_name: string | null } | null;
-  delivered_operator: { username: string; full_name: string | null } | null;
-};
 
 function formatDuration(minutes: number): string {
   const h = Math.floor(minutes / 60);
@@ -88,78 +50,30 @@ export default async function MobileVehiclesPage({
   }
 
   const params = await searchParams;
-  const statusFilter = parseCsv(params.status).filter((s) => ALL_STATUSES.includes(s));
+  const statusFilter = parseCsv(params.status).filter((s) =>
+    (ALL_STATUSES as readonly string[]).includes(s)
+  );
   const vehicleTypeFilter = parseCsv(params.vehicle_type);
   const operatorFilter = parseCsv(params.operator);
   const page = Math.max(1, Number(params.page) || 1);
 
   const supabase = createServiceClient();
 
-  const [{ data: vehicleTypes }, { data: operatorAccounts }] = await Promise.all([
-    supabase
-      .from("vehicle_types")
-      .select("id, name")
-      .eq("parking_space_id", session.assignedSiteId)
-      .order("name"),
-    supabase
-      .from("valet_accounts")
-      .select("id, username, full_name")
-      .eq("assigned_site_id", session.assignedSiteId)
-      .order("username"),
-  ]);
-
-  const TICKET_SELECT =
-    "id, ticket_token, vehicle_number, vehicle_type, mobile_number, status, checked_in_at, completed_at, fare_amount, payment_collected, check_in_photos, handover_photos, " +
-    "slots(slot_number), " +
-    "checked_in_operator:valet_accounts!valet_tickets_checked_in_by_fkey(username, full_name), " +
-    "delivered_operator:valet_accounts!valet_tickets_delivered_by_fkey(username, full_name)";
-
-  let baseQuery = supabase
-    .from("valet_tickets")
-    .select(TICKET_SELECT, { count: "exact" })
-    .eq("parking_space_id", session.assignedSiteId);
-
-  if (statusFilter.length) baseQuery = baseQuery.in("status", statusFilter);
-  if (vehicleTypeFilter.length) baseQuery = baseQuery.in("vehicle_type", vehicleTypeFilter);
-  if (operatorFilter.length) {
-    const list = operatorFilter.join(",");
-    baseQuery = baseQuery.or(`checked_in_by.in.(${list}),delivered_by.in.(${list})`);
-  }
-
-  const from = (page - 1) * PAGE_SIZE;
-  const { data: tickets, count } = await baseQuery
-    .order("checked_in_at", { ascending: false })
-    .range(from, from + PAGE_SIZE - 1)
-    .returns<Ticket[]>();
-
-  const totalCount = count ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-
-  let statsQuery = supabase
-    .from("valet_tickets")
-    .select("fare_amount, payment_collected, checked_in_at, completed_at")
-    .eq("parking_space_id", session.assignedSiteId)
-    .eq("status", "completed")
-    .order("checked_in_at", { ascending: false })
-    .limit(500);
-  if (vehicleTypeFilter.length) statsQuery = statsQuery.in("vehicle_type", vehicleTypeFilter);
-  if (operatorFilter.length) {
-    const list = operatorFilter.join(",");
-    statsQuery = statsQuery.or(`checked_in_by.in.(${list}),delivered_by.in.(${list})`);
-  }
-  const { data: completedForStats } = await statsQuery.returns<
-    { fare_amount: number | null; payment_collected: boolean }[]
-  >();
-
-  const completed = completedForStats ?? [];
-  const totalRevenue = completed.reduce((sum, t) => sum + (t.fare_amount ?? 0), 0);
-
-  const statusOptions = ALL_STATUSES.map((s) => ({ value: s, label: STATUS_LABEL[s] }));
-  const vehicleTypeOptions = (vehicleTypes ?? []).map((vt) => ({ value: vt.name, label: vt.name }));
-  const operatorOptions = (operatorAccounts ?? []).map((op) => ({
-    value: op.id,
-    label: op.full_name || op.username,
-  }));
+  const {
+    tickets,
+    totalCount,
+    totalPages,
+    completedCount,
+    totalRevenue,
+    statusOptions,
+    vehicleTypeOptions,
+    operatorOptions,
+  } = await listVehicles(
+    supabase,
+    session.assignedSiteId,
+    { status: statusFilter, vehicleType: vehicleTypeFilter, operator: operatorFilter },
+    page
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -170,7 +84,7 @@ export default async function MobileVehiclesPage({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="glass-card p-4">
-          <p className="font-numeric text-2xl">{completed.length}</p>
+          <p className="font-numeric text-2xl">{completedCount}</p>
           <p className="text-xs text-muted-foreground">Completed (last 500)</p>
         </div>
         <div className="glass-card p-4">
