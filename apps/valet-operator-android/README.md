@@ -37,4 +37,15 @@ dev API (`next dev` + `10.0.2.2`): login (real bearer-token auth, wrong-password
 handling), Dashboard (greeting, site badge, KPI tiles matching the API response),
 Vehicles (record count, stats, status filter chips, ticket cards with fare/operator
 detail), Profile (name/role display, working sign-out that deletes the session
-server-side). Queue is still a placeholder for Phase 2.
+server-side).
+
+Phase 2 complete and verified end-to-end on-device: `QueueScreen` with status filter
+chips, role-gated auto-allocate toggle, and the full ticket lifecycle exercised
+against the live dev API — check-in, mark parked (slot picker), guest requested
+(auto-allocate correctly no-ops when no operator has a daily "in" status, matching
+web), manual dispatch (operator picker with daily-status badges), mark arrived,
+complete handover (OTP validation with a live wrong-OTP error path, fare, payment
+toggle), edit details, and void — all backed by 11 new REST endpoints under
+`/api/parking-admin/v1/queue/*` sharing `lib/parking-admin/queue.ts` with the
+existing web Server Actions (zero business-logic fork). Check-in and handover don't
+send photos yet — that's Phase 3 (CameraX capture + multipart upload).

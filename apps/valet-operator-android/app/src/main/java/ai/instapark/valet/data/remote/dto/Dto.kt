@@ -97,3 +97,74 @@ data class ApiErrorDetail(
 data class ApiErrorBody(
     val error: ApiErrorDetail,
 )
+
+data class QueueTicket(
+    val id: String,
+    val ticketToken: String,
+    val vehicleNumber: String,
+    val vehicleType: String,
+    val mobileNumber: String,
+    val status: String,
+    val checkedInAt: String,
+    val fareAmount: Int?,
+    val photoCount: Int,
+    val slotNumber: String?,
+)
+
+data class SlotOption(
+    val id: String,
+    val label: String,
+)
+
+data class OperatorOption(
+    val id: String,
+    val label: String,
+)
+
+data class QueueFilters(
+    val statusOptions: List<FilterOption>,
+    val vehicleTypeOptions: List<FilterOption>,
+)
+
+data class QueueResponse(
+    val tickets: List<QueueTicket>,
+    val availableSlots: List<SlotOption>,
+    val operatorOptions: List<OperatorOption>,
+    val filters: QueueFilters,
+    val autoAllocateEnabled: Boolean,
+    val canToggleAutoAllocate: Boolean,
+)
+
+data class CheckInResponse(
+    val ticket: QueueTicket,
+)
+
+data class MarkParkedRequest(val slotId: String)
+data class DispatchRequest(val operatorId: String)
+data class VoidRequest(val reason: String?)
+data class UpdateTicketRequest(val vehicleNumber: String, val mobileNumber: String)
+data class AutoAllocateRequest(val enabled: Boolean)
+
+data class TimelineEntry(
+    val key: String,
+    val type: String,
+    val timestamp: String,
+    val vehicleNumber: String,
+    val operator: TicketOperator?,
+    val fare: Int?,
+    val paymentCollected: Boolean?,
+)
+
+data class TimelineResponse(
+    val timeline: List<TimelineEntry>,
+)
+
+data class TicketPhoto(
+    val label: String,
+    val stage: String,
+    val url: String,
+)
+
+data class PhotosResponse(
+    val photos: List<TicketPhoto>,
+)

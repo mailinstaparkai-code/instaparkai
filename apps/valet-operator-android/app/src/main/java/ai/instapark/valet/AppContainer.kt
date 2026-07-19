@@ -5,6 +5,7 @@ import ai.instapark.valet.data.remote.AuthInterceptor
 import ai.instapark.valet.data.remote.ParkingAdminApi
 import ai.instapark.valet.data.remote.SessionTokenHolder
 import ai.instapark.valet.data.repository.DashboardRepository
+import ai.instapark.valet.data.repository.QueueRepository
 import ai.instapark.valet.data.repository.SessionRepository
 import ai.instapark.valet.data.repository.VehiclesRepository
 import android.content.Context
@@ -40,4 +41,5 @@ class AppContainer(context: Context) {
     val sessionRepository = SessionRepository(api, tokenStore, sessionTokenHolder, gson)
     val dashboardRepository = DashboardRepository(api, gson)
     val vehiclesRepository = VehiclesRepository(api, gson)
+    val queueRepository = QueueRepository(api, gson)
 }

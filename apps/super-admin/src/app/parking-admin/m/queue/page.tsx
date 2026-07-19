@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getValetSession } from "@/lib/valet-auth/session";
-import { computeFare, type TariffRule } from "@/lib/tariff";
-import { getAvailableOperators } from "@/lib/operator-availability";
+import { computeFare } from "@/lib/tariff";
+import { getQueueData } from "@/lib/parking-admin/queue";
 import { formatISTTime } from "@/lib/format-date";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,31 +48,9 @@ const STATUS_COLOR: Record<string, string> = {
   completed: "bg-muted text-muted-foreground",
 };
 
-const DAILY_STATUS_BADGE: Record<string, string> = {
-  out: "Marked out",
-  leave: "On leave",
-  break: "On break",
-};
-
-const ACTIVE_STATUSES = ["checked_in", "parked", "requested", "in_transit", "arrived"];
-
 function parseCsv(value: string | undefined): string[] {
   return value ? value.split(",").filter(Boolean) : [];
 }
-
-type Ticket = {
-  id: string;
-  ticket_token: string;
-  vehicle_number: string;
-  vehicle_type: string;
-  mobile_number: string;
-  status: keyof typeof STATUS_LABEL;
-  checked_in_at: string;
-  fare_amount: number | null;
-  check_in_photos: unknown[];
-  handover_photos: unknown[];
-  slots: { slot_number: string } | null;
-};
 
 export default async function MobileQueuePage({
   searchParams,
@@ -85,84 +63,26 @@ export default async function MobileQueuePage({
   }
 
   const params = await searchParams;
-  const statusFilter = parseCsv(params.status).filter((s) => ACTIVE_STATUSES.includes(s));
+  const statusFilter = parseCsv(params.status);
   const vehicleTypeFilter = parseCsv(params.vehicle_type);
 
   const supabase = createServiceClient();
-
-  let ticketsQuery = supabase
-    .from("valet_tickets")
-    .select(
-      "id, ticket_token, vehicle_number, vehicle_type, mobile_number, status, checked_in_at, fare_amount, check_in_photos, handover_photos, slots(slot_number)"
-    )
-    .eq("parking_space_id", session.assignedSiteId)
-    .in("status", ACTIVE_STATUSES);
-  if (statusFilter.length) ticketsQuery = ticketsQuery.in("status", statusFilter);
-  if (vehicleTypeFilter.length) ticketsQuery = ticketsQuery.in("vehicle_type", vehicleTypeFilter);
-
-  const [
-    { data: tickets },
-    { data: zones },
-    { data: tariffRules },
-    { data: site },
-    availableOperators,
-    { data: vehicleTypes },
-  ] = await Promise.all([
-    ticketsQuery.order("checked_in_at", { ascending: true }).returns<Ticket[]>(),
-    supabase
-      .from("zones")
-      .select("id, name, slots(id, slot_number, status)")
-      .eq("parking_space_id", session.assignedSiteId),
-    supabase
-      .from("tariff_rules")
-      .select("vehicle_category, pricing_type, rate, surge_multiplier, slab_tiers")
-      .eq("parking_space_id", session.assignedSiteId)
-      .returns<TariffRule[]>(),
-    supabase
-      .from("parking_spaces")
-      .select("auto_allocate_operator")
-      .eq("id", session.assignedSiteId)
-      .single(),
-    getAvailableOperators(supabase, session.assignedSiteId, { respectDailyStatus: false }),
-    supabase
-      .from("vehicle_types")
-      .select("id, name")
-      .eq("parking_space_id", session.assignedSiteId)
-      .order("name"),
-  ]);
-
-  const operatorOptions = availableOperators.map((op) => {
-    const badge =
-      op.dailyStatus && op.dailyStatus !== "in"
-        ? DAILY_STATUS_BADGE[op.dailyStatus]
-        : !op.dailyStatus
-          ? "Not marked in"
-          : null;
-    return {
-      id: op.id,
-      label: badge ? `${op.full_name || op.username} — ${badge}` : op.full_name || op.username,
-    };
-  });
-
-  const availableSlots =
-    zones?.flatMap((z) =>
-      (z.slots as { id: string; slot_number: string; status: string }[])
-        .filter((s) => s.status === "available")
-        .map((s) => ({ id: s.id, label: `${z.name} · ${s.slot_number}` }))
-    ) ?? [];
-
-  const statusFilterOptions = ACTIVE_STATUSES.map((s) => ({ value: s, label: STATUS_LABEL[s] }));
-  const vehicleTypeFilterOptions = (vehicleTypes ?? []).map((vt) => ({
-    value: vt.name,
-    label: vt.name,
-  }));
+  const {
+    tickets,
+    availableSlots,
+    operatorOptions,
+    vehicleTypeOptions: vehicleTypeFilterOptions,
+    statusOptions: statusFilterOptions,
+    tariffRules,
+    autoAllocateEnabled,
+  } = await getQueueData(supabase, session, { status: statusFilter, vehicleType: vehicleTypeFilter });
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold">Live Queue</h1>
-          <p className="text-sm text-muted-foreground">{tickets?.length ?? 0} active vehicle(s)</p>
+          <p className="text-sm text-muted-foreground">{tickets.length} active vehicle(s)</p>
         </div>
         <FormDialog
           trigger={<Button size="sm">+ Check-in</Button>}
@@ -176,12 +96,12 @@ export default async function MobileQueuePage({
           <Field label="Vehicle type">
             <select
               name="vehicle_type"
-              defaultValue={vehicleTypes?.[0]?.name ?? "car"}
+              defaultValue={vehicleTypeFilterOptions[0]?.value ?? "car"}
               className="h-9 rounded-md border border-input bg-background px-3 text-sm"
             >
-              {(vehicleTypes ?? []).map((vt) => (
-                <option key={vt.id} value={vt.name}>
-                  {vt.name}
+              {vehicleTypeFilterOptions.map((vt) => (
+                <option key={vt.value} value={vt.value}>
+                  {vt.label}
                 </option>
               ))}
             </select>
@@ -201,7 +121,7 @@ export default async function MobileQueuePage({
 
       {session.role === "parking_admin" && (
         <AutoAllocateToggle
-          defaultChecked={site?.auto_allocate_operator ?? false}
+          defaultChecked={autoAllocateEnabled}
           action={updateAutoAllocate}
         />
       )}
@@ -214,11 +134,11 @@ export default async function MobileQueuePage({
       />
 
       <div className="flex flex-col gap-3">
-        {tickets?.map((t) => {
+        {tickets.map((t) => {
           const minutesParked = Math.round(
             (new Date().getTime() - new Date(t.checked_in_at).getTime()) / 60000
           );
-          const suggestedFare = computeFare(tariffRules ?? [], t.vehicle_type, minutesParked);
+          const suggestedFare = computeFare(tariffRules, t.vehicle_type, minutesParked);
 
           return (
             <div key={t.id} className="glass-card flex flex-col gap-3 p-4">
@@ -300,7 +220,7 @@ export default async function MobileQueuePage({
             </div>
           );
         })}
-        {!tickets?.length && (
+        {!tickets.length && (
           <p className="glass-card p-6 text-center text-sm text-muted-foreground">
             No active vehicles. Check one in to get started.
           </p>
