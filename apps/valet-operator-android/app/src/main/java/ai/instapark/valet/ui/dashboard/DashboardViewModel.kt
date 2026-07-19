@@ -27,10 +27,22 @@ class DashboardViewModel(
         private set
     var greetingName by mutableStateOf<String?>(null)
         private set
+    var role by mutableStateOf<String?>(null)
+        private set
+
+    // My Status card state (operators only). Seeded from the dashboard response,
+    // then owned client-side across toggles.
+    var myStatus by mutableStateOf<String?>(null)
+        private set
+    var statusPending by mutableStateOf(false)
+        private set
+    var statusError by mutableStateOf<String?>(null)
+        private set
 
     init {
         viewModelScope.launch {
             greetingName = tokenStore.fullNameFlow.first() ?: tokenStore.usernameFlow.first()
+            role = tokenStore.roleFlow.first()
         }
         load()
     }
@@ -39,8 +51,23 @@ class DashboardViewModel(
         viewModelScope.launch {
             uiState = DashboardUiState.Loading
             repository.getSummary()
-                .onSuccess { uiState = DashboardUiState.Success(it) }
+                .onSuccess {
+                    uiState = DashboardUiState.Success(it)
+                    myStatus = it.myDailyStatus?.status
+                }
                 .onFailure { uiState = DashboardUiState.Error((it as? ApiException)?.message ?: "Something went wrong.") }
+        }
+    }
+
+    fun setStatus(status: String) {
+        if (statusPending || myStatus == status) return
+        viewModelScope.launch {
+            statusPending = true
+            statusError = null
+            repository.setMyStatus(status)
+                .onSuccess { myStatus = it.status }
+                .onFailure { statusError = (it as? ApiException)?.message ?: "Couldn't update status." }
+            statusPending = false
         }
     }
 }

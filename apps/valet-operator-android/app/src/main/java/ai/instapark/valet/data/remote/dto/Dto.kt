@@ -36,11 +36,25 @@ data class DashboardKpis(
     val avgTurnaroundMinutes: Int?,
 )
 
+data class DashboardCapacity(
+    val totalSlots: Int,
+    val occupiedSlots: Int,
+)
+
+data class MyDailyStatus(
+    val status: String?,
+    val statusDate: String,
+)
+
 data class DashboardResponse(
     val siteName: String?,
     val valetParkingEnabled: Boolean,
     val kpis: DashboardKpis,
+    val capacity: DashboardCapacity?,
+    val myDailyStatus: MyDailyStatus?,
 )
+
+data class SetStatusRequest(val status: String)
 
 data class FilterOption(
     val value: String,
@@ -106,6 +120,7 @@ data class QueueTicket(
     val mobileNumber: String,
     val status: String,
     val checkedInAt: String,
+    val checkedInBy: String?,
     val fareAmount: Int?,
     val photoCount: Int,
     val slotNumber: String?,
@@ -133,6 +148,9 @@ data class QueueResponse(
     val filters: QueueFilters,
     val autoAllocateEnabled: Boolean,
     val canToggleAutoAllocate: Boolean,
+    val canRequest: Boolean,
+    val canDispatch: Boolean,
+    val myAccountId: String?,
 )
 
 data class CheckInResponse(

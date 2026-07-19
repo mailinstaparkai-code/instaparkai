@@ -8,6 +8,8 @@ import ai.instapark.valet.data.remote.dto.LoginRequest
 import ai.instapark.valet.data.remote.dto.LoginResponse
 import ai.instapark.valet.data.remote.dto.MarkParkedRequest
 import ai.instapark.valet.data.remote.dto.MeResponse
+import ai.instapark.valet.data.remote.dto.MyDailyStatus
+import ai.instapark.valet.data.remote.dto.SetStatusRequest
 import ai.instapark.valet.data.remote.dto.NotificationsResponse
 import ai.instapark.valet.data.remote.dto.PhotosResponse
 import ai.instapark.valet.data.remote.dto.QueueResponse
@@ -38,6 +40,12 @@ interface ParkingAdminApi {
 
     @GET("dashboard")
     suspend fun dashboard(): DashboardResponse
+
+    @GET("status")
+    suspend fun myStatus(): MyDailyStatus
+
+    @POST("status")
+    suspend fun setMyStatus(@Body request: SetStatusRequest): MyDailyStatus
 
     @GET("vehicles")
     suspend fun vehicles(
