@@ -30,6 +30,37 @@ then run the app on an emulator (not a physical device, which can't reach `10.0.
 
 The release build points at the production Vercel deployment.
 
+## Release build (signed APK, internal distribution)
+
+Distribution is a raw signed APK handed directly to staff devices — no Play Console
+(that needs a registered, paid, identity-verified Google Play Developer account, which
+doesn't exist for this project). Signing config lives in a gitignored `keystore.properties`
+at the repo root (`apps/valet-operator-android/keystore.properties`), read by
+`app/build.gradle.kts`; the release build type falls back to unsigned if that file is
+missing (e.g. a fresh clone) rather than failing outright.
+
+```bash
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+./gradlew assembleRelease
+# → app/build/outputs/apk/release/app-release.apk
+```
+
+**The keystore (`instapark-valet-release.keystore`) is the app's permanent signing
+identity — back it up outside this repo (password manager / secure storage) the moment
+it's generated.** Losing it means a future release build can no longer be installed as
+an *update* over an existing install (Android enforces same-signer for upgrades) —
+staff would need to uninstall and reinstall fresh, losing local app state (not account
+data, that's server-side). Regenerating a keystore is not a recovery path, only a
+new identity.
+
+To install directly from this machine (uninstall first if a differently-signed debug
+build is already on the device — Android refuses to install a same-package,
+different-signature APK over an existing one):
+
+```bash
+adb install -r app/build/outputs/apk/release/app-release.apk
+```
+
 ## Status
 
 Phase 1 complete and verified end-to-end on the `Pixel_10_Pro` emulator against the
@@ -47,5 +78,22 @@ web), manual dispatch (operator picker with daily-status badges), mark arrived,
 complete handover (OTP validation with a live wrong-OTP error path, fare, payment
 toggle), edit details, and void — all backed by 11 new REST endpoints under
 `/api/parking-admin/v1/queue/*` sharing `lib/parking-admin/queue.ts` with the
-existing web Server Actions (zero business-logic fork). Check-in and handover don't
-send photos yet — that's Phase 3 (CameraX capture + multipart upload).
+existing web Server Actions (zero business-logic fork).
+
+Phase 3 complete: real photo capture wired into check-in (5 fields) and handover
+(1 optional), via the device's stock camera app (`ActivityResultContracts.TakePicture()`
++ `FileProvider`) rather than an embedded CameraX preview, plus client-side compression
+(`ImageCompressor`, mirrors the web's `compressImageFile`: 1280px max, JPEG quality 0.7)
+before upload, and a Photos dialog on each ticket card. Camera permission flow and the
+capture command firing were verified via logcat on-device; the emulator's own capture
+pipeline is occasionally flaky (known AVD/virtual-scene-camera issue, unrelated to this
+code) — worth a clean real-device check.
+
+Phase 4 complete: `GET /notifications` + `POST /notifications/mark-read` (site-scoped,
+mirrors the web bell's Server Actions exactly), and a Android `NotificationsBell` in
+the shared top bar — 20s polling, unread badge, vibrate-on-increase haptic (matching
+web's V2 Phase 6), mark-all-read on open. Verified end-to-end via curl against the live
+API.
+
+Phase 5 complete: release signing configured, signed APK builds and installs cleanly,
+launches and reaches the production API. See "Release build" above.

@@ -273,9 +273,51 @@ keys) to any file, including this one — reference where to find/reset them ins
     explicit scope decision (no Service Worker/Push API/PWA manifest) — doesn't fire when
     the tab is closed or backgrounded.
 
-**Not started**: the Android operator app, and all AI features (deferred by design — see
-below). The new `/parking-admin/m/*` mobile web routes (Phase D above) are a stopgap,
-not a replacement for the native app in the original plan.
+- **Native Android app** (`apps/valet-operator-android`) — Kotlin + Jetpack Compose,
+  built in 6 phases against a brand-new bearer-token JSON API layer under
+  `apps/super-admin/src/app/api/parking-admin/v1/*`, functionally mirroring
+  `/parking-admin/m/*` mweb (not the richer `design.md` §6 concept — no QR tickets, OCR,
+  or Earnings tab).
+  - **Phase 0 — API auth plumbing**: `valet_sessions` gained `client` (`web`/`android`)
+    and `last_used_at` columns. `createValetApiToken`/`getValetSessionFromToken` extend
+    the existing cookie-session code rather than forking it — same table, same
+    scrypt/SHA-256 scheme, distinguished by `client`. Android tokens: 30-day TTL, sliding
+    (extended when used within 7 days of expiry); the web cookie's fixed 7-day TTL is
+    unchanged. `src/lib/supabase/proxy.ts` gained an early `/api/` bypass so bearer-token
+    requests skip the cookie-redirect/Supabase-Auth branches.
+  - **Phase 1 — Read-only API + Android skeleton**: extracted `lib/parking-admin/
+    dashboard.ts` + `vehicles.ts` out of RSC page bodies (both `m/dashboard` and
+    `m/vehicles` now call them — byte-identical rendering verified), backing
+    `GET dashboard` / `GET vehicles`. Android: Gradle project scaffold (no Hilt, no
+    kotlinx.serialization — manual DI + Retrofit/Gson, deliberately to reduce
+    build-tooling risk), Login → 4-tab bottom nav (Home/Queue/Vehicles/Profile) →
+    Dashboard + Vehicles screens.
+  - **Phase 2 — Queue + full ticket lifecycle**: extracted `lib/parking-admin/queue.ts`
+    from `queue/actions.ts` (both `(authenticated)/queue` and `m/queue` now call it),
+    backing 11 new REST endpoints (check-in, mark-parked, request, dispatch,
+    mark-arrived, complete-handover, edit, void, timeline, photos, auto-allocate — all
+    under `/api/parking-admin/v1/queue/*`). Android `QueueScreen`: status filters,
+    role-gated auto-allocate toggle, and a dialog per lifecycle step.
+  - **Phase 3 — Photo capture**: check-in (5 fields) and handover (1 optional) wired to
+    the device's stock camera app (`ActivityResultContracts.TakePicture()` +
+    `FileProvider`) rather than an embedded CameraX preview — same end result, less
+    code/risk for a first cut. `ImageCompressor` mirrors the web's
+    `compressImageFile` (1280px max, JPEG quality 0.7) before upload.
+  - **Phase 4 — Notifications**: extracted `lib/parking-admin/notifications.ts` from the
+    bell's Server Actions, backing `GET notifications` / `POST notifications/mark-read`.
+    Android `NotificationsBell` in the shared top bar (all 4 tabs): 20s polling, unread
+    badge, mark-all-read on open, and the same vibrate-on-increase haptic as the web's
+    V2 Phase 6 (200ms, only when unread count rises tick-over-tick).
+  - **Phase 5 — Internal distribution**: signed release build (`keystore.properties`,
+    gitignored, read by `app/build.gradle.kts`; release falls back to unsigned if that
+    file is missing). Distribution is a raw APK handed to staff devices, **not** Play
+    Console — that needs a registered/paid/verified Google Play Developer account, which
+    doesn't exist for this project. **The keystore is a one-way door**: back it up
+    outside the repo the moment it's generated, since losing it means future release
+    builds can't install as *updates* over an existing install (Android enforces
+    same-signer for upgrades) — regenerating a keystore is not a recovery path.
+
+All AI features remain deferred by design (see below).
 
 ## Architecture decisions worth knowing before you continue
 
@@ -372,16 +414,19 @@ not a replacement for the native app in the original plan.
 
 Roughly in order (matches the phased plan this project has been following):
 
-1. **Android operator app**: native Kotlin/Compose, consuming a small JSON API under
-   this Next.js app (bearer-token auth, since the Android app can't use Supabase's
-   client SDK against the custom `valet_accounts` session model). Still the largest
-   unbuilt piece of the original plan and a much bigger effort than anything so far —
-   new language/toolchain, Android Studio/emulator work. The new `/parking-admin/m/*`
-   mobile web routes cover the same ground for now (usable in any phone browser, no
-   install) — worth checking whether that's sufficient before investing in the native
-   app.
+1. **Physical-device smoke test of the Android release APK** — Phase 5 verified the
+   signed build installs, launches, and reaches the production API on the emulator, but
+   photo capture specifically should get a clean check on a real device: the emulator's
+   own camera capture pipeline hung mid-JPEG-conversion during Phase 3 testing (a known
+   AVD/virtual-scene-camera flakiness, confirmed via logcat to be unrelated to the app's
+   permission/FileProvider/intent wiring, all of which fired correctly) — worth
+   confirming it's smooth end-to-end where it matters.
 2. Collect a guest email at check-in (+ `valet_tickets.guest_email` column) so the
    already-built Email channel in Communication triggers can actually fire.
 3. Delivered/read message tracking via Twilio status-callback + SendGrid event webhooks.
 4. AI enhancements — only after the above is live and there's real usage data to build
    against.
+5. If Android distribution ever needs to grow beyond handing staff a signed APK
+   directly (auto-update, wider rollout), revisit Play Console's internal testing track
+   — that needs a Google Play Developer account (real Google account, $25 one-time fee,
+   identity verification) that doesn't exist yet for this project.
