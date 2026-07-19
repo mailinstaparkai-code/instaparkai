@@ -168,3 +168,15 @@ data class TicketPhoto(
 data class PhotosResponse(
     val photos: List<TicketPhoto>,
 )
+
+data class NotificationItem(
+    val id: String,
+    val kind: String,
+    val message: String,
+    val readAt: String?,
+    val createdAt: String,
+)
+
+data class NotificationsResponse(
+    val notifications: List<NotificationItem>,
+)

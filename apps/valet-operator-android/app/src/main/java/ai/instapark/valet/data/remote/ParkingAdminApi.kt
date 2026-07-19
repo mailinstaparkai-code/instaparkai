@@ -8,6 +8,7 @@ import ai.instapark.valet.data.remote.dto.LoginRequest
 import ai.instapark.valet.data.remote.dto.LoginResponse
 import ai.instapark.valet.data.remote.dto.MarkParkedRequest
 import ai.instapark.valet.data.remote.dto.MeResponse
+import ai.instapark.valet.data.remote.dto.NotificationsResponse
 import ai.instapark.valet.data.remote.dto.PhotosResponse
 import ai.instapark.valet.data.remote.dto.QueueResponse
 import ai.instapark.valet.data.remote.dto.TimelineResponse
@@ -101,4 +102,10 @@ interface ParkingAdminApi {
 
     @PATCH("queue/auto-allocate")
     suspend fun setAutoAllocate(@Body request: AutoAllocateRequest)
+
+    @GET("notifications")
+    suspend fun notifications(): NotificationsResponse
+
+    @POST("notifications/mark-read")
+    suspend fun markNotificationsRead()
 }
