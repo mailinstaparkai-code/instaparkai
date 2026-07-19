@@ -1,3 +1,13 @@
 <resources>
+    <!-- System splash (Android 12+ splash API via core-splashscreen): dark brand bg +
+         the P launcher icon, handing off to the plain app theme. The richer branded
+         splash (logo lockup + night scene + loading bar) is drawn in Compose right
+         after, while the session restore runs (see ValetNavGraph). -->
+    <style name="Theme.InstaParkValet.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/Theme.InstaParkValet</item>
+    </style>
+
     <style name="Theme.InstaParkValet" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>

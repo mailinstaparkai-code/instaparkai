@@ -1,6 +1,7 @@
 package ai.instapark.valet.ui.navigation
 
 import ai.instapark.valet.ui.appContainer
+import ai.instapark.valet.ui.components.BrandedSplash
 import ai.instapark.valet.ui.dashboard.DashboardScreen
 import ai.instapark.valet.ui.login.LoginScreen
 import ai.instapark.valet.ui.notifications.NotificationsBell
@@ -63,9 +64,7 @@ fun ValetNavGraph() {
     }
 
     if (!sessionChecked) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
-        }
+        BrandedSplash()
         return
     }
 

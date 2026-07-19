@@ -1,5 +1,6 @@
 package ai.instapark.valet
 
+import ai.instapark.valet.data.local.ThemeStore
 import ai.instapark.valet.data.local.TokenStore
 import ai.instapark.valet.data.remote.AuthInterceptor
 import ai.instapark.valet.data.remote.ParkingAdminApi
@@ -23,6 +24,7 @@ import retrofit2.converter.gson.GsonConverterFactory
  */
 class AppContainer(context: Context) {
     val tokenStore = TokenStore(context)
+    val themeStore = ThemeStore(context)
     private val sessionTokenHolder = SessionTokenHolder()
     private val gson = Gson()
 

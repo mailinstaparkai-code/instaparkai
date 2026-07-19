@@ -3,7 +3,7 @@ package ai.instapark.valet.ui.vehicles
 import ai.instapark.valet.data.remote.dto.Ticket
 import ai.instapark.valet.data.remote.dto.VehiclesResponse
 import ai.instapark.valet.ui.appContainer
-import ai.instapark.valet.ui.theme.StatusSuccess
+import ai.instapark.valet.ui.theme.AccentGreen
 import ai.instapark.valet.ui.theme.StatusWarning
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -151,7 +151,7 @@ private fun VehicleTicketCard(ticket: Ticket) {
                 Spacer(Modifier.height(4.dp))
                 Text(
                     "₹${ticket.fareAmount} ${if (ticket.paymentCollected) "paid" else "pending"}",
-                    color = if (ticket.paymentCollected) StatusSuccess else StatusWarning,
+                    color = if (ticket.paymentCollected) AccentGreen else StatusWarning,
                 )
             }
             val inOp = ticket.checkedInOperator?.let { it.fullName ?: it.username }

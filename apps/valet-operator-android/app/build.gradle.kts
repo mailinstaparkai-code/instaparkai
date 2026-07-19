@@ -93,5 +93,6 @@ dependencies {
     implementation(libs.gson)
     implementation(libs.coil.compose)
     implementation(libs.androidx.exifinterface)
+    implementation(libs.androidx.core.splashscreen)
     debugImplementation(libs.androidx.ui.tooling)
 }

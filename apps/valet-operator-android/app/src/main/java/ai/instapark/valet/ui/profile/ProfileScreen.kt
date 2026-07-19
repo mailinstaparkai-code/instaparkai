@@ -1,7 +1,12 @@
 package ai.instapark.valet.ui.profile
 
 import ai.instapark.valet.ui.appContainer
+import ai.instapark.valet.ui.components.ThemeTogglePill
 import ai.instapark.valet.ui.theme.BrandOrange
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,12 +39,25 @@ fun ProfileScreen(onSignedOut: () -> Unit) {
         factory = ProfileViewModelFactory(container.sessionRepository, container.tokenStore)
     )
 
+    val scope = rememberCoroutineScope()
+    val darkTheme by container.themeStore.darkThemeFlow.collectAsState(initial = true)
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text("Profile", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.SpaceBetween,
+        ) {
+            Text("Profile", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+            ThemeTogglePill(
+                darkTheme = darkTheme,
+                onToggle = { dark -> scope.launch { container.themeStore.setDarkTheme(dark) } },
+            )
+        }
         Spacer(Modifier.height(16.dp))
         Card(modifier = Modifier.fillMaxWidth()) {
             Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
