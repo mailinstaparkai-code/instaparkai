@@ -13,7 +13,18 @@ import ai.instapark.valet.data.remote.dto.VoidRequest
 import ai.instapark.valet.data.remote.toApiException
 import com.google.gson.Gson
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.File
+
+data class CheckInPhotos(
+    val front: File? = null,
+    val back: File? = null,
+    val left: File? = null,
+    val right: File? = null,
+    val odometer: File? = null,
+)
 
 class QueueRepository(
     private val api: ParkingAdminApi,
@@ -21,15 +32,34 @@ class QueueRepository(
 ) {
     private fun String.textBody() = toRequestBody("text/plain".toMediaTypeOrNull())
 
+    private fun filePart(fieldName: String, file: File?): MultipartBody.Part? {
+        if (file == null) return null
+        return MultipartBody.Part.createFormData(
+            fieldName,
+            file.name,
+            file.asRequestBody("image/jpeg".toMediaTypeOrNull())
+        )
+    }
+
     suspend fun list(status: String? = null, vehicleType: String? = null): Result<QueueResponse> = wrap {
         api.queue(status = status, vehicleType = vehicleType)
     }
 
-    suspend fun checkIn(vehicleNumber: String, vehicleType: String, mobileNumber: String): Result<QueueTicket> = wrap {
+    suspend fun checkIn(
+        vehicleNumber: String,
+        vehicleType: String,
+        mobileNumber: String,
+        photos: CheckInPhotos = CheckInPhotos(),
+    ): Result<QueueTicket> = wrap {
         api.checkIn(
             vehicleNumber = vehicleNumber.textBody(),
             vehicleType = vehicleType.textBody(),
             mobileNumber = mobileNumber.textBody(),
+            photoFront = filePart("photo_front", photos.front),
+            photoBack = filePart("photo_back", photos.back),
+            photoLeft = filePart("photo_left", photos.left),
+            photoRight = filePart("photo_right", photos.right),
+            photoOdometer = filePart("photo_odometer", photos.odometer),
         ).ticket
     }
 
@@ -50,12 +80,14 @@ class QueueRepository(
         otp: String,
         fareAmount: String?,
         paymentCollected: Boolean,
+        handoverPhoto: File? = null,
     ): Result<Unit> = wrap {
         api.completeHandover(
             id = id,
             otp = otp.textBody(),
             fareAmount = fareAmount?.textBody(),
             paymentCollected = paymentCollected.toString().textBody(),
+            photoHandover = filePart("photo_handover", handoverPhoto),
         )
     }
 

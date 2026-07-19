@@ -2,6 +2,8 @@ package ai.instapark.valet.ui.queue
 
 import ai.instapark.valet.data.remote.ApiException
 import ai.instapark.valet.data.remote.dto.QueueResponse
+import ai.instapark.valet.data.remote.dto.TicketPhoto
+import ai.instapark.valet.data.repository.CheckInPhotos
 import ai.instapark.valet.data.repository.QueueRepository
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -9,6 +11,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import java.io.File
 import kotlinx.coroutines.launch
 
 sealed interface QueueUiState {
@@ -64,8 +67,13 @@ class QueueViewModel(private val repository: QueueRepository) : ViewModel() {
         }
     }
 
-    fun checkIn(vehicleNumber: String, vehicleType: String, mobileNumber: String, onDone: (String?) -> Unit) =
-        perform({ repository.checkIn(vehicleNumber, vehicleType, mobileNumber) }, onDone)
+    fun checkIn(
+        vehicleNumber: String,
+        vehicleType: String,
+        mobileNumber: String,
+        photos: CheckInPhotos,
+        onDone: (String?) -> Unit,
+    ) = perform({ repository.checkIn(vehicleNumber, vehicleType, mobileNumber, photos) }, onDone)
 
     fun markParked(id: String, slotId: String, onDone: (String?) -> Unit) =
         perform({ repository.markParked(id, slotId) }, onDone)
@@ -84,8 +92,12 @@ class QueueViewModel(private val repository: QueueRepository) : ViewModel() {
         otp: String,
         fareAmount: String?,
         paymentCollected: Boolean,
+        handoverPhoto: File?,
         onDone: (String?) -> Unit,
-    ) = perform({ repository.completeHandover(id, otp, fareAmount, paymentCollected) }, onDone)
+    ) = perform(
+        { repository.completeHandover(id, otp, fareAmount, paymentCollected, handoverPhoto) },
+        onDone
+    )
 
     fun updateTicket(id: String, vehicleNumber: String, mobileNumber: String, onDone: (String?) -> Unit) =
         perform({ repository.updateTicket(id, vehicleNumber, mobileNumber) }, onDone)
@@ -94,6 +106,14 @@ class QueueViewModel(private val repository: QueueRepository) : ViewModel() {
         perform({ repository.voidTicket(id, reason) }, onDone)
 
     fun setAutoAllocate(enabled: Boolean) = perform({ repository.setAutoAllocate(enabled) }, {})
+
+    fun loadPhotos(id: String, onResult: (List<TicketPhoto>?, String?) -> Unit) {
+        viewModelScope.launch {
+            repository.photos(id)
+                .onSuccess { onResult(it.photos, null) }
+                .onFailure { onResult(null, it.friendlyMessage()) }
+        }
+    }
 }
 
 private fun Throwable.friendlyMessage(): String = (this as? ApiException)?.message ?: "Something went wrong."

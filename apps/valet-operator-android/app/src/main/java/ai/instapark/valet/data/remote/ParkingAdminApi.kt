@@ -14,6 +14,7 @@ import ai.instapark.valet.data.remote.dto.TimelineResponse
 import ai.instapark.valet.data.remote.dto.UpdateTicketRequest
 import ai.instapark.valet.data.remote.dto.VehiclesResponse
 import ai.instapark.valet.data.remote.dto.VoidRequest
+import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -57,6 +58,11 @@ interface ParkingAdminApi {
         @Part("vehicle_number") vehicleNumber: RequestBody,
         @Part("vehicle_type") vehicleType: RequestBody,
         @Part("mobile_number") mobileNumber: RequestBody,
+        @Part photoFront: MultipartBody.Part? = null,
+        @Part photoBack: MultipartBody.Part? = null,
+        @Part photoLeft: MultipartBody.Part? = null,
+        @Part photoRight: MultipartBody.Part? = null,
+        @Part photoOdometer: MultipartBody.Part? = null,
     ): CheckInResponse
 
     @POST("queue/{id}/mark-parked")
@@ -78,6 +84,7 @@ interface ParkingAdminApi {
         @Part("otp") otp: RequestBody,
         @Part("fare_amount") fareAmount: RequestBody?,
         @Part("payment_collected") paymentCollected: RequestBody,
+        @Part photoHandover: MultipartBody.Part? = null,
     )
 
     @PATCH("queue/{id}")

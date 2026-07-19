@@ -4,21 +4,33 @@ import ai.instapark.valet.data.remote.dto.OperatorOption
 import ai.instapark.valet.data.remote.dto.QueueResponse
 import ai.instapark.valet.data.remote.dto.QueueTicket
 import ai.instapark.valet.data.remote.dto.SlotOption
+import ai.instapark.valet.data.remote.dto.TicketPhoto
+import ai.instapark.valet.data.repository.CheckInPhotos
 import ai.instapark.valet.ui.appContainer
+import ai.instapark.valet.ui.components.PhotoCaptureField
+import coil.compose.AsyncImage
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.AlertDialog
@@ -37,6 +49,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -153,8 +166,8 @@ private fun QueueContent(response: QueueResponse, viewModel: QueueViewModel) {
             vehicleTypeOptions = response.filters.vehicleTypeOptions,
             pending = viewModel.mutationPending,
             onDismiss = { showCheckIn = false },
-            onSubmit = { vehicleNumber, vehicleType, mobileNumber, onError ->
-                viewModel.checkIn(vehicleNumber, vehicleType, mobileNumber) { error ->
+            onSubmit = { vehicleNumber, vehicleType, mobileNumber, photos, onError ->
+                viewModel.checkIn(vehicleNumber, vehicleType, mobileNumber, photos) { error ->
                     if (error == null) showCheckIn = false else onError(error)
                 }
             },
@@ -174,6 +187,7 @@ private fun TicketCard(
     var showHandover by remember { mutableStateOf(false) }
     var showEdit by remember { mutableStateOf(false) }
     var showVoid by remember { mutableStateOf(false) }
+    var showPhotos by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
 
     Card(modifier = Modifier.fillMaxWidth()) {
@@ -201,11 +215,26 @@ private fun TicketCard(
                 }
             }
             Spacer(Modifier.height(4.dp))
-            Text(
-                "Slot: ${ticket.slotNumber ?: "—"}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "Slot: ${ticket.slotNumber ?: "—"}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                if (ticket.photoCount > 0) {
+                    Text(
+                        " · ",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        "${ticket.photoCount} photo(s)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.clickable { showPhotos = true },
+                    )
+                }
+            }
             Spacer(Modifier.height(8.dp))
 
             when (ticket.status) {
@@ -263,8 +292,8 @@ private fun TicketCard(
         HandoverDialog(
             pending = viewModel.mutationPending,
             onDismiss = { showHandover = false },
-            onConfirm = { otp, fare, paid, onError ->
-                viewModel.completeHandover(ticket.id, otp, fare, paid) { error ->
+            onConfirm = { otp, fare, paid, photo, onError ->
+                viewModel.completeHandover(ticket.id, otp, fare, paid, photo) { error ->
                     if (error == null) showHandover = false else onError(error)
                 }
             },
@@ -294,6 +323,61 @@ private fun TicketCard(
             },
         )
     }
+    if (showPhotos) {
+        PhotosDialog(
+            ticketId = ticket.id,
+            viewModel = viewModel,
+            onDismiss = { showPhotos = false },
+        )
+    }
+}
+
+@Composable
+private fun PhotosDialog(ticketId: String, viewModel: QueueViewModel, onDismiss: () -> Unit) {
+    var photos by remember { mutableStateOf<List<TicketPhoto>?>(null) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(ticketId) {
+        viewModel.loadPhotos(ticketId) { result, err -> photos = result; error = err }
+    }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Ticket photos") },
+        text = {
+            when {
+                error != null -> Text(error!!, color = MaterialTheme.colorScheme.error)
+                photos == null -> Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+                photos!!.isEmpty() -> Text(
+                    "No photos yet.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                else -> Column(
+                    modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())
+                ) {
+                    photos!!.forEach { photo ->
+                        Text(
+                            "${photo.stage} · ${photo.label}",
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+                        )
+                        AsyncImage(
+                            model = photo.url,
+                            contentDescription = "${photo.stage} ${photo.label}",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(4f / 3f)
+                                .clip(RoundedCornerShape(8.dp)),
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = { Button(onClick = onDismiss) { Text("Close") } },
+    )
 }
 
 @Composable
@@ -301,18 +385,27 @@ private fun CheckInDialog(
     vehicleTypeOptions: List<ai.instapark.valet.data.remote.dto.FilterOption>,
     pending: Boolean,
     onDismiss: () -> Unit,
-    onSubmit: (String, String, String, (String) -> Unit) -> Unit,
+    onSubmit: (String, String, String, CheckInPhotos, (String) -> Unit) -> Unit,
 ) {
     var vehicleNumber by remember { mutableStateOf("") }
     var vehicleType by remember { mutableStateOf(vehicleTypeOptions.firstOrNull()?.value ?: "car") }
     var mobileNumber by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
+    var frontPhoto by remember { mutableStateOf<java.io.File?>(null) }
+    var backPhoto by remember { mutableStateOf<java.io.File?>(null) }
+    var leftPhoto by remember { mutableStateOf<java.io.File?>(null) }
+    var rightPhoto by remember { mutableStateOf<java.io.File?>(null) }
+    var odometerPhoto by remember { mutableStateOf<java.io.File?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Check-in vehicle") },
         text = {
-            Column {
+            Column(
+                modifier = Modifier
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
                 OutlinedTextField(
                     value = vehicleNumber,
                     onValueChange = { vehicleNumber = it },
@@ -335,6 +428,14 @@ private fun CheckInDialog(
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                Spacer(Modifier.height(12.dp))
+                Text("Check-in photos (optional)", style = MaterialTheme.typography.labelMedium)
+                Spacer(Modifier.height(4.dp))
+                PhotoCaptureField("Front", frontPhoto, { frontPhoto = it }, Modifier.padding(vertical = 2.dp))
+                PhotoCaptureField("Back", backPhoto, { backPhoto = it }, Modifier.padding(vertical = 2.dp))
+                PhotoCaptureField("Left", leftPhoto, { leftPhoto = it }, Modifier.padding(vertical = 2.dp))
+                PhotoCaptureField("Right", rightPhoto, { rightPhoto = it }, Modifier.padding(vertical = 2.dp))
+                PhotoCaptureField("Odometer", odometerPhoto, { odometerPhoto = it }, Modifier.padding(vertical = 2.dp))
                 error?.let {
                     Spacer(Modifier.height(8.dp))
                     Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
@@ -343,7 +444,10 @@ private fun CheckInDialog(
         },
         confirmButton = {
             Button(
-                onClick = { onSubmit(vehicleNumber, vehicleType, mobileNumber) { message -> error = message } },
+                onClick = {
+                    val photos = CheckInPhotos(frontPhoto, backPhoto, leftPhoto, rightPhoto, odometerPhoto)
+                    onSubmit(vehicleNumber, vehicleType, mobileNumber, photos) { message -> error = message }
+                },
                 enabled = !pending && vehicleNumber.isNotBlank() && mobileNumber.isNotBlank(),
             ) { Text(if (pending) "Checking in…" else "Check in") }
         },
@@ -431,18 +535,23 @@ private fun DispatchDialog(
 private fun HandoverDialog(
     pending: Boolean,
     onDismiss: () -> Unit,
-    onConfirm: (String, String?, Boolean, (String) -> Unit) -> Unit,
+    onConfirm: (String, String?, Boolean, java.io.File?, (String) -> Unit) -> Unit,
 ) {
     var otp by remember { mutableStateOf("") }
     var fare by remember { mutableStateOf("") }
     var paid by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
+    var handoverPhoto by remember { mutableStateOf<java.io.File?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Complete handover") },
         text = {
-            Column {
+            Column(
+                modifier = Modifier
+                    .heightIn(max = 420.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
                 Text(
                     "Ask the guest for the OTP sent to their phone and enter it below to confirm the handover.",
                     style = MaterialTheme.typography.bodySmall,
@@ -470,6 +579,8 @@ private fun HandoverDialog(
                     Spacer(Modifier.width(8.dp))
                     Text("Payment collected", style = MaterialTheme.typography.bodySmall)
                 }
+                Spacer(Modifier.height(8.dp))
+                PhotoCaptureField("Handover photo (optional)", handoverPhoto, { handoverPhoto = it })
                 error?.let {
                     Spacer(Modifier.height(8.dp))
                     Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
@@ -478,7 +589,7 @@ private fun HandoverDialog(
         },
         confirmButton = {
             Button(
-                onClick = { onConfirm(otp, fare.ifBlank { null }, paid) { message -> error = message } },
+                onClick = { onConfirm(otp, fare.ifBlank { null }, paid, handoverPhoto) { message -> error = message } },
                 enabled = !pending && otp.isNotBlank(),
             ) { Text(if (pending) "Completing…" else "Complete handover") }
         },
