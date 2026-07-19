@@ -32,10 +32,9 @@ The release build points at the production Vercel deployment.
 
 ## Status
 
-Phase 1 (this checkpoint): Login, Dashboard, and Vehicles screens are implemented and
-the app builds cleanly (`./gradlew assembleDebug` succeeds). Queue and Profile are
-present (Profile has working sign-out; Queue is a placeholder for Phase 2). **Not yet
-verified on an emulator/device** — this development machine's only configured AVD
-(`Pixel_10_Pro`) currently fails to boot due to low disk space (`Your device does not
-have enough disk space to run avd`, ~2GB free). Free up disk space and re-run to get a
-real on-device verification pass before treating this phase as fully done.
+Phase 1 complete and verified end-to-end on the `Pixel_10_Pro` emulator against the
+dev API (`next dev` + `10.0.2.2`): login (real bearer-token auth, wrong-password error
+handling), Dashboard (greeting, site badge, KPI tiles matching the API response),
+Vehicles (record count, stats, status filter chips, ticket cards with fare/operator
+detail), Profile (name/role display, working sign-out that deletes the session
+server-side). Queue is still a placeholder for Phase 2.
