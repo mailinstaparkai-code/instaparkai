@@ -3,13 +3,15 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { getValetSession } from "@/lib/valet-auth/session";
 import { getDashboardSummary } from "@/lib/parking-admin/dashboard";
 import { Car, ListOrdered, CircleCheckBig, Clock } from "lucide-react";
+import { MyStatusToggle } from "./my-status-toggle";
+import { setMyStatus } from "./actions";
 
 export default async function MobileDashboardPage() {
   const session = await getValetSession();
   if (!session) return null;
 
   const supabase = createServiceClient();
-  const summary = await getDashboardSummary(supabase, session.assignedSiteId);
+  const summary = await getDashboardSummary(supabase, session);
 
   const kpis = [
     { label: "Active vehicles", value: summary.kpis.activeVehicles, icon: Car },
@@ -37,6 +39,10 @@ export default async function MobileDashboardPage() {
           )}
         </p>
       </div>
+
+      {session.role === "valet_operator" && (
+        <MyStatusToggle status={summary.myDailyStatus.status} action={setMyStatus} />
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         {kpis.map((kpi) => (

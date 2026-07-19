@@ -17,6 +17,7 @@ export function mapQueueTicket(t: QueueTicket) {
     mobileNumber: t.mobile_number,
     status: t.status,
     checkedInAt: t.checked_in_at,
+    checkedInBy: t.checked_in_by,
     fareAmount: t.fare_amount,
     photoCount: t.check_in_photos.length + t.handover_photos.length,
     slotNumber: t.slots?.slot_number ?? null,
@@ -43,6 +44,9 @@ export async function GET(req: Request) {
       },
       autoAllocateEnabled: result.autoAllocateEnabled,
       canToggleAutoAllocate: result.canToggleAutoAllocate,
+      canRequest: result.canRequest,
+      canDispatch: result.canDispatch,
+      myAccountId: result.myAccountId,
     });
   } catch (err) {
     return errorResponse(err);

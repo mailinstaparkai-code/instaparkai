@@ -5,6 +5,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { hashPassword } from "@/lib/valet-auth/password";
 import { getValetSession } from "@/lib/valet-auth/session";
 import { uploadOperatorPhoto } from "@/lib/valet-photos";
+import { todayIST } from "@/lib/operator-availability";
 
 const PATH = "/parking-admin/operators";
 
@@ -104,10 +105,6 @@ export async function setOperatorActive(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath(PATH);
-}
-
-function todayIST(): string {
-  return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 }
 
 export async function setOperatorDailyStatus(formData: FormData) {

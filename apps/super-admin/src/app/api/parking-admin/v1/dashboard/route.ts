@@ -8,7 +8,7 @@ export async function GET(req: Request) {
   try {
     const session = await requireApiSession(req);
     const supabase = createServiceClient();
-    const summary = await getDashboardSummary(supabase, session.assignedSiteId);
+    const summary = await getDashboardSummary(supabase, session);
     return NextResponse.json(summary);
   } catch (err) {
     return errorResponse(err);

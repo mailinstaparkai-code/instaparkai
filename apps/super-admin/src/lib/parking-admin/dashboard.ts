@@ -1,5 +1,7 @@
 import "server-only";
 import type { createServiceClient } from "@/lib/supabase/service";
+import type { ValetSession } from "@/lib/valet-auth/session";
+import { getMyDailyStatus, type MyDailyStatus } from "./operator-status";
 
 export type DashboardSummary = {
   siteName: string | null;
@@ -10,23 +12,34 @@ export type DashboardSummary = {
     completedToday: number;
     avgTurnaroundMinutes: number | null;
   };
+  capacity: {
+    totalSlots: number;
+    occupiedSlots: number;
+  };
+  myDailyStatus: MyDailyStatus;
 };
 
 export async function getDashboardSummary(
   supabase: ReturnType<typeof createServiceClient>,
-  siteId: string
+  session: ValetSession
 ): Promise<DashboardSummary> {
+  const siteId = session.assignedSiteId;
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
-  const [{ data: site }, { data: tickets }] = await Promise.all([
+  const [{ data: site }, { data: tickets }, { data: zones }, myDailyStatus] = await Promise.all([
     supabase.from("parking_spaces").select("name, valet_parking_enabled").eq("id", siteId).single(),
     supabase
       .from("valet_tickets")
       .select("status, checked_in_at, completed_at")
       .eq("parking_space_id", siteId)
       .gte("checked_in_at", startOfToday.toISOString()),
+    // Same forward zones -> slots embed as getQueueData() in queue.ts, just for
+    // capacity counting instead of an availability picker.
+    supabase.from("zones").select("slots(status)").eq("parking_space_id", siteId),
+    getMyDailyStatus(supabase, session),
   ]);
+  const slots = (zones ?? []).flatMap((z) => z.slots as { status: string }[]);
 
   const activeCount =
     tickets?.filter((t) => t.status !== "completed" && t.status !== "voided").length ?? 0;
@@ -52,5 +65,10 @@ export async function getDashboardSummary(
       completedToday: completedToday.length,
       avgTurnaroundMinutes,
     },
+    capacity: {
+      totalSlots: slots?.length ?? 0,
+      occupiedSlots: slots?.filter((s) => s.status === "occupied").length ?? 0,
+    },
+    myDailyStatus,
   };
 }

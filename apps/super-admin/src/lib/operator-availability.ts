@@ -13,7 +13,7 @@ export type AvailableOperator = {
 
 // IST calendar date as YYYY-MM-DD -- "today" for operator_daily_status is always the
 // site's local (IST) day, not the server/browser's own timezone.
-function todayIST(): string {
+export function todayIST(): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
 }
 

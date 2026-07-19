@@ -75,6 +75,9 @@ export default async function MobileQueuePage({
     statusOptions: statusFilterOptions,
     tariffRules,
     autoAllocateEnabled,
+    canRequest,
+    canDispatch,
+    myAccountId,
   } = await getQueueData(supabase, session, { status: statusFilter, vehicleType: vehicleTypeFilter });
 
   return (
@@ -179,14 +182,15 @@ export default async function MobileQueuePage({
               </div>
 
               <div>
-                {t.status === "checked_in" && (
-                  <MarkParkedButton
-                    ticketId={t.id}
-                    slots={availableSlots}
-                    action={markAsParked}
-                  />
-                )}
-                {t.status === "parked" && (
+                {t.status === "checked_in" &&
+                  (session.role === "parking_admin" || t.checked_in_by === myAccountId) && (
+                    <MarkParkedButton
+                      ticketId={t.id}
+                      slots={availableSlots}
+                      action={markAsParked}
+                    />
+                  )}
+                {t.status === "parked" && canRequest && (
                   <form action={requestVehicle}>
                     <input type="hidden" name="id" value={t.id} />
                     <Button type="submit" size="sm" variant="outline" className="w-full">
@@ -194,7 +198,7 @@ export default async function MobileQueuePage({
                     </Button>
                   </form>
                 )}
-                {t.status === "requested" && (
+                {t.status === "requested" && canDispatch && (
                   <DispatchOperatorButton
                     ticketId={t.id}
                     operators={operatorOptions}

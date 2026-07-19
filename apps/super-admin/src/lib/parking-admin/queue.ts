@@ -45,6 +45,7 @@ export type QueueTicket = {
   mobile_number: string;
   status: string;
   checked_in_at: string;
+  checked_in_by: string | null;
   fare_amount: number | null;
   check_in_photos: unknown[];
   handover_photos: unknown[];
@@ -134,7 +135,7 @@ export async function loadTicket(
   const { data } = await supabase
     .from("valet_tickets")
     .select(
-      "id, status, otp, slot_id, parking_space_id, vehicle_number, vehicle_type, mobile_number, ticket_token"
+      "id, status, otp, slot_id, parking_space_id, vehicle_number, vehicle_type, mobile_number, ticket_token, checked_in_by"
     )
     .eq("id", id)
     .eq("parking_space_id", siteId)
@@ -151,6 +152,11 @@ export type QueueData = {
   tariffRules: TariffRule[];
   autoAllocateEnabled: boolean;
   canToggleAutoAllocate: boolean;
+  // "Guest requested" and manual dispatch are Parking Admin only; mark-as-parked is
+  // the checked-in operator or an admin (evaluated per-ticket, see QueueTicket).
+  canRequest: boolean;
+  canDispatch: boolean;
+  myAccountId: string;
 };
 
 export async function getQueueData(
@@ -166,7 +172,7 @@ export async function getQueueData(
   let ticketsQuery = supabase
     .from("valet_tickets")
     .select(
-      "id, ticket_token, vehicle_number, vehicle_type, mobile_number, status, checked_in_at, fare_amount, check_in_photos, handover_photos, slots(slot_number)"
+      "id, ticket_token, vehicle_number, vehicle_type, mobile_number, status, checked_in_at, checked_in_by, fare_amount, check_in_photos, handover_photos, slots(slot_number)"
     )
     .eq("parking_space_id", session.assignedSiteId)
     .in("status", ACTIVE_STATUSES as unknown as string[]);
@@ -236,6 +242,9 @@ export async function getQueueData(
     tariffRules: tariffRules ?? [],
     autoAllocateEnabled: site?.auto_allocate_operator ?? false,
     canToggleAutoAllocate: session.role === "parking_admin",
+    canRequest: session.role === "parking_admin",
+    canDispatch: session.role === "parking_admin",
+    myAccountId: session.accountId,
   };
 }
 
@@ -322,6 +331,7 @@ export async function checkInVehicle(
     mobile_number,
     status: "checked_in",
     checked_in_at: new Date().toISOString(),
+    checked_in_by: session.accountId,
     fare_amount: null,
     check_in_photos: photos,
     handover_photos: [],
@@ -339,6 +349,11 @@ export async function markAsParked(
   if (!ticket) throw new AppError("not_found", "Ticket not found.", 404);
   if (ticket.status !== "checked_in") {
     throw new AppError("invalid_state", "Ticket is not awaiting parking.", 409);
+  }
+  // Only the operator who checked the vehicle in -- everyone else can see it, but
+  // only that operator (or an admin, for stuck-ticket recovery) can mark it parked.
+  if (session.role !== "parking_admin" && ticket.checked_in_by !== session.accountId) {
+    throw new AppError("forbidden", "Only the operator who checked this vehicle in can mark it parked.", 403);
   }
 
   const { error } = await supabase
@@ -368,6 +383,9 @@ export async function requestVehicle(
   session: ValetSession,
   id: string
 ): Promise<void> {
+  // Staff-side "guest requested" is Parking Admin only -- the guest's own path is
+  // requestVehicleByGuest() in app/track/[token]/actions.ts, unrelated to this session.
+  assertParkingAdminRole(session);
   const ticket = await loadTicket(supabase, id, session.assignedSiteId);
   if (!ticket) throw new AppError("not_found", "Ticket not found.", 404);
   if (ticket.status !== "parked") {
@@ -422,6 +440,7 @@ export async function dispatchVehicle(
   id: string,
   operatorId: string
 ): Promise<void> {
+  assertParkingAdminRole(session);
   const ticket = await loadTicket(supabase, id, session.assignedSiteId);
   if (!ticket) throw new AppError("not_found", "Ticket not found.", 404);
   if (ticket.status !== "requested") {

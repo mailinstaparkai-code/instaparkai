@@ -60,18 +60,24 @@ function TicketRowActions({
   suggestedFare,
   availableSlots,
   operatorOptions,
+  canRequest,
+  canDispatch,
+  canMarkParked,
 }: {
   ticket: Ticket;
   suggestedFare: number | null;
   availableSlots: { id: string; label: string }[];
   operatorOptions: { id: string; label: string }[];
+  canRequest: boolean;
+  canDispatch: boolean;
+  canMarkParked: boolean;
 }) {
   return (
     <div className="flex items-center gap-1">
-      {ticket.status === "checked_in" && (
+      {ticket.status === "checked_in" && canMarkParked && (
         <MarkParkedButton ticketId={ticket.id} slots={availableSlots} action={markAsParked} />
       )}
-      {ticket.status === "parked" && (
+      {ticket.status === "parked" && canRequest && (
         <form action={requestVehicle}>
           <input type="hidden" name="id" value={ticket.id} />
           <Button type="submit" size="sm" variant="outline">
@@ -79,7 +85,7 @@ function TicketRowActions({
           </Button>
         </form>
       )}
-      {ticket.status === "requested" && (
+      {ticket.status === "requested" && canDispatch && (
         <DispatchOperatorButton
           ticketId={ticket.id}
           operators={operatorOptions}
@@ -133,6 +139,9 @@ export default async function LiveQueuePage({
     statusOptions: statusFilterOptions,
     tariffRules,
     autoAllocateEnabled,
+    canRequest,
+    canDispatch,
+    myAccountId,
   } = await getQueueData(supabase, session, { status: statusFilter, vehicleType: vehicleTypeFilter });
 
   const counts = {
@@ -271,6 +280,9 @@ export default async function LiveQueuePage({
                       suggestedFare={suggestedFare}
                       availableSlots={availableSlots}
                       operatorOptions={operatorOptions}
+                      canRequest={canRequest}
+                      canDispatch={canDispatch}
+                      canMarkParked={session.role === "parking_admin" || t.checked_in_by === myAccountId}
                     />
                   </td>
                 </tr>
@@ -327,6 +339,9 @@ export default async function LiveQueuePage({
                 suggestedFare={suggestedFare}
                 availableSlots={availableSlots}
                 operatorOptions={operatorOptions}
+                canRequest={canRequest}
+                canDispatch={canDispatch}
+                canMarkParked={session.role === "parking_admin" || t.checked_in_by === myAccountId}
               />
             </div>
           );
