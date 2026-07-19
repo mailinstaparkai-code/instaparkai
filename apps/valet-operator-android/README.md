@@ -61,6 +61,31 @@ different-signature APK over an existing one):
 adb install -r app/build/outputs/apk/release/app-release.apk
 ```
 
+## Versioned releases (checked into git)
+
+By project decision, built release APKs are committed into `releases/` in this
+directory rather than distributed out-of-band — `releases/*.apk` is **not** gitignored
+(everything else under `app/build/` is; this is a deliberate carve-out). This does mean
+the repo grows by one APK's worth of history per release (~12MB today) since there's no
+Git LFS set up — acceptable for a low-frequency internal-tool release cadence, but worth
+revisiting with LFS if release frequency picks up a lot.
+
+**Cutting a new release:**
+
+1. Bump `versionCode` (integer, always +1) and `versionName` (semantic, e.g. `0.2.0`) in
+   `app/build.gradle.kts`.
+2. Build: `./gradlew assembleRelease` (see above — needs `keystore.properties` present).
+3. Copy the output into `releases/`, named `instapark-valet-v<versionName>-build<versionCode>.apk`:
+   ```bash
+   cp app/build/outputs/apk/release/app-release.apk \
+     releases/instapark-valet-v<versionName>-build<versionCode>.apk
+   ```
+4. Add a row to the table below, commit both the APK and this README edit together, push.
+
+| Version | versionCode | Date | APK | Notes |
+|---|---|---|---|---|
+| 0.1.0 | 1 | 2026-07-19 | `releases/instapark-valet-v0.1.0-build1.apk` | First signed release. Phases 0–5 complete: full ticket lifecycle, photo capture, notifications, release signing. |
+
 ## Status
 
 Phase 1 complete and verified end-to-end on the `Pixel_10_Pro` emulator against the
