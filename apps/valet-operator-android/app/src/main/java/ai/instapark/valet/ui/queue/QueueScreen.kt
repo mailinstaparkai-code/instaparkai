@@ -1,5 +1,6 @@
 package ai.instapark.valet.ui.queue
 
+import ai.instapark.valet.R
 import ai.instapark.valet.data.remote.dto.OperatorOption
 import ai.instapark.valet.data.remote.dto.QueueResponse
 import ai.instapark.valet.data.remote.dto.QueueTicket
@@ -7,8 +8,22 @@ import ai.instapark.valet.data.remote.dto.SlotOption
 import ai.instapark.valet.data.remote.dto.TicketPhoto
 import ai.instapark.valet.data.repository.CheckInPhotos
 import ai.instapark.valet.ui.appContainer
+import ai.instapark.valet.ui.components.GlassCard
 import ai.instapark.valet.ui.components.PhotoCaptureField
+import ai.instapark.valet.ui.components.StatusPill
+import ai.instapark.valet.ui.components.statusAccent
+import ai.instapark.valet.ui.theme.ValetTheme
 import coil.compose.AsyncImage
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import java.time.OffsetDateTime
+import java.time.Duration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -83,19 +98,39 @@ fun QueueScreen() {
 @Composable
 private fun QueueContent(response: QueueResponse, viewModel: QueueViewModel) {
     var showCheckIn by remember { mutableStateOf(false) }
+    val colors = ValetTheme.colors
+    val container = appContainer()
+    val role by container.tokenStore.roleFlow.collectAsState(initial = null)
+    val isAdmin = role == "parking_admin"
 
     Column(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column {
                     Text("Live Queue", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                    Text(
-                        "${response.tickets.size} active vehicle(s)",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(7.dp)
+                                .clip(CircleShape)
+                                .background(colors.successGlow)
+                        )
+                        Text(
+                            "${response.tickets.size} active vehicle(s)",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = colors.textSecondary,
+                            modifier = Modifier.padding(start = 6.dp),
+                        )
+                    }
                 }
-                Button(onClick = { showCheckIn = true }) { Text("+ Check-in") }
+                Button(
+                    onClick = { showCheckIn = true },
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = colors.orange,
+                        contentColor = Color.White,
+                    ),
+                    shape = RoundedCornerShape(50),
+                ) { Text("+ Check-in", fontWeight = FontWeight.SemiBold) }
             }
 
             if (response.canToggleAutoAllocate) {
@@ -147,7 +182,15 @@ private fun QueueContent(response: QueueResponse, viewModel: QueueViewModel) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             items(response.tickets, key = { it.id }) { ticket ->
-                TicketCard(ticket, viewModel, response.availableSlots, response.operatorOptions)
+                TicketCard(
+                    ticket = ticket,
+                    viewModel = viewModel,
+                    availableSlots = response.availableSlots,
+                    operatorOptions = response.operatorOptions,
+                    canMarkParked = isAdmin || ticket.checkedInBy == response.myAccountId,
+                    canRequest = response.canRequest,
+                    canDispatch = response.canDispatch,
+                )
             }
             if (response.tickets.isEmpty()) {
                 item {
@@ -158,6 +201,7 @@ private fun QueueContent(response: QueueResponse, viewModel: QueueViewModel) {
                     )
                 }
             }
+            item { TodaysSummaryStrip(response.tickets) }
         }
     }
 
@@ -175,12 +219,72 @@ private fun QueueContent(response: QueueResponse, viewModel: QueueViewModel) {
     }
 }
 
+private fun vehicleImageRes(vehicleType: String): Int {
+    val t = vehicleType.lowercase()
+    return when {
+        "bike" in t || "motor" in t -> R.drawable.img_vehicle_bike
+        "scoot" in t -> R.drawable.img_vehicle_scooter
+        "sedan" in t || "4" in t -> R.drawable.img_vehicle_sedan
+        else -> R.drawable.img_vehicle_car
+    }
+}
+
+private fun timeAgo(iso: String): String = try {
+    val minutes = Duration.between(OffsetDateTime.parse(iso), OffsetDateTime.now()).toMinutes()
+    when {
+        minutes < 1 -> "just now"
+        minutes < 60 -> "${minutes}m ago"
+        minutes < 60 * 24 -> "${minutes / 60}h ago"
+        else -> "${minutes / (60 * 24)}d ago"
+    }
+} catch (e: Exception) {
+    ""
+}
+
+@Composable
+private fun TodaysSummaryStrip(tickets: List<QueueTicket>) {
+    val colors = ValetTheme.colors
+    GlassCard(modifier = Modifier.fillMaxWidth()) {
+        Column {
+            Text("Today's Summary", fontWeight = FontWeight.SemiBold)
+            Spacer(Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf(
+                    Triple("Active", tickets.size, colors.purple),
+                    Triple("Checked In", tickets.count { it.status == "checked_in" }, colors.blue),
+                    Triple("Parked", tickets.count { it.status == "parked" }, colors.green),
+                    Triple("Requested", tickets.count { it.status == "requested" }, colors.warning),
+                ).forEach { (label, count, accent) ->
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(accent.copy(alpha = 0.10f))
+                            .padding(vertical = 10.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text("$count", fontWeight = FontWeight.Bold, color = accent)
+                        Text(
+                            label,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = colors.textSecondary,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun TicketCard(
     ticket: QueueTicket,
     viewModel: QueueViewModel,
     availableSlots: List<SlotOption>,
     operatorOptions: List<OperatorOption>,
+    canMarkParked: Boolean,
+    canRequest: Boolean,
+    canDispatch: Boolean,
 ) {
     var showMarkParked by remember { mutableStateOf(false) }
     var showDispatch by remember { mutableStateOf(false) }
@@ -190,22 +294,27 @@ private fun TicketCard(
     var showPhotos by remember { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
 
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Column {
-                    Text(ticket.vehicleNumber, fontWeight = FontWeight.Bold)
-                    Text(
-                        "${ticket.vehicleType} · ${ticket.mobileNumber}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+    val colors = ValetTheme.colors
+    val accent = statusAccent(ticket.status)
+
+    GlassCard(modifier = Modifier.fillMaxWidth(), accent = accent) {
+        Column {
+            // Top row: status ribbon + time-ago + kebab
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                StatusPill(label = statusLabel(ticket.status).uppercase(), accent = accent)
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    AssistChip(onClick = {}, label = { Text(statusLabel(ticket.status)) })
+                    Text(
+                        timeAgo(ticket.checkedInAt),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = colors.textSecondary,
+                    )
                     Box {
                         IconButton(onClick = { menuOpen = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "More actions")
+                            Icon(Icons.Default.MoreVert, contentDescription = "More actions", tint = colors.textSecondary)
                         }
                         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                             DropdownMenuItem(text = { Text("Edit details") }, onClick = { menuOpen = false; showEdit = true })
@@ -214,52 +323,113 @@ private fun TicketCard(
                     }
                 }
             }
-            Spacer(Modifier.height(4.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    "Slot: ${ticket.slotNumber ?: "—"}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                if (ticket.photoCount > 0) {
-                    Text(
-                        " · ",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                        "${ticket.photoCount} photo(s)",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.clickable { showPhotos = true },
-                    )
-                }
-            }
             Spacer(Modifier.height(8.dp))
 
+            // Vehicle image + details
+            Row {
+                Image(
+                    painter = painterResource(vehicleImageRes(ticket.vehicleType)),
+                    contentDescription = ticket.vehicleType,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(88.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .border(1.dp, accent.copy(alpha = 0.4f), RoundedCornerShape(14.dp)),
+                )
+                Column(modifier = Modifier.padding(start = 14.dp)) {
+                    Text(
+                        ticket.vehicleNumber,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            ticket.vehicleType.replaceFirstChar { it.uppercase() },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.textSecondary,
+                        )
+                        Text(" • ", color = accent)
+                        Text(
+                            ticket.mobileNumber,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.textSecondary,
+                        )
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "Slot: ${ticket.slotNumber ?: "—"}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.textSecondary,
+                    )
+                    if (ticket.photoCount > 0) {
+                        Text(
+                            "${ticket.photoCount} photo(s)",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = accent,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.clickable { showPhotos = true }.padding(top = 2.dp),
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(12.dp))
+
+            // Role-aware primary action, full-width in the status accent
+            val actionShape = RoundedCornerShape(14.dp)
+            @Composable
+            fun accentAction(label: String, enabled: Boolean = true, onClick: () -> Unit) {
+                Button(
+                    onClick = onClick,
+                    enabled = enabled,
+                    shape = actionShape,
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = accent.copy(alpha = 0.18f),
+                        contentColor = accent,
+                        disabledContainerColor = colors.backgroundDeep,
+                        disabledContentColor = colors.textSecondary,
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text(label, fontWeight = FontWeight.SemiBold) }
+            }
+
             when (ticket.status) {
-                "checked_in" -> OutlinedButton(
-                    onClick = { showMarkParked = true },
-                    enabled = availableSlots.isNotEmpty(),
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text(if (availableSlots.isEmpty()) "No available slots" else "Mark as parked") }
-                "parked" -> OutlinedButton(
-                    onClick = { viewModel.requestVehicle(ticket.id) {} },
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text("Guest requested") }
-                "requested" -> OutlinedButton(
-                    onClick = { showDispatch = true },
-                    enabled = operatorOptions.isNotEmpty(),
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text(if (operatorOptions.isEmpty()) "No operators available" else "Dispatch operator") }
-                "in_transit" -> OutlinedButton(
-                    onClick = { viewModel.markArrived(ticket.id) {} },
-                    modifier = Modifier.fillMaxWidth(),
-                ) { Text("Mark arrived") }
+                "checked_in" -> if (canMarkParked) {
+                    accentAction(
+                        label = if (availableSlots.isEmpty()) "No available slots" else "Mark as parked",
+                        enabled = availableSlots.isNotEmpty(),
+                    ) { showMarkParked = true }
+                } else {
+                    Text(
+                        "Waiting for the check-in operator to park",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.textSecondary,
+                    )
+                }
+                "parked" -> if (canRequest) {
+                    accentAction("Guest requested") { viewModel.requestVehicle(ticket.id) {} }
+                }
+                "requested" -> if (canDispatch) {
+                    accentAction(
+                        label = if (operatorOptions.isEmpty()) "No operators available" else "Dispatch operator",
+                        enabled = operatorOptions.isNotEmpty(),
+                    ) { showDispatch = true }
+                } else {
+                    Text(
+                        "Awaiting dispatch by the Parking Admin",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.textSecondary,
+                    )
+                }
+                "in_transit" -> accentAction("Mark arrived") { viewModel.markArrived(ticket.id) {} }
                 "arrived" -> Button(
                     onClick = { showHandover = true },
+                    shape = actionShape,
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = colors.orange,
+                        contentColor = Color.White,
+                    ),
                     modifier = Modifier.fillMaxWidth(),
-                ) { Text("Complete handover") }
+                ) { Text("Complete handover", fontWeight = FontWeight.SemiBold) }
             }
         }
     }

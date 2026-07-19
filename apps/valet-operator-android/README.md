@@ -85,6 +85,7 @@ revisiting with LFS if release frequency picks up a lot.
 | Version | versionCode | Date | APK | Notes |
 |---|---|---|---|---|
 | 0.1.0 | 1 | 2026-07-19 | `releases/instapark-valet-v0.1.0-build1.apk` | First signed release. Phases 0–5 complete: full ticket lifecycle, photo capture, notifications, release signing. |
+| 0.2.0 | 2 | 2026-07-20 | `releases/instapark-valet-v0.2.0-build2.apk` | 19th-July revamp: brand theme (dark+light, in-app toggle), real app icon, splash, Home/Queue/Vehicles redesign, operator IN/BREAK/OUT self-status, role-gated queue actions. Built on-device UNVERIFIED (emulator blocked by host disk space) — smoke test on a real device. |
 
 ## Status
 
@@ -122,3 +123,14 @@ API.
 
 Phase 5 complete: release signing configured, signed APK builds and installs cleanly,
 launches and reaches the production API. See "Release build" above.
+
+19th-July revamp (v0.2.0): full visual redesign per the reference PNGs — new brand
+palette (dark-first, in-app light/dark toggle persisted via `ThemeStore`), real
+adaptive app icon + system/branded splash, Home screen rebuilt (hero art, My Status
+IN/BREAK/OUT animated toggle wired to `POST /status`, stat dashlets, queue preview,
+quick actions, capacity donut), Queue cards restyled (vehicle imagery, status
+ribbons, role-gated actions: mark-parked only for the check-in operator or admin;
+request/dispatch admin-only), Vehicles restyled (stat cards, imagery, status pills).
+**Not yet visually verified on emulator** (host disk too full to boot an AVD when
+this shipped) — the code compiles and the permission logic is server-verified, but
+the first real look happens on a physical device.

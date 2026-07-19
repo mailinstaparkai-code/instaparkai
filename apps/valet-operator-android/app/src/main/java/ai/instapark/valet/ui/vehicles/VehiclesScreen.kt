@@ -1,10 +1,16 @@
 package ai.instapark.valet.ui.vehicles
 
+import ai.instapark.valet.R
 import ai.instapark.valet.data.remote.dto.Ticket
 import ai.instapark.valet.data.remote.dto.VehiclesResponse
 import ai.instapark.valet.ui.appContainer
-import ai.instapark.valet.ui.theme.AccentGreen
-import ai.instapark.valet.ui.theme.StatusWarning
+import ai.instapark.valet.ui.components.GlassCard
+import ai.instapark.valet.ui.components.StatusPill
+import ai.instapark.valet.ui.components.statusAccent
+import ai.instapark.valet.ui.theme.ValetTheme
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -15,20 +21,31 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.AssistChip
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CurrencyRupee
+import androidx.compose.material.icons.filled.FactCheck
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -55,18 +72,31 @@ fun VehiclesScreen() {
 
 @Composable
 private fun VehiclesContent(response: VehiclesResponse, viewModel: VehiclesViewModel) {
+    val colors = ValetTheme.colors
     Column(modifier = Modifier.fillMaxSize()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text("Vehicles", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(
                 "${response.totalCount} record(s)",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = colors.textSecondary,
             )
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                StatCard(response.stats.completedCount.toString(), "Completed (last 500)", Modifier.weight(1f))
-                StatCard("₹${response.stats.totalRevenue}", "Revenue", Modifier.weight(1f))
+                StatCard(
+                    icon = Icons.Filled.FactCheck,
+                    value = response.stats.completedCount.toString(),
+                    label = "Completed (last 500)",
+                    accent = colors.purple,
+                    modifier = Modifier.weight(1f),
+                )
+                StatCard(
+                    icon = Icons.Filled.CurrencyRupee,
+                    value = "₹${response.stats.totalRevenue}",
+                    label = "Revenue",
+                    accent = colors.green,
+                    modifier = Modifier.weight(1f),
+                )
             }
             Spacer(Modifier.height(12.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -117,52 +147,118 @@ private fun VehiclesContent(response: VehiclesResponse, viewModel: VehiclesViewM
 }
 
 @Composable
-private fun StatCard(value: String, label: String, modifier: Modifier = Modifier) {
-    Card(modifier = modifier) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text(label, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+private fun StatCard(
+    icon: ImageVector,
+    value: String,
+    label: String,
+    accent: Color,
+    modifier: Modifier = Modifier,
+) {
+    val colors = ValetTheme.colors
+    GlassCard(modifier = modifier, accent = accent, cornerRadius = 18.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.linearGradient(
+                            listOf(accent.copy(alpha = 0.35f), accent.copy(alpha = 0.12f))
+                        )
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(22.dp))
+            }
+            Column(modifier = Modifier.padding(start = 12.dp)) {
+                Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(label, style = MaterialTheme.typography.labelSmall, color = colors.textSecondary)
+            }
         }
+    }
+}
+
+private fun vehicleImageRes(vehicleType: String): Int {
+    val t = vehicleType.lowercase()
+    return when {
+        "bike" in t || "motor" in t -> R.drawable.img_vehicle_bike
+        "scoot" in t -> R.drawable.img_vehicle_scooter
+        "sedan" in t || "4" in t -> R.drawable.img_vehicle_sedan
+        else -> R.drawable.img_vehicle_car
     }
 }
 
 @Composable
 private fun VehicleTicketCard(ticket: Ticket) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Column {
-                    Text(ticket.vehicleNumber, fontWeight = FontWeight.Bold)
+    val colors = ValetTheme.colors
+    val accent = statusAccent(ticket.status)
+    GlassCard(modifier = Modifier.fillMaxWidth(), accent = accent) {
+        Row {
+            Image(
+                painter = painterResource(vehicleImageRes(ticket.vehicleType)),
+                contentDescription = ticket.vehicleType,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(84.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .border(1.dp, accent.copy(alpha = 0.35f), RoundedCornerShape(14.dp)),
+            )
+            Column(modifier = Modifier.padding(start = 14.dp).weight(1f)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     Text(
-                        "${ticket.vehicleType} · ${ticket.mobileNumber}",
+                        ticket.vehicleNumber,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    StatusPill(label = statusLabel(ticket.status), accent = accent)
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        ticket.vehicleType.replaceFirstChar { it.uppercase() },
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = colors.textSecondary,
+                    )
+                    Text(" • ", color = accent)
+                    Text(
+                        ticket.mobileNumber,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.textSecondary,
                     )
                 }
-                AssistChip(onClick = {}, label = { Text(statusLabel(ticket.status)) })
-            }
-            Spacer(Modifier.height(8.dp))
-            Text(
-                "Slot: ${ticket.slotNumber ?: "—"}",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            if (ticket.fareAmount != null) {
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "₹${ticket.fareAmount} ${if (ticket.paymentCollected) "paid" else "pending"}",
-                    color = if (ticket.paymentCollected) AccentGreen else StatusWarning,
-                )
-            }
-            val inOp = ticket.checkedInOperator?.let { it.fullName ?: it.username }
-            val outOp = ticket.deliveredOperator?.let { it.fullName ?: it.username }
-            if (inOp != null || outOp != null) {
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    listOfNotNull(inOp?.let { "In: $it" }, outOp?.let { "Out: $it" }).joinToString(" · "),
+                    "Slot: ${ticket.slotNumber ?: "—"}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = colors.textSecondary,
                 )
+                if (ticket.fareAmount != null) {
+                    Text(
+                        "₹${ticket.fareAmount} ${if (ticket.paymentCollected) "paid" else "pending"}",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        color = if (ticket.paymentCollected) colors.green else colors.warning,
+                    )
+                }
+                val inOp = ticket.checkedInOperator?.let { it.fullName ?: it.username }
+                val outOp = ticket.deliveredOperator?.let { it.fullName ?: it.username }
+                if (inOp != null || outOp != null) {
+                    Row {
+                        Text(
+                            "In: ",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.textSecondary,
+                        )
+                        Text(
+                            listOfNotNull(inOp, outOp?.let { "Out: $it" }).joinToString(" · "),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.purple,
+                        )
+                    }
+                }
             }
         }
     }
