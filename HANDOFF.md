@@ -386,9 +386,26 @@ All AI features remain deferred by design (see below).
   (`gh auth login`, `vercel login`, `npx supabase login`) with the account that owns it —
   this has come up more than once in a sandboxed dev environment.
 - **Vercel auto-deploy on `git push` has intermittently gotten stuck/cancelled** in this
-  environment (unrelated to code changes). If a push doesn't go live, run
-  `vercel deploy --prod --yes` manually — that path has worked reliably every time it's
-  been needed.
+  environment (unrelated to code changes — confirmed via `vercel ls instaparkai-super-admin
+  --scope insta-park-ai`, which showed a run of `Canceled` production deploys spanning
+  ~17 hours before this was caught). If a push doesn't go live, run `vercel deploy --prod
+  --yes` manually from the **repo root** (`/Users/siddharthasaha/InstaParkAI`), not from
+  `apps/super-admin` — the project's Root Directory is configured as `apps/super-admin`
+  in Vercel's dashboard, and running the CLI from inside that directory double-applies
+  it, silently deploying to (or auto-creating) a *different* project instead of erroring.
+  **This exact mistake caused a real multi-hour production outage**: a stray
+  `apps/super-admin/.vercel/project.json` linked to a project literally named
+  `super-admin` (not `instaparkai-super-admin`), so every manual deploy that "succeeded"
+  was actually updating `super-admin-beta-nine.vercel.app` — a domain nothing points at —
+  while the real `instaparkai-super-admin.vercel.app` (hardcoded into the Android app's
+  release build, and what mweb/dweb/users actually hit) sat on a stale build for hours
+  with no error anywhere. Before trusting a manual deploy, verify
+  `.vercel/project.json` **at the repo root** reads `"projectName":"instaparkai-super-admin"`
+  (that's the correct link — `apps/super-admin/.vercel/project.json` is redundant/unused
+  now and should be ignored, not relied on), then run the deploy from the repo root. After
+  deploying, sanity-check with `curl -s -o /dev/null -w "%{http_code}" https://instaparkai-super-admin.vercel.app/api/parking-admin/v1/me`
+  — expect `401` (reached, auth required); a `404` HTML page means you deployed to (or are
+  checking) the wrong place.
 - Env vars live in Vercel's Production environment settings (not just `.env.local` —
   update both if they ever rotate): `NEXT_PUBLIC_SUPABASE_URL`,
   `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
