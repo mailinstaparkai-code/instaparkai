@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { MoreVertical, Pencil, Ban } from "lucide-react";
+import { MoreVertical, Pencil, Ban, Phone } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -78,10 +78,18 @@ export function TicketActionsMenu({
           <form id="edit-ticket-form" onSubmit={handleEditSubmit} className="flex flex-col gap-3">
             <input type="hidden" name="id" value={ticketId} />
             <Field label="Vehicle number">
-              <Input name="vehicle_number" required defaultValue={vehicleNumber} />
+              <div className="relative">
+                <span className="absolute top-1/2 left-1.5 -translate-y-1/2 rounded-md bg-status-disabled/20 px-1.5 py-0.5 text-[10px] font-bold text-status-disabled">
+                  IND
+                </span>
+                <Input name="vehicle_number" required defaultValue={vehicleNumber} className="pl-11" />
+              </div>
             </Field>
             <Field label="Mobile number">
-              <Input name="mobile_number" required defaultValue={mobileNumber} />
+              <div className="relative">
+                <Phone className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+                <Input name="mobile_number" required defaultValue={mobileNumber} className="pl-8" />
+              </div>
             </Field>
           </form>
           <DialogFooter>

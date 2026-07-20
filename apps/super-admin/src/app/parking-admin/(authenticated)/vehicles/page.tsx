@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getValetSession } from "@/lib/valet-auth/session";
 import { CopyLinkButton } from "../queue/copy-link-button";
@@ -7,6 +8,7 @@ import { PhotosButton } from "../queue/photos-button";
 import { TicketTimelineDialog } from "../queue/ticket-timeline-dialog";
 import { formatIST } from "@/lib/format-date";
 import { VehicleFilters } from "../../components/vehicle-filters";
+import { vehicleImageSrc } from "@/lib/vehicle-image";
 
 const STATUS_LABEL: Record<string, string> = {
   checked_in: "Checked in",
@@ -252,8 +254,19 @@ export default async function VehicleLogPage({
               return (
                 <tr key={t.id} className="border-b border-border last:border-0">
                   <td className="p-3">
-                    <TicketTimelineDialog ticketId={t.id} vehicleNumber={t.vehicle_number} />
-                    <p className="text-xs capitalize text-muted-foreground">{t.vehicle_type}</p>
+                    <div className="flex items-center gap-2">
+                      <Image
+                        src={vehicleImageSrc(t.vehicle_type)}
+                        alt=""
+                        width={32}
+                        height={32}
+                        className="shrink-0 rounded-md object-cover"
+                      />
+                      <div>
+                        <TicketTimelineDialog ticketId={t.id} vehicleNumber={t.vehicle_number} />
+                        <p className="text-xs capitalize text-muted-foreground">{t.vehicle_type}</p>
+                      </div>
+                    </div>
                   </td>
                   <td className="p-3">{t.mobile_number}</td>
                   <td className="p-3">{t.slots?.slot_number ?? "—"}</td>

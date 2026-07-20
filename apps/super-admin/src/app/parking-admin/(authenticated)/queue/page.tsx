@@ -1,9 +1,11 @@
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getValetSession } from "@/lib/valet-auth/session";
 import { computeFare } from "@/lib/tariff";
 import { getQueueData, type QueueTicket } from "@/lib/parking-admin/queue";
 import { formatISTTime } from "@/lib/format-date";
+import { vehicleImageSrc } from "@/lib/vehicle-image";
 import { Car, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -262,8 +264,19 @@ export default async function LiveQueuePage({
               return (
                 <tr key={t.id} className="border-b border-border last:border-0">
                   <td className="p-3">
-                    <TicketTimelineDialog ticketId={t.id} vehicleNumber={t.vehicle_number} />
-                    <p className="text-xs capitalize text-muted-foreground">{t.vehicle_type}</p>
+                    <div className="flex items-center gap-2">
+                      <Image
+                        src={vehicleImageSrc(t.vehicle_type)}
+                        alt=""
+                        width={32}
+                        height={32}
+                        className="shrink-0 rounded-md object-cover"
+                      />
+                      <div>
+                        <TicketTimelineDialog ticketId={t.id} vehicleNumber={t.vehicle_number} />
+                        <p className="text-xs capitalize text-muted-foreground">{t.vehicle_type}</p>
+                      </div>
+                    </div>
                   </td>
                   <td className="p-3">{t.mobile_number}</td>
                   <td className="p-3">{t.slots?.slot_number ?? "—"}</td>
@@ -321,11 +334,20 @@ export default async function LiveQueuePage({
           return (
             <div key={t.id} className="glass-card flex flex-col gap-3 p-4">
               <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <TicketTimelineDialog ticketId={t.id} vehicleNumber={t.vehicle_number} />
-                  <p className="text-xs capitalize text-muted-foreground">
-                    {t.vehicle_type} · {t.mobile_number}
-                  </p>
+                <div className="flex min-w-0 items-start gap-2">
+                  <Image
+                    src={vehicleImageSrc(t.vehicle_type)}
+                    alt=""
+                    width={36}
+                    height={36}
+                    className="shrink-0 rounded-md object-cover"
+                  />
+                  <div className="min-w-0">
+                    <TicketTimelineDialog ticketId={t.id} vehicleNumber={t.vehicle_number} />
+                    <p className="text-xs capitalize text-muted-foreground">
+                      {t.vehicle_type} · {t.mobile_number}
+                    </p>
+                  </div>
                 </div>
                 <span
                   className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLOR[t.status]}`}

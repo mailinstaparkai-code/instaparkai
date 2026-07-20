@@ -849,9 +849,10 @@ private fun EditTicketDialog(
     ) {
         OutlinedTextField(
             value = vehicle,
-            onValueChange = { vehicle = it },
+            onValueChange = { vehicle = it.uppercase() },
             label = { Text("Vehicle number") },
             singleLine = true,
+            leadingIcon = { CountryChip() },
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
         )

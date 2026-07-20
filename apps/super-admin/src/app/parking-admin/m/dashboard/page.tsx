@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getValetSession } from "@/lib/valet-auth/session";
@@ -26,18 +27,28 @@ export default async function MobileDashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <h1 className="text-xl font-semibold">
-          Good morning, {session.fullName || session.username} 👋
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {summary.siteName ?? "Your site"}
-          {summary.valetParkingEnabled && (
-            <span className="ml-2 rounded-full bg-status-success/15 px-2 py-0.5 text-xs font-medium text-status-success">
-              Valet enabled
-            </span>
-          )}
-        </p>
+      <div className="relative -mx-4 -mt-4 h-44 overflow-hidden">
+        <Image
+          src="/img/valet-hero-mobile.png"
+          alt=""
+          fill
+          className="object-cover object-right-top"
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 p-4">
+          <h1 className="text-xl font-semibold">
+            Good morning, {session.fullName || session.username} 👋
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {summary.siteName ?? "Your site"}
+            {summary.valetParkingEnabled && (
+              <span className="ml-2 rounded-full bg-status-success/15 px-2 py-0.5 text-xs font-medium text-status-success">
+                Valet enabled
+              </span>
+            )}
+          </p>
+        </div>
       </div>
 
       {session.role === "valet_operator" && (

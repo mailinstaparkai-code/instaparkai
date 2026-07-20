@@ -1,9 +1,11 @@
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getValetSession } from "@/lib/valet-auth/session";
 import { computeFare } from "@/lib/tariff";
 import { getQueueData } from "@/lib/parking-admin/queue";
 import { formatISTTime } from "@/lib/format-date";
+import { vehicleImageSrc } from "@/lib/vehicle-image";
 import { Car, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -158,11 +160,20 @@ export default async function MobileQueuePage({
           return (
             <div key={t.id} className="glass-card flex flex-col gap-3 p-4">
               <div className="flex items-start justify-between">
-                <div>
-                  <TicketTimelineDialog ticketId={t.id} vehicleNumber={t.vehicle_number} />
-                  <p className="text-xs capitalize text-muted-foreground">
-                    {t.vehicle_type} · {t.mobile_number}
-                  </p>
+                <div className="flex items-start gap-2">
+                  <Image
+                    src={vehicleImageSrc(t.vehicle_type)}
+                    alt=""
+                    width={36}
+                    height={36}
+                    className="shrink-0 rounded-md object-cover"
+                  />
+                  <div>
+                    <TicketTimelineDialog ticketId={t.id} vehicleNumber={t.vehicle_number} />
+                    <p className="text-xs capitalize text-muted-foreground">
+                      {t.vehicle_type} · {t.mobile_number}
+                    </p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-1">
                   <span
