@@ -273,6 +273,72 @@ keys) to any file, including this one — reference where to find/reset them ins
     explicit scope decision (no Service Worker/Push API/PWA manifest) — doesn't fire when
     the tab is closed or backgrounded.
 
+- **Polish batch — Phase G (visual parity, web + Android)**: a small punch-list closing
+  gaps the V1/V2 work left behind, not a numbered doc this time.
+  - **Edit-ticket dialog field parity**: the Edit dialog (web + Android) still used plain
+    text fields while Check-in had already been upgraded to the IND chip / phone-icon
+    treatment — brought Edit in line on both platforms.
+  - **Illustrated vehicle-type icons**: Live Queue and Vehicles ticket rows (desktop web,
+    mweb, Android) now show a per-vehicle-type illustration (car/bike/scooter/sedan,
+    `src/lib/vehicle-image.ts`) instead of plain text — reuses artwork the Android app
+    already had, now shared into `public/img/vehicles/`.
+  - **mweb dashboard hero image**: mweb's dashboard previously had no hero art at all;
+    added a full-width image matching Android Home's layout.
+  - **Android hero image fix**: the *original* Android home hero
+    (`img_hero_valet.png`) had a decorative bell baked directly into the photo's pixels
+    that looked like (but wasn't) the real notification bell in the top bar — swapped for
+    a clean cover photo with no baked-in UI elements. The actual functional bell was
+    never affected.
+  - **`.glass-card` shading**: added the same inner top-light shadow layer `.metric-card`
+    already had — `.glass-card` was visibly flatter than Android's `GlassCard`
+    composable, which does have that highlight.
+
+- **Real push notifications for `vehicle_dispatched`** (Phase C, Android FCM + Web
+  Push) — layered on top of the existing in-app notifications bell (still there,
+  unchanged), so an operator gets a system-tray alert the moment a car is assigned to
+  them, not just an in-app badge they have to notice.
+  - New `valet_push_tokens` table (one row per account+platform+token, upsert-by-token),
+    same deny-all-RLS / service-role-only pattern as `valet_accounts`/`valet_sessions`
+    (see `CLAUDE.md`'s Auth model section) — authorization lives in application code, not
+    Postgres.
+  - `src/lib/push/`: `fcm.ts` (FCM HTTP v1 via `google-auth-library`, service-account
+    JSON in `FIREBASE_SERVICE_ACCOUNT_JSON` env var), `web-push.ts` (VAPID via the
+    `web-push` package, keys in `VAPID_PUBLIC_KEY`/`VAPID_PRIVATE_KEY`/
+    `NEXT_PUBLIC_VAPID_PUBLIC_KEY`), `dispatch.ts` (fans out to every token for one
+    operator, **best-effort — never throws**, prunes dead tokens on a 404/410 response).
+    Wired into `dispatchToOperator` (`lib/parking-admin/queue.ts`) alongside the
+    existing `notify()` in-app call — targets only the operator just assigned the
+    pickup, not site-wide like the bell. Verified end-to-end: dispatching a real ticket
+    to an operator with **zero** registered tokens still completes normally (HTTP 200,
+    ticket flips to `in_transit`, no error in server logs) — the push layer can never
+    block the actual dispatch.
+  - Two registration paths feeding the same table: `POST /api/parking-admin/v1/
+    device-tokens` (bearer auth, Android) and a `push-actions.ts` Server Action (cookie
+    auth, mweb), both through a shared `registerPushToken()` upsert helper
+    (`src/lib/push/register-token.ts`).
+  - **mweb**: now an installable PWA scoped to the `/parking-admin/m/*` tree only
+    (`public/manifest.json` + `public/sw.js`, linked via that segment's `metadata.manifest`
+    — desktop pages are unaffected, confirmed no `<link rel="manifest">` leaks onto
+    `/parking-admin/dashboard`). An explicit **"Enable notifications"** banner
+    (`m/push-subscribe.tsx`) only appears when `Notification.permission === "default"` —
+    deliberately no unprompted browser permission popup on page load.
+  - **Android**: `InstaParkFirebaseMessagingService` posts a system-tray notification +
+    haptic on receipt; `POST_NOTIFICATIONS` runtime permission requested once at app
+    start (API 33+ only, no-ops below that); FCM token registered right after a
+    successful login (`LoginViewModel`). Shipped as **v0.4.0** (see the Android README's
+    release table).
+  - **Real gotcha hit while wiring this up**: `firebase-messaging-ktx` **doesn't exist
+    for BOM 34.x** — Firebase stopped shipping `-ktx` artifacts and removed them from the
+    BOM's constraint list in July 2025 (the KTX APIs live in the main `firebase-messaging`
+    artifact now, no separate dependency needed). Using `libs.firebase.messaging` (not
+    `.messaging.ktx`) in `gradle/libs.versions.toml` avoided an unresolvable-dependency
+    Gradle failure.
+  - **Not yet verified**: actual push *delivery* to a real device/browser (only the
+    server-side send path and its non-blocking guarantee were exercised in this sandboxed
+    environment — no real FCM device token or a browser with notification permission
+    granted was available to test against). Worth a real-device/real-browser check before
+    relying on this in production.
+
 - **Native Android app** (`apps/valet-operator-android`) — Kotlin + Jetpack Compose,
   built in 6 phases against a brand-new bearer-token JSON API layer under
   `apps/super-admin/src/app/api/parking-admin/v1/*`, functionally mirroring
@@ -372,6 +438,11 @@ All AI features remain deferred by design (see below).
   auto-allocation and nobody remembers to set daily status each morning. Worth watching
   for real-world reports of "auto-allocate isn't picking anyone" before assuming it's a
   bug — check `operator_daily_status` for that date first.
+- **Push notification delivery is unverified for real**: the Phase C work above confirmed
+  the send path never blocks a dispatch and correctly no-ops for operators with zero
+  tokens, but no real Android device or browser-with-permission-granted was available in
+  this sandboxed environment, so an actual notification landing on a real phone/browser
+  has not been observed firsthand — worth a quick real-device/real-browser check.
 - Two Vercel deploys in this batch hit a stale `.next/dev` cache after a local
   `rm -rf .next && npm run build` collided with the still-running dev preview server
   (`ENOENT ... pages-manifest.json` / `Cannot find module '.../[turbopack]_runtime.js'`)
@@ -408,7 +479,15 @@ All AI features remain deferred by design (see below).
   checking) the wrong place.
 - Env vars live in Vercel's Production environment settings (not just `.env.local` —
   update both if they ever rotate): `NEXT_PUBLIC_SUPABASE_URL`,
-  `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, plus three added for
+  push notifications (Phase C above): `FIREBASE_SERVICE_ACCOUNT_JSON` (the Firebase
+  project's service-account key, full JSON as a single-line string — used server-side
+  only, for FCM HTTP v1 auth), `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` (Web Push,
+  generated via the `web-push` package's `generateVAPIDKeys()`), and
+  `NEXT_PUBLIC_VAPID_PUBLIC_KEY` (same public key, client-exposed so mweb's subscribe
+  flow can read it). The Android app's own Firebase config (`google-services.json`) is
+  gitignored — it lives only on the machine that built the release APK; ask the project
+  owner if a fresh environment needs to rebuild the Android app from scratch.
 
 ## Test accounts
 
@@ -431,19 +510,22 @@ All AI features remain deferred by design (see below).
 
 Roughly in order (matches the phased plan this project has been following):
 
-1. **Physical-device smoke test of the Android release APK** — Phase 5 verified the
-   signed build installs, launches, and reaches the production API on the emulator, but
-   photo capture specifically should get a clean check on a real device: the emulator's
-   own camera capture pipeline hung mid-JPEG-conversion during Phase 3 testing (a known
-   AVD/virtual-scene-camera flakiness, confirmed via logcat to be unrelated to the app's
-   permission/FileProvider/intent wiring, all of which fired correctly) — worth
-   confirming it's smooth end-to-end where it matters.
-2. Collect a guest email at check-in (+ `valet_tickets.guest_email` column) so the
+1. **Physical-device smoke test of the Android release APK (v0.4.0)** — install it on a
+   real staff phone and confirm two things that couldn't be verified in this sandboxed
+   environment: photo capture (the emulator's own camera pipeline is known-flaky, see
+   Known gaps in earlier phases — unrelated to app code) and, new in this batch, that a
+   `vehicle_dispatched` push notification actually lands in the system tray with the
+   expected vibration.
+2. **Real-browser check of mweb Web Push** — grant notification permission in an actual
+   mobile browser (not this sandboxed one, which reports `Notification.permission:
+   "denied"` globally and can't exercise the "Enable notifications" banner) and confirm a
+   dispatch triggers a real browser notification end to end.
+3. Collect a guest email at check-in (+ `valet_tickets.guest_email` column) so the
    already-built Email channel in Communication triggers can actually fire.
-3. Delivered/read message tracking via Twilio status-callback + SendGrid event webhooks.
-4. AI enhancements — only after the above is live and there's real usage data to build
+4. Delivered/read message tracking via Twilio status-callback + SendGrid event webhooks.
+5. AI enhancements — only after the above is live and there's real usage data to build
    against.
-5. If Android distribution ever needs to grow beyond handing staff a signed APK
+6. If Android distribution ever needs to grow beyond handing staff a signed APK
    directly (auto-update, wider rollout), revisit Play Console's internal testing track
    — that needs a Google Play Developer account (real Google account, $25 one-time fee,
    identity verification) that doesn't exist yet for this project.

@@ -19,7 +19,13 @@ InstaPark AI is an enterprise parking management platform, built in phases:
 ```
 InstaParkAI/
   apps/
-    super-admin/        Next.js app — Super Admin portal + Parking Admin dashboard
+    super-admin/           Next.js app — Super Admin portal + Parking Admin dashboard
+                            + the JSON API the Android app consumes (`src/app/api/
+                            parking-admin/v1/*`)
+    valet-operator-android/ Kotlin + Jetpack Compose native app (parking_admin /
+                            valet_operator roles). `releases/*.apk` holds signed builds,
+                            checked into git by deliberate carve-out — see that app's
+                            README.md before touching `.gitignore` there.
   supabase/
     migrations/          SQL migrations, applied via `supabase db push` (see below)
   design.md               Design system: colors, type, spacing, components, motion
@@ -27,9 +33,8 @@ InstaParkAI/
   HANDOFF.md               Project status, access notes, what's next
 ```
 
-Only one app exists so far. Future valet surfaces per the plan: a native Android app
-(likely `apps/valet-operator-android`) and possibly a separate web app for
-dweb/mweb — check `HANDOFF.md` for the current decision before assuming either exists.
+No separate dweb/mweb web app — mweb is served from the same Next.js app under
+`/parking-admin/m/*` (own route tree, own `MobileAppShell`), not a second deployment.
 
 ## Stack
 
@@ -137,9 +142,42 @@ This is the single most important thing to understand before touching auth code.
   ```bash
   vercel deploy --prod --yes
   ```
-- Env vars (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
-  `SUPABASE_SERVICE_ROLE_KEY`) are already set in the Vercel project's Production
-  environment — update there (not just `.env.local`) if they ever rotate.
+  **Always run this from the repo root** (`/Users/siddharthasaha/InstaParkAI`), never
+  from `apps/super-admin`. The Vercel project's Root Directory is configured as
+  `apps/super-admin`; running the CLI from inside that directory double-applies it and
+  can silently deploy to (or auto-create) a *different* Vercel project instead of
+  erroring. **This caused a real multi-hour production outage once** — see `HANDOFF.md`'s
+  Accounts & access section for the full story and the `curl` sanity check to run after
+  every manual deploy.
+- Env vars (already set in the Vercel project's Production environment — update there,
+  not just `.env.local`, if they ever rotate): `NEXT_PUBLIC_SUPABASE_URL`,
+  `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, plus
+  `FIREBASE_SERVICE_ACCOUNT_JSON` / `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` /
+  `NEXT_PUBLIC_VAPID_PUBLIC_KEY` for push notifications (see `HANDOFF.md`'s Phase C
+  section).
+
+## Native Android app (`apps/valet-operator-android`)
+
+- Shares zero business logic with the web app by forking — it's a separate Kotlin
+  codebase that consumes the same JSON API (`apps/super-admin/src/app/api/
+  parking-admin/v1/*`), which itself is backed by the same `lib/parking-admin/*`
+  functions the web Server Actions call. Fix a bug in the underlying `lib/` function once
+  and both web and Android pick it up; a bug in Android's own Kotlin (rendering,
+  validation, etc.) needs a matching fix there specifically.
+- New tables for `parking_admin`/`valet_operator`-owned data (e.g. `valet_push_tokens`)
+  should follow the same deny-all-RLS / service-role-only pattern as
+  `valet_accounts`/`valet_sessions` (see Auth model above) — not the `super_admin`
+  RLS-policy pattern.
+- **Firebase BOM 34.x gotcha**: `firebase-messaging-ktx` (and other `-ktx` Firebase
+  artifacts) no longer exist as of BOM 34.0.0 — Firebase folded the Kotlin extension
+  APIs into the main artifacts and dropped the separate `-ktx` modules from the BOM's
+  constraint list in July 2025. Depend on `com.google.firebase:firebase-messaging`
+  directly (no `-ktx` suffix); the KTX-style APIs still work, just from that artifact.
+- `google-services.json` (the Firebase project config) is gitignored — machine-local,
+  not committed. A fresh clone can't build the Firebase-dependent parts (push
+  notifications) without the project owner supplying a fresh copy.
+- See that app's own `README.md` for build/signing/release-versioning instructions —
+  don't duplicate them here.
 
 ## Where to look next
 
