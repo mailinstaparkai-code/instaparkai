@@ -1,5 +1,6 @@
 package ai.instapark.valet.ui.components
 
+import ai.instapark.valet.ui.theme.ValetTheme
 import ai.instapark.valet.util.ImageCompressor
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -7,13 +8,15 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -25,8 +28,15 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -40,6 +50,9 @@ import java.io.File
  * apps/super-admin/.../components/photo-input.tsx (capture="environment" + compressImageFile).
  * Launches the device's stock camera app rather than embedding a CameraX preview --
  * simpler and more reliable across the emulator/device fleet for a first cut.
+ *
+ * Rendered as a square, dashed-border tile per `Check in popup.png` -- a captured
+ * photo swaps the camera icon for a check and the border/label to the success color.
  */
 @Composable
 fun PhotoCaptureField(
@@ -49,9 +62,11 @@ fun PhotoCaptureField(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val colors = ValetTheme.colors
     val scope = rememberCoroutineScope()
     var pendingUri by remember { mutableStateOf<Uri?>(null) }
     var compressing by remember { mutableStateOf(false) }
+    val captured = file != null
 
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
         val uri = pendingUri
@@ -72,11 +87,14 @@ fun PhotoCaptureField(
         if (granted) launchCamera(context) { uri -> pendingUri = uri; cameraLauncher.launch(uri) }
     }
 
-    Row(
+    val tint = if (captured) colors.green else colors.textSecondary
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .height(40.dp)
-            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(8.dp))
+            .aspectRatio(1f)
+            .clip(RoundedCornerShape(14.dp))
+            .dashedBorder(if (captured) colors.green else colors.cardBorder)
+            .background(colors.backgroundDeep)
             .clickable {
                 val hasPermission = ContextCompat.checkSelfPermission(
                     context,
@@ -88,29 +106,40 @@ fun PhotoCaptureField(
                     permissionLauncher.launch(android.Manifest.permission.CAMERA)
                 }
             }
-            .padding(horizontal = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .padding(8.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(
-            Icons.Default.CameraAlt,
+            if (captured) Icons.Filled.Check else Icons.Filled.CameraAlt,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.height(18.dp),
+            tint = tint,
+            modifier = Modifier.padding(bottom = 6.dp),
         )
         Text(
-            text = when {
-                compressing -> "Compressing…"
-                file != null -> "$label captured"
-                else -> label
-            },
-            modifier = Modifier.padding(start = 8.dp),
-            style = MaterialTheme.typography.bodySmall,
-            color = if (file != null) StatusSuccessColor else MaterialTheme.colorScheme.onSurfaceVariant,
+            text = if (compressing) "…" else label,
+            style = MaterialTheme.typography.labelSmall,
+            color = tint,
+            textAlign = TextAlign.Center,
         )
     }
 }
 
-private val StatusSuccessColor = Color(0xFF22C55E)
+/** A dashed rounded-rect outline -- shadcn/Compose have no built-in for this. */
+private fun Modifier.dashedBorder(color: Color, cornerRadius: Dp = 14.dp): Modifier =
+    this.then(
+        Modifier.drawWithContent {
+            drawContent()
+            drawRoundRect(
+                color = color,
+                cornerRadius = CornerRadius(cornerRadius.toPx(), cornerRadius.toPx()),
+                style = Stroke(
+                    width = 1.5.dp.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f), 0f),
+                ),
+            )
+        }
+    )
 
 private fun launchCamera(context: android.content.Context, onReady: (Uri) -> Unit) {
     val dir = File(context.cacheDir, "captured_photos").apply { mkdirs() }

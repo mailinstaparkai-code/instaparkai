@@ -43,6 +43,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,6 +59,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.Canvas
+import androidx.compose.ui.platform.LocalContext
+import ai.instapark.valet.util.Haptics
 import androidx.lifecycle.viewmodel.compose.viewModel
 import java.util.Calendar
 
@@ -265,7 +268,13 @@ private fun DashboardContent(
 @Composable
 private fun MyStatusCard(viewModel: DashboardViewModel) {
     val colors = ValetTheme.colors
+    val context = LocalContext.current
     val onLeave = viewModel.myStatus == "leave"
+
+    LaunchedEffect(viewModel.statusHapticSignal) {
+        if (viewModel.statusHapticSignal > 0) Haptics.tick(context)
+    }
+
     GlassCard(modifier = Modifier.fillMaxWidth()) {
         Column {
             Row(

@@ -2,15 +2,20 @@ package ai.instapark.valet.ui.components
 
 import ai.instapark.valet.ui.theme.ValetTheme
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,8 +23,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,9 +42,9 @@ data class SegmentOption(
 )
 
 /**
- * The My Status IN | BREAK | OUT control from the Operator Home reference: each
- * segment is an icon + label; the selected one gets a green-bordered rounded pill
- * with a radial success glow, animated over 300ms (the spec's "soft pulse" select).
+ * The My Status IN | BREAK | OUT control from the Operator Home reference: a
+ * green-glow pill slides and spring-bounces to the selected segment (rather than
+ * just fading a border), so the toggle reads as physically tactile.
  */
 @Composable
 fun AnimatedSegmented(
@@ -50,65 +55,75 @@ fun AnimatedSegmented(
     modifier: Modifier = Modifier,
 ) {
     val colors = ValetTheme.colors
-    Row(modifier = modifier.fillMaxWidth()) {
-        options.forEach { option ->
-            val active = selected == option.value
-            val glowAlpha by animateFloatAsState(
-                targetValue = if (active) 0.30f else 0f,
-                animationSpec = tween(300),
-                label = "glow",
-            )
-            val borderColor by animateColorAsState(
-                targetValue = if (active) colors.successGlow else Color.Transparent,
-                animationSpec = tween(300),
-                label = "border",
-            )
-            val contentColor by animateColorAsState(
-                targetValue = if (active) MaterialTheme.colorScheme.onBackground else colors.textSecondary,
-                animationSpec = tween(300),
-                label = "content",
-            )
-            val shape = RoundedCornerShape(14.dp)
-            Column(
+    val selectedIndex = options.indexOfFirst { it.value == selected }.coerceAtLeast(0)
+    val hasSelection = selected != null
+
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        val segmentWidth = maxWidth / options.size
+        val indicatorOffset by animateDpAsState(
+            targetValue = segmentWidth * selectedIndex,
+            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
+            label = "indicatorOffset",
+        )
+        val indicatorScale by animateFloatAsState(
+            targetValue = if (hasSelection) 1f else 0f,
+            animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+            label = "indicatorScale",
+        )
+
+        // Sliding glow pill, behind the row of icon/label content.
+        if (hasSelection) {
+            Box(
                 modifier = Modifier
-                    .weight(1f)
+                    .offset(x = indicatorOffset)
                     .padding(horizontal = 4.dp)
-                    .clip(shape)
-                    .border(1.dp, borderColor, shape)
+                    .size(width = segmentWidth - 8.dp, height = 56.dp * indicatorScale.coerceIn(0f, 1f))
+                    .clip(RoundedCornerShape(14.dp))
+                    .border(1.dp, colors.successGlow, RoundedCornerShape(14.dp))
                     .drawBehind {
-                        if (glowAlpha > 0f) {
-                            drawRect(
-                                brush = Brush.radialGradient(
-                                    colors = listOf(
-                                        colors.successGlow.copy(alpha = glowAlpha),
-                                        Color.Transparent,
-                                    ),
-                                    radius = size.maxDimension * 0.8f,
-                                )
+                        drawRect(
+                            brush = Brush.radialGradient(
+                                colors = listOf(colors.successGlow.copy(alpha = 0.30f), Color.Transparent),
+                                radius = size.maxDimension * 0.8f,
                             )
-                        }
+                        )
                     }
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        enabled = enabled && !active,
-                    ) { onSelect(option.value) }
-                    .padding(vertical = 12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Icon(
-                    option.icon,
-                    contentDescription = null,
-                    tint = if (active) colors.successGlow else contentColor,
-                    modifier = Modifier.size(22.dp),
+            )
+        }
+
+        Row(modifier = Modifier.fillMaxWidth()) {
+            options.forEach { option ->
+                val active = selected == option.value
+                val contentColor by animateColorAsState(
+                    targetValue = if (active) colors.successGlow else colors.textSecondary,
+                    animationSpec = tween(200),
+                    label = "content",
                 )
-                Text(
-                    option.label,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
-                    color = contentColor,
-                    modifier = Modifier.padding(top = 4.dp),
-                )
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            enabled = enabled && !active,
+                        ) { onSelect(option.value) }
+                        .padding(vertical = 12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Icon(
+                        option.icon,
+                        contentDescription = null,
+                        tint = contentColor,
+                        modifier = Modifier.size(22.dp),
+                    )
+                    Text(
+                        option.label,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
+                        color = contentColor,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
             }
         }
     }

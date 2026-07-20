@@ -2,10 +2,7 @@ package ai.instapark.valet.ui.notifications
 
 import ai.instapark.valet.data.remote.dto.NotificationItem
 import ai.instapark.valet.ui.appContainer
-import android.content.Context
-import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
+import ai.instapark.valet.util.Haptics
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -58,7 +55,7 @@ fun NotificationsBell() {
 
     LaunchedEffect(Unit) { viewModel.startPolling() }
     LaunchedEffect(viewModel.vibrateSignal) {
-        if (viewModel.vibrateSignal > 0) vibrate(context)
+        if (viewModel.vibrateSignal > 0) Haptics.notify(context)
     }
 
     Box {
@@ -118,10 +115,3 @@ private fun formatTime(iso: String): String = try {
     iso
 }
 
-private fun vibrate(context: Context) {
-    @Suppress("DEPRECATION")
-    val vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator ?: return
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        vibrator.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE))
-    }
-}

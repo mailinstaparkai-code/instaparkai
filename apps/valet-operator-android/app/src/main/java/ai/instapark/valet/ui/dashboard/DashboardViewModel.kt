@@ -38,6 +38,10 @@ class DashboardViewModel(
         private set
     var statusError by mutableStateOf<String?>(null)
         private set
+    // One-shot signal the Composable observes to fire a haptic tick -- only on a
+    // successful change, not on tap, so a rejected/leave-blocked attempt stays silent.
+    var statusHapticSignal by mutableStateOf(0)
+        private set
 
     init {
         viewModelScope.launch {
@@ -65,7 +69,10 @@ class DashboardViewModel(
             statusPending = true
             statusError = null
             repository.setMyStatus(status)
-                .onSuccess { myStatus = it.status }
+                .onSuccess {
+                    myStatus = it.status
+                    statusHapticSignal += 1
+                }
                 .onFailure { statusError = (it as? ApiException)?.message ?: "Couldn't update status." }
             statusPending = false
         }

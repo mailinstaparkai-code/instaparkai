@@ -8,9 +8,13 @@ import ai.instapark.valet.data.remote.dto.SlotOption
 import ai.instapark.valet.data.remote.dto.TicketPhoto
 import ai.instapark.valet.data.repository.CheckInPhotos
 import ai.instapark.valet.ui.appContainer
+import ai.instapark.valet.ui.components.DialogPrimaryButton
+import ai.instapark.valet.ui.components.DialogSecondaryButton
 import ai.instapark.valet.ui.components.GlassCard
 import ai.instapark.valet.ui.components.PhotoCaptureField
+import ai.instapark.valet.ui.components.PremiumDialog
 import ai.instapark.valet.ui.components.StatusPill
+import ai.instapark.valet.ui.components.VehicleTypeSelector
 import ai.instapark.valet.ui.components.statusAccent
 import ai.instapark.valet.ui.theme.ValetTheme
 import coil.compose.AsyncImage
@@ -47,8 +51,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.LocalParking
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.VpnKey
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -190,6 +202,7 @@ private fun QueueContent(response: QueueResponse, viewModel: QueueViewModel) {
                     canMarkParked = isAdmin || ticket.checkedInBy == response.myAccountId,
                     canRequest = response.canRequest,
                     canDispatch = response.canDispatch,
+                    modifier = Modifier.animateItem(),
                 )
             }
             if (response.tickets.isEmpty()) {
@@ -285,6 +298,7 @@ private fun TicketCard(
     canMarkParked: Boolean,
     canRequest: Boolean,
     canDispatch: Boolean,
+    modifier: Modifier = Modifier,
 ) {
     var showMarkParked by remember { mutableStateOf(false) }
     var showDispatch by remember { mutableStateOf(false) }
@@ -297,7 +311,7 @@ private fun TicketCard(
     val colors = ValetTheme.colors
     val accent = statusAccent(ticket.status)
 
-    GlassCard(modifier = Modifier.fillMaxWidth(), accent = accent) {
+    GlassCard(modifier = modifier.fillMaxWidth(), accent = accent) {
         Column {
             // Top row: status ribbon + time-ago + kebab
             Row(
@@ -506,48 +520,44 @@ private fun TicketCard(
 private fun PhotosDialog(ticketId: String, viewModel: QueueViewModel, onDismiss: () -> Unit) {
     var photos by remember { mutableStateOf<List<TicketPhoto>?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
+    val colors = ValetTheme.colors
 
     LaunchedEffect(ticketId) {
         viewModel.loadPhotos(ticketId) { result, err -> photos = result; error = err }
     }
 
-    AlertDialog(
+    PremiumDialog(
+        icon = Icons.Filled.PhotoLibrary,
+        title = "Ticket photos",
+        subtitle = "Check-in and handover photos for this vehicle",
+        accent = colors.blue,
         onDismissRequest = onDismiss,
-        title = { Text("Ticket photos") },
-        text = {
-            when {
-                error != null -> Text(error!!, color = MaterialTheme.colorScheme.error)
-                photos == null -> Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-                photos!!.isEmpty() -> Text(
-                    "No photos yet.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                else -> Column(
-                    modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())
-                ) {
-                    photos!!.forEach { photo ->
-                        Text(
-                            "${photo.stage} · ${photo.label}",
-                            style = MaterialTheme.typography.labelMedium,
-                            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
-                        )
-                        AsyncImage(
-                            model = photo.url,
-                            contentDescription = "${photo.stage} ${photo.label}",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .aspectRatio(4f / 3f)
-                                .clip(RoundedCornerShape(8.dp)),
-                        )
-                    }
-                }
+        footer = { DialogPrimaryButton("Close", onClick = onDismiss, modifier = Modifier.weight(1f)) },
+    ) {
+        when {
+            error != null -> Text(error!!, color = MaterialTheme.colorScheme.error)
+            photos == null -> Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
             }
-        },
-        confirmButton = { Button(onClick = onDismiss) { Text("Close") } },
-    )
+            photos!!.isEmpty() -> Text("No photos yet.", color = colors.textSecondary)
+            else -> photos!!.forEach { photo ->
+                Text(
+                    "${photo.stage} · ${photo.label}",
+                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+                )
+                AsyncImage(
+                    model = photo.url,
+                    contentDescription = "${photo.stage} ${photo.label}",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(4f / 3f)
+                        .clip(RoundedCornerShape(12.dp)),
+                )
+            }
+        }
+    }
 }
 
 @Composable
@@ -566,63 +576,93 @@ private fun CheckInDialog(
     var leftPhoto by remember { mutableStateOf<java.io.File?>(null) }
     var rightPhoto by remember { mutableStateOf<java.io.File?>(null) }
     var odometerPhoto by remember { mutableStateOf<java.io.File?>(null) }
+    val colors = ValetTheme.colors
 
-    AlertDialog(
+    PremiumDialog(
+        icon = Icons.Filled.DirectionsCar,
+        title = "Check-in Vehicle",
+        subtitle = "Enter vehicle details to check-in",
         onDismissRequest = onDismiss,
-        title = { Text("Check-in vehicle") },
-        text = {
-            Column(
-                modifier = Modifier
-                    .heightIn(max = 420.dp)
-                    .verticalScroll(rememberScrollState())
-            ) {
-                OutlinedTextField(
-                    value = vehicleNumber,
-                    onValueChange = { vehicleNumber = it },
-                    label = { Text("Vehicle number") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(8.dp))
-                SelectField(
-                    label = "Vehicle type",
-                    valueLabel = vehicleTypeOptions.firstOrNull { it.value == vehicleType }?.label ?: vehicleType,
-                    options = vehicleTypeOptions.map { it.value to it.label },
-                    onSelect = { vehicleType = it },
-                )
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = mobileNumber,
-                    onValueChange = { mobileNumber = it },
-                    label = { Text("Mobile number") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(12.dp))
-                Text("Check-in photos (optional)", style = MaterialTheme.typography.labelMedium)
-                Spacer(Modifier.height(4.dp))
-                PhotoCaptureField("Front", frontPhoto, { frontPhoto = it }, Modifier.padding(vertical = 2.dp))
-                PhotoCaptureField("Back", backPhoto, { backPhoto = it }, Modifier.padding(vertical = 2.dp))
-                PhotoCaptureField("Left", leftPhoto, { leftPhoto = it }, Modifier.padding(vertical = 2.dp))
-                PhotoCaptureField("Right", rightPhoto, { rightPhoto = it }, Modifier.padding(vertical = 2.dp))
-                PhotoCaptureField("Odometer", odometerPhoto, { odometerPhoto = it }, Modifier.padding(vertical = 2.dp))
-                error?.let {
-                    Spacer(Modifier.height(8.dp))
-                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                }
-            }
-        },
-        confirmButton = {
-            Button(
+        footer = {
+            DialogSecondaryButton("Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
+            DialogPrimaryButton(
+                text = if (pending) "Checking in…" else "Check in",
+                icon = Icons.Filled.CheckCircle,
+                enabled = !pending && vehicleNumber.isNotBlank() && mobileNumber.isNotBlank(),
                 onClick = {
                     val photos = CheckInPhotos(frontPhoto, backPhoto, leftPhoto, rightPhoto, odometerPhoto)
                     onSubmit(vehicleNumber, vehicleType, mobileNumber, photos) { message -> error = message }
                 },
-                enabled = !pending && vehicleNumber.isNotBlank() && mobileNumber.isNotBlank(),
-            ) { Text(if (pending) "Checking in…" else "Check in") }
+                modifier = Modifier.weight(1.4f),
+            )
         },
-        dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancel") } },
-    )
+    ) {
+        Text("Vehicle number", style = MaterialTheme.typography.labelMedium, color = colors.textSecondary)
+        Spacer(Modifier.height(4.dp))
+        OutlinedTextField(
+            value = vehicleNumber,
+            onValueChange = { vehicleNumber = it.uppercase() },
+            placeholder = { Text("KA01AB1234") },
+            singleLine = true,
+            leadingIcon = { CountryChip() },
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(14.dp))
+        Text("Vehicle type", style = MaterialTheme.typography.labelMedium, color = colors.textSecondary)
+        Spacer(Modifier.height(6.dp))
+        VehicleTypeSelector(
+            options = vehicleTypeOptions,
+            selected = vehicleType,
+            onSelect = { vehicleType = it },
+        )
+        Spacer(Modifier.height(14.dp))
+        Text("Mobile number", style = MaterialTheme.typography.labelMedium, color = colors.textSecondary)
+        Spacer(Modifier.height(4.dp))
+        OutlinedTextField(
+            value = mobileNumber,
+            onValueChange = { mobileNumber = it },
+            placeholder = { Text("Enter mobile number") },
+            singleLine = true,
+            leadingIcon = { Icon(Icons.Filled.Phone, contentDescription = null, tint = colors.textSecondary) },
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(14.dp))
+        Text("Check-in photos (optional)", style = MaterialTheme.typography.labelMedium, color = colors.textSecondary)
+        Text(
+            "Add clear photos of the vehicle",
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.textSecondary,
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            PhotoCaptureField("Front", frontPhoto, { frontPhoto = it }, Modifier.weight(1f))
+            PhotoCaptureField("Back", backPhoto, { backPhoto = it }, Modifier.weight(1f))
+            PhotoCaptureField("Left", leftPhoto, { leftPhoto = it }, Modifier.weight(1f))
+            PhotoCaptureField("Right", rightPhoto, { rightPhoto = it }, Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(8.dp))
+        PhotoCaptureField("Odometer", odometerPhoto, { odometerPhoto = it }, Modifier.fillMaxWidth(0.25f))
+        error?.let {
+            Spacer(Modifier.height(10.dp))
+            Text(it, color = colors.danger, style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+
+/** Static "IND" flag chip on the vehicle-number field, matching the reference. */
+@Composable
+private fun CountryChip() {
+    val colors = ValetTheme.colors
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(colors.purple.copy(alpha = 0.30f))
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+    ) {
+        Text("IND", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+    }
 }
 
 @Composable
@@ -635,32 +675,36 @@ private fun MarkParkedDialog(
     var selected by remember { mutableStateOf(slots.firstOrNull()?.id ?: "") }
     var error by remember { mutableStateOf<String?>(null) }
     val selectedLabel = slots.firstOrNull { it.id == selected }?.label ?: ""
+    val colors = ValetTheme.colors
 
-    AlertDialog(
+    PremiumDialog(
+        icon = Icons.Filled.LocalParking,
+        title = "Mark as Parked",
+        subtitle = "Choose the slot this vehicle is parked in",
+        accent = colors.blue,
         onDismissRequest = onDismiss,
-        title = { Text("Mark as parked") },
-        text = {
-            Column {
-                SelectField(
-                    label = "Slot",
-                    valueLabel = selectedLabel,
-                    options = slots.map { it.id to it.label },
-                    onSelect = { selected = it },
-                )
-                error?.let {
-                    Spacer(Modifier.height(8.dp))
-                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { onConfirm(selected) { message -> error = message } },
+        footer = {
+            DialogSecondaryButton("Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
+            DialogPrimaryButton(
+                text = if (pending) "Saving…" else "Confirm parked",
+                icon = Icons.Filled.CheckCircle,
                 enabled = !pending && selected.isNotBlank(),
-            ) { Text(if (pending) "Saving…" else "Confirm parked") }
+                onClick = { onConfirm(selected) { message -> error = message } },
+                modifier = Modifier.weight(1.4f),
+            )
         },
-        dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancel") } },
-    )
+    ) {
+        SelectField(
+            label = "Slot",
+            valueLabel = selectedLabel,
+            options = slots.map { it.id to it.label },
+            onSelect = { selected = it },
+        )
+        error?.let {
+            Spacer(Modifier.height(10.dp))
+            Text(it, color = colors.danger, style = MaterialTheme.typography.bodySmall)
+        }
+    }
 }
 
 @Composable
@@ -673,32 +717,36 @@ private fun DispatchDialog(
     var selected by remember { mutableStateOf(operators.firstOrNull()?.id ?: "") }
     var error by remember { mutableStateOf<String?>(null) }
     val selectedLabel = operators.firstOrNull { it.id == selected }?.label ?: ""
+    val colors = ValetTheme.colors
 
-    AlertDialog(
+    PremiumDialog(
+        icon = Icons.Filled.Group,
+        title = "Dispatch Operator",
+        subtitle = "Send this vehicle's pickup to an available operator",
+        accent = colors.orange,
         onDismissRequest = onDismiss,
-        title = { Text("Dispatch operator") },
-        text = {
-            Column {
-                SelectField(
-                    label = "Available operators",
-                    valueLabel = selectedLabel,
-                    options = operators.map { it.id to it.label },
-                    onSelect = { selected = it },
-                )
-                error?.let {
-                    Spacer(Modifier.height(8.dp))
-                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { onConfirm(selected) { message -> error = message } },
+        footer = {
+            DialogSecondaryButton("Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
+            DialogPrimaryButton(
+                text = if (pending) "Dispatching…" else "Dispatch",
+                icon = Icons.Filled.Group,
                 enabled = !pending && selected.isNotBlank(),
-            ) { Text(if (pending) "Dispatching…" else "Dispatch") }
+                onClick = { onConfirm(selected) { message -> error = message } },
+                modifier = Modifier.weight(1.4f),
+            )
         },
-        dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancel") } },
-    )
+    ) {
+        SelectField(
+            label = "Available operators",
+            valueLabel = selectedLabel,
+            options = operators.map { it.id to it.label },
+            onSelect = { selected = it },
+        )
+        error?.let {
+            Spacer(Modifier.height(10.dp))
+            Text(it, color = colors.danger, style = MaterialTheme.typography.bodySmall)
+        }
+    }
 }
 
 @Composable
@@ -712,59 +760,63 @@ private fun HandoverDialog(
     var paid by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
     var handoverPhoto by remember { mutableStateOf<java.io.File?>(null) }
+    val colors = ValetTheme.colors
 
-    AlertDialog(
+    PremiumDialog(
+        icon = Icons.Filled.VpnKey,
+        title = "Complete Handover",
+        subtitle = "Confirm OTP and collect payment to release the vehicle",
+        accent = colors.green,
         onDismissRequest = onDismiss,
-        title = { Text("Complete handover") },
-        text = {
-            Column(
-                modifier = Modifier
-                    .heightIn(max = 420.dp)
-                    .verticalScroll(rememberScrollState())
-            ) {
-                Text(
-                    "Ask the guest for the OTP sent to their phone and enter it below to confirm the handover.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = otp,
-                    onValueChange = { otp = it },
-                    label = { Text("Enter OTP to confirm") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = fare,
-                    onValueChange = { fare = it },
-                    label = { Text("Fare amount (₹)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Switch(checked = paid, onCheckedChange = { paid = it })
-                    Spacer(Modifier.width(8.dp))
-                    Text("Payment collected", style = MaterialTheme.typography.bodySmall)
-                }
-                Spacer(Modifier.height(8.dp))
-                PhotoCaptureField("Handover photo (optional)", handoverPhoto, { handoverPhoto = it })
-                error?.let {
-                    Spacer(Modifier.height(8.dp))
-                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { onConfirm(otp, fare.ifBlank { null }, paid, handoverPhoto) { message -> error = message } },
+        footer = {
+            DialogSecondaryButton("Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
+            DialogPrimaryButton(
+                text = if (pending) "Completing…" else "Complete handover",
+                icon = Icons.Filled.CheckCircle,
                 enabled = !pending && otp.isNotBlank(),
-            ) { Text(if (pending) "Completing…" else "Complete handover") }
+                onClick = { onConfirm(otp, fare.ifBlank { null }, paid, handoverPhoto) { message -> error = message } },
+                modifier = Modifier.weight(1.6f),
+            )
         },
-        dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancel") } },
-    )
+    ) {
+        Text(
+            "Ask the guest for the OTP sent to their phone and enter it below to confirm the handover.",
+            style = MaterialTheme.typography.bodySmall,
+            color = colors.textSecondary,
+        )
+        Spacer(Modifier.height(10.dp))
+        OutlinedTextField(
+            value = otp,
+            onValueChange = { otp = it },
+            label = { Text("Enter OTP to confirm") },
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(10.dp))
+        OutlinedTextField(
+            value = fare,
+            onValueChange = { fare = it },
+            label = { Text("Fare amount (₹)") },
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(10.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Switch(checked = paid, onCheckedChange = { paid = it })
+            Spacer(Modifier.width(8.dp))
+            Text("Payment collected", style = MaterialTheme.typography.bodySmall)
+        }
+        Spacer(Modifier.height(10.dp))
+        Text("Handover photo (optional)", style = MaterialTheme.typography.labelMedium, color = colors.textSecondary)
+        Spacer(Modifier.height(6.dp))
+        PhotoCaptureField("Photo", handoverPhoto, { handoverPhoto = it }, Modifier.fillMaxWidth(0.4f))
+        error?.let {
+            Spacer(Modifier.height(10.dp))
+            Text(it, color = colors.danger, style = MaterialTheme.typography.bodySmall)
+        }
+    }
 }
 
 @Composable
@@ -778,41 +830,46 @@ private fun EditTicketDialog(
     var vehicle by remember { mutableStateOf(vehicleNumber) }
     var mobile by remember { mutableStateOf(mobileNumber) }
     var error by remember { mutableStateOf<String?>(null) }
+    val colors = ValetTheme.colors
 
-    AlertDialog(
+    PremiumDialog(
+        icon = Icons.Filled.Edit,
+        title = "Edit Vehicle Details",
+        subtitle = "Correct a mis-entered plate or mobile number",
         onDismissRequest = onDismiss,
-        title = { Text("Edit vehicle details") },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = vehicle,
-                    onValueChange = { vehicle = it },
-                    label = { Text("Vehicle number") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = mobile,
-                    onValueChange = { mobile = it },
-                    label = { Text("Mobile number") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                error?.let {
-                    Spacer(Modifier.height(8.dp))
-                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { onConfirm(vehicle, mobile) { message -> error = message } },
+        footer = {
+            DialogSecondaryButton("Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
+            DialogPrimaryButton(
+                text = if (pending) "Saving…" else "Save",
                 enabled = !pending && vehicle.isNotBlank() && mobile.isNotBlank(),
-            ) { Text(if (pending) "Saving…" else "Save") }
+                onClick = { onConfirm(vehicle, mobile) { message -> error = message } },
+                modifier = Modifier.weight(1f),
+            )
         },
-        dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancel") } },
-    )
+    ) {
+        OutlinedTextField(
+            value = vehicle,
+            onValueChange = { vehicle = it },
+            label = { Text("Vehicle number") },
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(10.dp))
+        OutlinedTextField(
+            value = mobile,
+            onValueChange = { mobile = it },
+            label = { Text("Mobile number") },
+            singleLine = true,
+            leadingIcon = { Icon(Icons.Filled.Phone, contentDescription = null, tint = colors.textSecondary) },
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        error?.let {
+            Spacer(Modifier.height(10.dp))
+            Text(it, color = colors.danger, style = MaterialTheme.typography.bodySmall)
+        }
+    }
 }
 
 @Composable
@@ -823,39 +880,39 @@ private fun VoidTicketDialog(
 ) {
     var reason by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
+    val colors = ValetTheme.colors
 
-    AlertDialog(
+    PremiumDialog(
+        icon = Icons.Filled.DeleteOutline,
+        title = "Void Ticket",
+        subtitle = "Frees the assigned slot and removes this ticket from the queue",
+        accent = colors.danger,
         onDismissRequest = onDismiss,
-        title = { Text("Void ticket") },
-        text = {
-            Column {
-                Text(
-                    "Frees the assigned slot, if one is parked, and removes this ticket from the Live Queue.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = reason,
-                    onValueChange = { reason = it },
-                    label = { Text("Reason (optional)") },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                error?.let {
-                    Spacer(Modifier.height(8.dp))
-                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                }
-            }
-        },
-        confirmButton = {
-            Button(
-                onClick = { onConfirm(reason.ifBlank { null }) { message -> error = message } },
+        footer = {
+            DialogSecondaryButton("Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
+            DialogPrimaryButton(
+                text = if (pending) "Voiding…" else "Void",
+                icon = Icons.Filled.DeleteOutline,
                 enabled = !pending,
-            ) { Text(if (pending) "Voiding…" else "Void") }
+                containerColor = colors.danger,
+                onClick = { onConfirm(reason.ifBlank { null }) { message -> error = message } },
+                modifier = Modifier.weight(1f),
+            )
         },
-        dismissButton = { OutlinedButton(onClick = onDismiss) { Text("Cancel") } },
-    )
+    ) {
+        OutlinedTextField(
+            value = reason,
+            onValueChange = { reason = it },
+            label = { Text("Reason (optional)") },
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        error?.let {
+            Spacer(Modifier.height(10.dp))
+            Text(it, color = colors.danger, style = MaterialTheme.typography.bodySmall)
+        }
+    }
 }
 
 @Composable

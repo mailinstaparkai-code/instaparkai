@@ -122,7 +122,9 @@ private fun VehiclesContent(response: VehiclesResponse, viewModel: VehiclesViewM
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            items(response.tickets) { ticket -> VehicleTicketCard(ticket) }
+            items(response.tickets, key = { it.id }) { ticket ->
+                VehicleTicketCard(ticket, modifier = Modifier.animateItem())
+            }
             if (response.tickets.isEmpty()) {
                 item { Text("No records for this filter.", modifier = Modifier.padding(24.dp)) }
             }
@@ -189,10 +191,10 @@ private fun vehicleImageRes(vehicleType: String): Int {
 }
 
 @Composable
-private fun VehicleTicketCard(ticket: Ticket) {
+private fun VehicleTicketCard(ticket: Ticket, modifier: Modifier = Modifier) {
     val colors = ValetTheme.colors
     val accent = statusAccent(ticket.status)
-    GlassCard(modifier = Modifier.fillMaxWidth(), accent = accent) {
+    GlassCard(modifier = modifier.fillMaxWidth(), accent = accent) {
         Row {
             Image(
                 painter = painterResource(vehicleImageRes(ticket.vehicleType)),
