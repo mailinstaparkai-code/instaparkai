@@ -1,15 +1,17 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { ParkingSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
+  DialogFooter,
+  DialogIconHeader,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Field } from "../../components/field";
+import { DialogPrimaryButton, DialogSecondaryButton } from "../../components/dialog-buttons";
 
 export function MarkParkedButton({
   ticketId,
@@ -48,10 +50,13 @@ export function MarkParkedButton({
         }
       />
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Mark as parked</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <DialogIconHeader
+          icon={<ParkingSquare className="size-5" />}
+          title="Mark as Parked"
+          subtitle="Choose the slot this vehicle is parked in"
+          accentClassName="bg-brand-blue/20 text-brand-blue"
+        />
+        <form id="mark-parked-form" onSubmit={handleSubmit} className="flex flex-col gap-3">
           <input type="hidden" name="id" value={ticketId} />
           {slots.length ? (
             <Field label="Slot">
@@ -72,10 +77,13 @@ export function MarkParkedButton({
             <p className="text-sm text-muted-foreground">No available slots.</p>
           )}
           {error && <p className="text-sm text-status-danger">{error}</p>}
-          <Button type="submit" disabled={pending || !slots.length}>
-            {pending ? "Saving…" : "Confirm parked"}
-          </Button>
         </form>
+        <DialogFooter>
+          <DialogSecondaryButton onClick={() => setOpen(false)}>Cancel</DialogSecondaryButton>
+          <DialogPrimaryButton type="submit" form="mark-parked-form" disabled={pending || !slots.length}>
+            {pending ? "Saving…" : "Confirm parked"}
+          </DialogPrimaryButton>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

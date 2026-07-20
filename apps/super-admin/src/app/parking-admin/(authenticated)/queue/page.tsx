@@ -4,11 +4,13 @@ import { getValetSession } from "@/lib/valet-auth/session";
 import { computeFare } from "@/lib/tariff";
 import { getQueueData, type QueueTicket } from "@/lib/parking-admin/queue";
 import { formatISTTime } from "@/lib/format-date";
+import { Car, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Field } from "../../components/field";
 import { FormDialog } from "../../components/form-dialog";
 import { PhotoInput } from "../../components/photo-input";
+import { VehicleTypeSelector } from "../../components/vehicle-type-selector";
 import {
   checkInVehicle,
   completeHandover,
@@ -161,35 +163,45 @@ export default async function LiveQueuePage({
         </div>
         <FormDialog
           trigger={<Button size="sm">+ Check-in Vehicle</Button>}
-          title="Check-in vehicle"
+          title="Check-in Vehicle"
+          subtitle="Enter vehicle details to check-in"
+          icon={<Car className="size-5" />}
           action={checkInVehicle}
           submitLabel="Check in"
         >
           <Field label="Vehicle number">
-            <Input name="vehicle_number" required placeholder="MH12AB1234" />
+            <div className="relative">
+              <span className="absolute top-1/2 left-1.5 -translate-y-1/2 rounded-md bg-status-disabled/20 px-1.5 py-0.5 text-[10px] font-bold text-status-disabled">
+                IND
+              </span>
+              <Input name="vehicle_number" required placeholder="KA01AB1234" className="pl-11" />
+            </div>
           </Field>
           <Field label="Vehicle type">
-            <select
+            <VehicleTypeSelector
               name="vehicle_type"
+              options={vehicleTypeFilterOptions}
               defaultValue={vehicleTypeFilterOptions[0]?.value ?? "car"}
-              className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-            >
-              {vehicleTypeFilterOptions.map((vt) => (
-                <option key={vt.value} value={vt.value}>
-                  {vt.label}
-                </option>
-              ))}
-            </select>
+            />
           </Field>
           <Field label="Mobile number">
-            <Input name="mobile_number" required placeholder="9876543210" />
+            <div className="relative">
+              <Phone className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input name="mobile_number" required placeholder="Enter mobile number" className="pl-8" />
+            </div>
           </Field>
-          <div className="grid grid-cols-2 gap-3">
-            <PhotoInput name="photo_front" label="Front" />
-            <PhotoInput name="photo_back" label="Back" />
-            <PhotoInput name="photo_left" label="Left" />
-            <PhotoInput name="photo_right" label="Right" />
-            <PhotoInput name="photo_odometer" label="Odometer" />
+          <div>
+            <p className="text-sm font-medium">Check-in photos (optional)</p>
+            <p className="text-xs text-muted-foreground">Add clear photos of the vehicle</p>
+            <div className="mt-2 grid grid-cols-4 gap-3">
+              <PhotoInput name="photo_front" label="Front" />
+              <PhotoInput name="photo_back" label="Back" />
+              <PhotoInput name="photo_left" label="Left" />
+              <PhotoInput name="photo_right" label="Right" />
+            </div>
+            <div className="mt-3 w-1/4">
+              <PhotoInput name="photo_odometer" label="Odometer" />
+            </div>
           </div>
         </FormDialog>
       </div>

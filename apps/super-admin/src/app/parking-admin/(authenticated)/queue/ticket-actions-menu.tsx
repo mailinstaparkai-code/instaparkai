@@ -2,14 +2,13 @@
 
 import { useState, type FormEvent } from "react";
 import { MoreVertical, Pencil, Ban } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
+  DialogFooter,
+  DialogIconHeader,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Field } from "../../components/field";
 import { ConfirmDeleteDialog } from "../../components/confirm-delete-dialog";
+import { DialogPrimaryButton, DialogSecondaryButton } from "../../components/dialog-buttons";
 
 export function TicketActionsMenu({
   ticketId,
@@ -70,10 +70,12 @@ export function TicketActionsMenu({
 
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit vehicle details</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleEditSubmit} className="flex flex-col gap-3">
+          <DialogIconHeader
+            icon={<Pencil className="size-5" />}
+            title="Edit Vehicle Details"
+            subtitle="Correct a mis-entered plate or mobile number"
+          />
+          <form id="edit-ticket-form" onSubmit={handleEditSubmit} className="flex flex-col gap-3">
             <input type="hidden" name="id" value={ticketId} />
             <Field label="Vehicle number">
               <Input name="vehicle_number" required defaultValue={vehicleNumber} />
@@ -81,10 +83,13 @@ export function TicketActionsMenu({
             <Field label="Mobile number">
               <Input name="mobile_number" required defaultValue={mobileNumber} />
             </Field>
-            <Button type="submit" disabled={pending}>
-              {pending ? "Saving…" : "Save"}
-            </Button>
           </form>
+          <DialogFooter>
+            <DialogSecondaryButton onClick={() => setEditOpen(false)}>Cancel</DialogSecondaryButton>
+            <DialogPrimaryButton type="submit" form="edit-ticket-form" disabled={pending}>
+              {pending ? "Saving…" : "Save"}
+            </DialogPrimaryButton>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 

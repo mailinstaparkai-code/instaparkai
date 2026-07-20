@@ -90,6 +90,45 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
+/**
+ * The icon-badge header from the "Check in popup.png" reference: colored circle
+ * + icon, title, subtitle -- reused by every queue dialog on both desktop and
+ * mweb (the check-in/mark-parked/dispatch/handover/edit/void dialogs share the
+ * same underlying components, so this covers both surfaces).
+ */
+function DialogIconHeader({
+  icon,
+  title,
+  subtitle,
+  accentClassName = "bg-status-disabled/20 text-status-disabled",
+}: {
+  // A pre-rendered icon element (e.g. `<Car className="size-5" />`), not a bare
+  // component reference -- this header is used from both Server Components
+  // (queue/page.tsx) and Client Components, and a bare component reference can't
+  // cross the Server->Client boundary as a prop.
+  icon: React.ReactNode
+  title: string
+  subtitle?: string
+  accentClassName?: string
+}) {
+  return (
+    <DialogHeader className="flex-row items-start gap-3 pr-6">
+      <span
+        className={cn(
+          "flex size-11 shrink-0 items-center justify-center rounded-full [&_svg]:size-5",
+          accentClassName
+        )}
+      >
+        {icon}
+      </span>
+      <div className="flex flex-col gap-0.5 pt-0.5">
+        <DialogTitle className="text-lg">{title}</DialogTitle>
+        {subtitle && <DialogDescription>{subtitle}</DialogDescription>}
+      </div>
+    </DialogHeader>
+  )
+}
+
 function DialogFooter({
   className,
   showCloseButton = false,
@@ -102,7 +141,7 @@ function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        "-mx-4 -mb-4 flex flex-col-reverse gap-2 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row sm:justify-end",
+        "-mx-4 -mb-4 flex flex-col-reverse gap-2.5 rounded-b-xl border-t bg-muted/50 p-4 sm:flex-row",
         className
       )}
       {...props}
@@ -153,6 +192,7 @@ export {
   DialogDescription,
   DialogFooter,
   DialogHeader,
+  DialogIconHeader,
   DialogOverlay,
   DialogPortal,
   DialogTitle,

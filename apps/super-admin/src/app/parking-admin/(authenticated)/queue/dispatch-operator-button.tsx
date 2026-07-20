@@ -1,15 +1,17 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
+import { Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
+  DialogFooter,
+  DialogIconHeader,
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Field } from "../../components/field";
+import { DialogPrimaryButton, DialogSecondaryButton } from "../../components/dialog-buttons";
 
 export function DispatchOperatorButton({
   ticketId,
@@ -48,10 +50,13 @@ export function DispatchOperatorButton({
         }
       />
       <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Dispatch operator</DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <DialogIconHeader
+          icon={<Users className="size-5" />}
+          title="Dispatch Operator"
+          subtitle="Send this vehicle's pickup to an available operator"
+          accentClassName="bg-brand-orange/20 text-brand-orange"
+        />
+        <form id="dispatch-form" onSubmit={handleSubmit} className="flex flex-col gap-3">
           <input type="hidden" name="id" value={ticketId} />
           {operators.length ? (
             <Field label="Available operators">
@@ -74,10 +79,13 @@ export function DispatchOperatorButton({
             </p>
           )}
           {error && <p className="text-sm text-status-danger">{error}</p>}
-          <Button type="submit" disabled={pending || !operators.length}>
-            {pending ? "Dispatching…" : "Dispatch"}
-          </Button>
         </form>
+        <DialogFooter>
+          <DialogSecondaryButton onClick={() => setOpen(false)}>Cancel</DialogSecondaryButton>
+          <DialogPrimaryButton type="submit" form="dispatch-form" disabled={pending || !operators.length}>
+            {pending ? "Dispatching…" : "Dispatch"}
+          </DialogPrimaryButton>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

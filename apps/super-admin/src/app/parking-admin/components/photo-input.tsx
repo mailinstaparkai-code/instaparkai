@@ -1,15 +1,18 @@
 "use client";
 
 import { useId, useRef, useState, type ChangeEvent } from "react";
-import { Camera } from "lucide-react";
+import { Camera, Check } from "lucide-react";
 import { compressImageFile } from "@/lib/image-compress";
-import { Field } from "./field";
+import { cn } from "@/lib/utils";
 
+/**
+ * Rendered as a square, dashed-border tile per `Check in popup.png` -- a captured
+ * photo swaps the camera icon for a check and the border/label to the success color.
+ */
 export function PhotoInput({ name, label }: { name: string; label: string }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const inputId = useId();
   const [status, setStatus] = useState<"idle" | "compressing" | "ready">("idle");
-  const [fileName, setFileName] = useState<string | null>(null);
 
   async function handleChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -21,22 +24,27 @@ export function PhotoInput({ name, label }: { name: string; label: string }) {
     const dataTransfer = new DataTransfer();
     dataTransfer.items.add(compressed);
     if (inputRef.current) inputRef.current.files = dataTransfer.files;
-    setFileName(compressed.name);
     setStatus("ready");
   }
 
+  const ready = status === "ready";
+
   return (
-    <Field label={label}>
+    <div>
       {/* Native file inputs render unstyled, differently-sized browser chrome that
-          clashes with the rest of the design system and truncates its "No file
-          chosen" text mid-word in narrow grids -- so the native input is visually
-          hidden and a styled label drives it instead, truncating with an ellipsis. */}
+          clashes with the rest of the design system -- so it's visually hidden and
+          a dashed-border square tile drives it instead. */}
       <label
         htmlFor={inputId}
-        className="flex h-9 min-w-0 cursor-pointer items-center gap-2 rounded-md border border-input bg-background px-3 text-sm hover:bg-muted"
+        className={cn(
+          "flex aspect-square cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed px-1 text-center text-xs transition-colors",
+          ready
+            ? "border-status-success bg-status-success/10 text-status-success"
+            : "border-border bg-muted/50 text-muted-foreground hover:bg-muted"
+        )}
       >
-        <Camera className="size-4 shrink-0 text-muted-foreground" />
-        <span className="truncate">{fileName ?? "Choose photo"}</span>
+        {ready ? <Check className="size-5" /> : <Camera className="size-5" />}
+        <span className="truncate">{status === "compressing" ? "…" : label}</span>
       </label>
       <input
         ref={inputRef}
@@ -48,10 +56,6 @@ export function PhotoInput({ name, label }: { name: string; label: string }) {
         onChange={handleChange}
         className="sr-only"
       />
-      {status === "compressing" && (
-        <p className="text-xs text-muted-foreground">Compressing…</p>
-      )}
-      {status === "ready" && <p className="text-xs text-status-success">Ready to upload</p>}
-    </Field>
+    </div>
   );
 }
