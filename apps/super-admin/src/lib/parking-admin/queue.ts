@@ -9,6 +9,7 @@ import { fireTrigger } from "@/lib/communication-triggers";
 import { getAvailableOperators } from "@/lib/operator-availability";
 import { TICKET_TIMELINE_SELECT, unpivot, type TicketRow, type Transaction } from "@/lib/ticket-timeline";
 import { notify } from "@/lib/valet-notifications";
+import { dispatchPush } from "@/lib/push/dispatch";
 import { type TariffRule } from "@/lib/tariff";
 import { AppError } from "./errors";
 
@@ -125,6 +126,13 @@ async function dispatchToOperator(
     kind: "vehicle_dispatched",
     message: `${ticket.vehicle_number} dispatched to an operator`,
   });
+  await dispatchPush(
+    supabase,
+    operatorId,
+    "Vehicle assigned",
+    `${ticket.vehicle_number} is ready for pickup`,
+    { ticketId: ticket.id }
+  );
 }
 
 export async function loadTicket(

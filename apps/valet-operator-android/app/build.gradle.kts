@@ -16,6 +16,13 @@ val keystoreProperties = Properties().apply {
     }
 }
 
+// google-services.json (gitignored, like keystore.properties) identifies the Firebase
+// project used for FCM push -- apply the plugin only if it's present so a fresh clone
+// without it still builds (just without push notifications working).
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 android {
     namespace = "ai.instapark.valet"
     compileSdk = 36
@@ -94,5 +101,7 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.androidx.exifinterface)
     implementation(libs.androidx.core.splashscreen)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
     debugImplementation(libs.androidx.ui.tooling)
 }

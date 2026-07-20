@@ -14,3 +14,7 @@ local.properties
 *.keystore
 *.jks
 keystore.properties
+
+# Firebase client config -- identifies the Firebase project; kept local like
+# keystore.properties rather than committed.
+google-services.json

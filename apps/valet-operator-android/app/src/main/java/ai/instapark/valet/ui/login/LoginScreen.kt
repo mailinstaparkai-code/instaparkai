@@ -24,7 +24,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @Composable
 fun LoginScreen(onLoginSuccess: () -> Unit) {
     val container = appContainer()
-    val viewModel: LoginViewModel = viewModel(factory = LoginViewModelFactory(container.sessionRepository))
+    val viewModel: LoginViewModel = viewModel(
+        factory = LoginViewModelFactory(container.sessionRepository, container.pushTokenRepository)
+    )
 
     Column(
         modifier = Modifier

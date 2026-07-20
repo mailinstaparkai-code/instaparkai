@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, ListOrdered, Car, User } from "lucide-react";
 import { NotificationsBell } from "./notifications-bell";
+import { PushSubscribeBanner } from "@/app/parking-admin/m/push-subscribe";
 
 const TABS = [
   { label: "Home", href: "/parking-admin/m/dashboard", icon: LayoutDashboard },
@@ -34,6 +35,8 @@ export function MobileAppShell({
           </span>
         </div>
       </header>
+
+      <PushSubscribeBanner />
 
       <main className="flex-1 px-4 py-4 pb-24">{children}</main>
 

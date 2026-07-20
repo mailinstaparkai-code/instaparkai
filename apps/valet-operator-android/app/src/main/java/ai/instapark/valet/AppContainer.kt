@@ -7,6 +7,7 @@ import ai.instapark.valet.data.remote.ParkingAdminApi
 import ai.instapark.valet.data.remote.SessionTokenHolder
 import ai.instapark.valet.data.repository.DashboardRepository
 import ai.instapark.valet.data.repository.NotificationsRepository
+import ai.instapark.valet.data.repository.PushTokenRepository
 import ai.instapark.valet.data.repository.QueueRepository
 import ai.instapark.valet.data.repository.SessionRepository
 import ai.instapark.valet.data.repository.VehiclesRepository
@@ -46,4 +47,5 @@ class AppContainer(context: Context) {
     val vehiclesRepository = VehiclesRepository(api, gson)
     val queueRepository = QueueRepository(api, gson)
     val notificationsRepository = NotificationsRepository(api, gson)
+    val pushTokenRepository = PushTokenRepository(api, gson)
 }

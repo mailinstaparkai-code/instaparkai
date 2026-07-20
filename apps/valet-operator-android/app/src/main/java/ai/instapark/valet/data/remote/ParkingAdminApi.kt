@@ -3,6 +3,7 @@ package ai.instapark.valet.data.remote
 import ai.instapark.valet.data.remote.dto.AutoAllocateRequest
 import ai.instapark.valet.data.remote.dto.CheckInResponse
 import ai.instapark.valet.data.remote.dto.DashboardResponse
+import ai.instapark.valet.data.remote.dto.DeviceTokenRequest
 import ai.instapark.valet.data.remote.dto.DispatchRequest
 import ai.instapark.valet.data.remote.dto.LoginRequest
 import ai.instapark.valet.data.remote.dto.LoginResponse
@@ -116,4 +117,7 @@ interface ParkingAdminApi {
 
     @POST("notifications/mark-read")
     suspend fun markNotificationsRead()
+
+    @POST("device-tokens")
+    suspend fun registerDeviceToken(@Body request: DeviceTokenRequest)
 }
