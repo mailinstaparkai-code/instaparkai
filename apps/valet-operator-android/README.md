@@ -86,6 +86,7 @@ revisiting with LFS if release frequency picks up a lot.
 |---|---|---|---|---|
 | 0.1.0 | 1 | 2026-07-19 | `releases/instapark-valet-v0.1.0-build1.apk` | First signed release. Phases 0–5 complete: full ticket lifecycle, photo capture, notifications, release signing. |
 | 0.2.0 | 2 | 2026-07-20 | `releases/instapark-valet-v0.2.0-build2.apk` | 19th-July revamp: brand theme (dark+light, in-app toggle), real app icon, splash, Home/Queue/Vehicles redesign, operator IN/BREAK/OUT self-status, role-gated queue actions. Built on-device UNVERIFIED (emulator blocked by host disk space) — smoke test on a real device. |
+| 0.3.0 | 3 | 2026-07-20 | `releases/instapark-valet-v0.3.0-build3.apk` | Premium dialog chrome (PremiumDialog shell, icon-badge headers, icon-tile vehicle-type picker, dashed photo tiles) across all 7 queue popups, matching web's matching redesign. Haptic tick + spring-based sliding animation on the My Status IN/BREAK/OUT toggle. `Modifier.animateItem()` on Queue/Vehicles lists. |
 
 ## Status
 
