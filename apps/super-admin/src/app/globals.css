@@ -181,6 +181,25 @@
   }
 }
 
+/* Parking Admin dark SaaS scope — the 19th-July "Revamp Parking Dashboard" spec.
+   Applied as a wrapper class on the parking-admin layout only, so the Super Admin
+   portal keeps the base design.md tokens. Light mode is untouched; these override
+   the .dark tokens with the spec's deep-navy palette. */
+.dark .pa-scope {
+  --background: #0b0f1a;
+  --card: #121829;
+  --card-foreground: #f8fafc;
+  --popover: #121829;
+  --popover-foreground: #f8fafc;
+  --secondary: #171e31;
+  --muted: #171e31;
+  --muted-foreground: #a1a7b3;
+  --surface-glass: rgba(255, 255, 255, 0.05);
+  --border-glass: rgba(255, 255, 255, 0.08);
+  --sidebar: #0c1122;
+  --sidebar-accent: #241a12;
+}
+
 @layer components {
   /* Floating glass surface — see /design.md §2.4 */
   .glass-card {
@@ -197,5 +216,50 @@
     font-family: var(--font-numeric);
     font-variant-numeric: tabular-nums;
     font-weight: 700;
+  }
+
+  /* 3D metric card from the revamp spec: 20px radius, layered lift shadows, 1px
+     hairline, inner top light, and a left-edge glow in the card's accent color
+     (set --metric-accent inline per card). */
+  .metric-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 20px;
+    background: var(--card);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow:
+      0 20px 40px rgba(0, 0, 0, 0.4),
+      0 8px 16px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+  .metric-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(
+      120% 90% at 0% 20%,
+      color-mix(in srgb, var(--metric-accent, transparent) 18%, transparent),
+      transparent 60%
+    );
+  }
+  :root:not(.dark) .metric-card {
+    border-color: var(--border-glass);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.1), 0 4px 10px rgba(15, 23, 42, 0.06);
+  }
+
+  /* Sidebar gradient + active pill (parking-admin scope, dark) */
+  .dark .pa-scope .pa-sidebar-gradient {
+    background: linear-gradient(180deg, #0c1122 0%, #12122a 100%);
+  }
+  .pa-active-pill {
+    background: linear-gradient(90deg, var(--brand-orange) 0%, var(--brand-orange-soft) 100%);
+    color: #fff !important;
+    box-shadow: 0 6px 18px color-mix(in srgb, var(--brand-orange) 45%, transparent);
+  }
+
+  /* Glowing slot pill for the parking map */
+  .slot-glow {
+    box-shadow: 0 0 16px -2px currentColor;
   }
 }

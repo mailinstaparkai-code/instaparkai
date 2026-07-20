@@ -49,8 +49,13 @@ export function AppShell({
     router.push(trimmed ? `/parking-admin/vehicles?q=${encodeURIComponent(trimmed)}` : "/parking-admin/vehicles");
   }
 
+  // The dark SaaS revamp (gradient sidebar, glass topbar, glowing active pill) is
+  // scoped to the parking-admin/valet-operator surfaces only -- Super Admin keeps
+  // the base design.md look. See globals.css's ".pa-scope" block.
+  const isParkingSurface = nav !== "super-admin";
+
   return (
-    <div className="flex min-h-dvh bg-background text-foreground">
+    <div className={`flex min-h-dvh bg-background text-foreground ${isParkingSurface ? "pa-scope" : ""}`}>
       {drawerOpen && (
         <button
           aria-label="Close menu"
@@ -60,9 +65,9 @@ export function AppShell({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 shrink-0 -translate-x-full border-r border-border bg-sidebar p-4 transition-transform lg:sticky lg:top-0 lg:h-dvh lg:w-16 lg:translate-x-0 lg:p-2 xl:w-64 xl:p-4 ${
-          drawerOpen ? "translate-x-0" : ""
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 w-64 shrink-0 -translate-x-full border-r border-border p-4 transition-transform lg:sticky lg:top-0 lg:h-dvh lg:w-16 lg:translate-x-0 lg:p-2 xl:w-64 xl:p-4 ${
+          isParkingSurface ? "bg-sidebar pa-sidebar-gradient" : "bg-sidebar"
+        } ${drawerOpen ? "translate-x-0" : ""}`}
       >
         {/* Full label at xl+ (1280px); collapses to an icon-only rail between 1024
             and 1280 (design.md §5: "collapses to icon-only under 1280px"). */}
@@ -108,7 +113,9 @@ export function AppShell({
                 title={item.label}
                 className={`flex items-center gap-3 rounded-lg border-l-2 px-3 py-2 text-sm transition-colors lg:justify-center lg:px-2 xl:justify-start xl:px-3 ${
                   active
-                    ? "border-brand-orange bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                    ? isParkingSurface
+                      ? "pa-active-pill border-transparent font-medium"
+                      : "border-brand-orange bg-sidebar-accent font-medium text-sidebar-accent-foreground"
                     : "border-transparent text-sidebar-foreground hover:bg-sidebar-accent/60"
                 }`}
               >
@@ -118,6 +125,18 @@ export function AppShell({
             );
           })}
         </nav>
+
+        {isParkingSurface && (
+          <div className="absolute inset-x-4 bottom-4 hidden items-center gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent/40 p-2 xl:flex">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-orange text-sm font-medium text-white">
+              {userLabel.slice(0, 1).toUpperCase()}
+            </span>
+            <div className="min-w-0">
+              <p className="truncate text-xs font-medium">{userLabel}</p>
+              <p className="truncate text-[11px] text-muted-foreground">{userSubLabel}</p>
+            </div>
+          </div>
+        )}
       </aside>
 
       <div className="flex min-h-dvh flex-1 flex-col">

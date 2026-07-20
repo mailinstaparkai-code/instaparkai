@@ -8,9 +8,9 @@ type Zone = { id: string; name: string; slots: Slot[] };
 type ParkedTicket = { id: string; slot_id: string | null; vehicle_number: string };
 
 const STATUS_COLOR: Record<string, string> = {
-  available: "border-status-success/40 bg-status-success/15 text-status-success",
-  occupied: "border-brand-orange/40 bg-brand-orange/15 text-brand-orange",
-  reserved: "border-status-info/40 bg-status-info/15 text-status-info",
+  available: "border-status-success/40 bg-status-success/15 text-status-success slot-glow",
+  occupied: "border-brand-orange/40 bg-brand-orange/15 text-brand-orange slot-glow",
+  reserved: "border-status-info/40 bg-status-info/15 text-status-info slot-glow",
   out_of_service: "border-border bg-muted text-muted-foreground",
 };
 
@@ -42,7 +42,7 @@ export function ParkingMap({
   }
 
   return (
-    <div className="glass-card flex flex-col gap-4 p-4">
+    <div className="metric-card flex flex-col gap-4 p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm font-medium">Parking map</p>
