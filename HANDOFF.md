@@ -339,6 +339,23 @@ keys) to any file, including this one — reference where to find/reset them ins
     granted was available to test against). Worth a real-device/real-browser check before
     relying on this in production.
 
+- **Live Queue: "Dispatch operator" now explains itself instead of just going grey** —
+  a user report ("why is Dispatch operator disabled when there's an operator marked
+  In?") traced to correct-but-silent behavior: `getAvailableOperators`
+  (`src/lib/operator-availability.ts`) correctly excludes any operator currently
+  `dispatched_by` an `in_transit`/`arrived` ticket (out with another car), regardless of
+  their daily In/Break/Out status — but the button just disabled itself with zero
+  explanation, and the dialog's fallback message ("No operators are currently
+  available.") was unreachable dead code since the trigger never opened while disabled.
+  Fix: `getQueueData` (`lib/parking-admin/queue.ts`) now computes a specific
+  `dispatchUnavailableReason` (no operators assigned to the site vs. all N currently out
+  with another vehicle); `DispatchOperatorButton`'s trigger always opens the dialog now,
+  which shows that reason instead. Same fix applied to both `/parking-admin/queue`
+  (desktop) and `/parking-admin/m/queue` (mobile), since they share the component.
+  Verified against live "Hotel Parking Test" data (both its operators mid-handover) —
+  confirmed the reason text, then completed a handover and confirmed the picker
+  immediately offered the freed-up operator.
+
 - **Native Android app** (`apps/valet-operator-android`) — Kotlin + Jetpack Compose,
   built in 6 phases against a brand-new bearer-token JSON API layer under
   `apps/super-admin/src/app/api/parking-admin/v1/*`, functionally mirroring

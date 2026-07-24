@@ -119,6 +119,12 @@ This is the single most important thing to understand before touching auth code.
 - Design tokens live in `apps/super-admin/src/app/globals.css` as CSS variables, driven
   by `design.md`. Don't hardcode a raw hex/px value in a component — add or reuse a
   token.
+- **A disabled action button needs a reachable explanation, not just `disabled={...}`**
+  (`dispatch-operator-button.tsx` had this bug: the trigger was `disabled={!operators
+  .length}`, so the dialog's own fallback message — "No operators are currently
+  available." — could never actually render, since the dialog never opened while
+  disabled). Prefer leaving the trigger enabled and explaining the empty/blocked state
+  inside the dialog/panel it opens, over silently disabling it with no indication why.
 
 ## Working with Supabase locally
 
