@@ -165,6 +165,10 @@ export type QueueData = {
   canRequest: boolean;
   canDispatch: boolean;
   myAccountId: string;
+  // Explains why the dispatch operator list is empty (no operators assigned to
+  // the site vs. all of them currently out with another vehicle) -- null when
+  // at least one operator is dispatchable.
+  dispatchUnavailableReason: string | null;
 };
 
 export async function getQueueData(
@@ -194,6 +198,7 @@ export async function getQueueData(
     { data: site },
     availableOperators,
     { data: vehicleTypes },
+    { count: totalActiveOperators },
   ] = await Promise.all([
     ticketsQuery.order("checked_in_at", { ascending: true }).returns<QueueTicket[]>(),
     supabase
@@ -216,6 +221,12 @@ export async function getQueueData(
       .select("id, name")
       .eq("parking_space_id", session.assignedSiteId)
       .order("name"),
+    supabase
+      .from("valet_accounts")
+      .select("id", { count: "exact", head: true })
+      .eq("assigned_site_id", session.assignedSiteId)
+      .eq("role", "valet_operator")
+      .eq("is_active", true),
   ]);
 
   const operatorOptions = availableOperators.map((op) => {
@@ -230,6 +241,19 @@ export async function getQueueData(
       label: badge ? `${op.full_name || op.username} — ${badge}` : op.full_name || op.username,
     };
   });
+
+  // Explains an empty operatorOptions list: none assigned to the site at all,
+  // vs. all of them currently dispatched_by an in_transit/arrived ticket (out
+  // with another vehicle). Daily status (In/Break/Out) is never the cause here
+  // since manual dispatch calls getAvailableOperators with respectDailyStatus: false.
+  const dispatchUnavailableReason =
+    operatorOptions.length > 0
+      ? null
+      : !totalActiveOperators
+        ? "No valet operators are assigned to this site yet. Add one under Valet Operators."
+        : totalActiveOperators === 1
+          ? "The only operator assigned to this site is currently out with another vehicle."
+          : `All ${totalActiveOperators} operators assigned to this site are currently out with another vehicle.`;
 
   const availableSlots =
     zones?.flatMap((z) =>
@@ -253,6 +277,7 @@ export async function getQueueData(
     canRequest: session.role === "parking_admin",
     canDispatch: session.role === "parking_admin",
     myAccountId: session.accountId,
+    dispatchUnavailableReason,
   };
 }
 

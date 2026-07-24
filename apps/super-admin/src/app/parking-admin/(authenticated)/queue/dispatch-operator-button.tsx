@@ -17,10 +17,12 @@ export function DispatchOperatorButton({
   ticketId,
   operators,
   action,
+  unavailableReason,
 }: {
   ticketId: string;
   operators: { id: string; label: string }[];
   action: (formData: FormData) => Promise<void> | void;
+  unavailableReason?: string | null;
 }) {
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
@@ -44,7 +46,7 @@ export function DispatchOperatorButton({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button size="sm" variant="outline" disabled={!operators.length}>
+          <Button size="sm" variant="outline">
             Dispatch operator
           </Button>
         }
@@ -75,7 +77,7 @@ export function DispatchOperatorButton({
             </Field>
           ) : (
             <p className="text-sm text-muted-foreground">
-              No operators are currently available.
+              {unavailableReason ?? "No operators are currently available."}
             </p>
           )}
           {error && <p className="text-sm text-status-danger">{error}</p>}

@@ -82,6 +82,7 @@ export default async function MobileQueuePage({
     canRequest,
     canDispatch,
     myAccountId,
+    dispatchUnavailableReason,
   } = await getQueueData(supabase, session, { status: statusFilter, vehicleType: vehicleTypeFilter });
 
   return (
@@ -226,6 +227,7 @@ export default async function MobileQueuePage({
                     ticketId={t.id}
                     operators={operatorOptions}
                     action={dispatchVehicle}
+                    unavailableReason={dispatchUnavailableReason}
                   />
                 )}
                 {t.status === "in_transit" && (

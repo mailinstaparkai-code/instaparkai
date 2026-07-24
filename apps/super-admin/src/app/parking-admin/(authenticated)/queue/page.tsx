@@ -64,6 +64,7 @@ function TicketRowActions({
   suggestedFare,
   availableSlots,
   operatorOptions,
+  dispatchUnavailableReason,
   canRequest,
   canDispatch,
   canMarkParked,
@@ -72,6 +73,7 @@ function TicketRowActions({
   suggestedFare: number | null;
   availableSlots: { id: string; label: string }[];
   operatorOptions: { id: string; label: string }[];
+  dispatchUnavailableReason: string | null;
   canRequest: boolean;
   canDispatch: boolean;
   canMarkParked: boolean;
@@ -94,6 +96,7 @@ function TicketRowActions({
           ticketId={ticket.id}
           operators={operatorOptions}
           action={dispatchVehicle}
+          unavailableReason={dispatchUnavailableReason}
         />
       )}
       {ticket.status === "in_transit" && (
@@ -146,6 +149,7 @@ export default async function LiveQueuePage({
     canRequest,
     canDispatch,
     myAccountId,
+    dispatchUnavailableReason,
   } = await getQueueData(supabase, session, { status: statusFilter, vehicleType: vehicleTypeFilter });
 
   const counts = {
@@ -305,6 +309,7 @@ export default async function LiveQueuePage({
                       suggestedFare={suggestedFare}
                       availableSlots={availableSlots}
                       operatorOptions={operatorOptions}
+                      dispatchUnavailableReason={dispatchUnavailableReason}
                       canRequest={canRequest}
                       canDispatch={canDispatch}
                       canMarkParked={session.role === "parking_admin" || t.checked_in_by === myAccountId}
@@ -373,6 +378,7 @@ export default async function LiveQueuePage({
                 suggestedFare={suggestedFare}
                 availableSlots={availableSlots}
                 operatorOptions={operatorOptions}
+                dispatchUnavailableReason={dispatchUnavailableReason}
                 canRequest={canRequest}
                 canDispatch={canDispatch}
                 canMarkParked={session.role === "parking_admin" || t.checked_in_by === myAccountId}
