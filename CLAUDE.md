@@ -126,6 +126,39 @@ This is the single most important thing to understand before touching auth code.
   disabled). Prefer leaving the trigger enabled and explaining the empty/blocked state
   inside the dialog/panel it opens, over silently disabling it with no indication why.
 
+## Performance: latency here is round-trips, not SQL
+
+Read this before "optimizing" a slow page — the intuitive fixes are the wrong ones in
+this app.
+
+- **The tables are tiny** (order of tens of rows). Postgres will sequential-scan them
+  faster than it can use an index, so query tuning and new indexes buy **nothing**
+  measurable today. The indexes in `20260725012309_hot_path_indexes.sql` are
+  future-proofing and say so in their own header comment — don't credit them with a
+  speedup.
+- **What actually costs time is each network round-trip from the serverless function to
+  Supabase.** The two live in different regions (functions `bom1`/Mumbai via
+  `apps/super-admin/vercel.json`, Supabase `ap-north‑east-1`/Tokyo), and the *first*
+  query in a function invocation additionally pays a TLS handshake. So the lever is
+  always **reduce the number of sequential round-trips**: `Promise.all` independent
+  queries, and wrap per-request-stable reads in React `cache()`.
+- `getValetSession` / `getValetSessionFromToken` (`lib/valet-auth/session.ts`) and
+  `getSiteRow` (`lib/parking-admin/queue.ts`) are **deliberately `cache()`-wrapped** —
+  every route verifies the session twice (once in `layout.tsx`, once in `page.tsx`), and
+  `getSiteName`/`isAutoAllocateEnabled` read the same `parking_spaces` row. Don't unwrap
+  them.
+- `createServiceClient()` returns a **shared instance**, not a fresh client per call —
+  safe because it's stateless and always the same service-role principal. The
+  cookie-bound `server.ts` client must stay per-request; don't "fix" that one to match.
+- **Measuring**: `pg_stat_statements` is enabled on the remote project, so you can count
+  real queries for one page load —
+  `select sum(calls) from pg_stat_statements where query ilike '%<table>%'` before and
+  after. Watch out for the notifications bell (polls every 20s) confounding the count:
+  measure from a page that isn't open, or via `curl` with a session cookie.
+- **`ReturnType<typeof createSupabaseClient>` silently destroys the generated table
+  types** (every row degrades to `never`, producing dozens of errors far from the actual
+  change). Type off a local factory function instead — see `lib/supabase/service.ts`.
+
 ## Working with Supabase locally
 
 - No local Supabase stack — Docker isn't set up in this environment, and migrations are
@@ -148,7 +181,11 @@ This is the single most important thing to understand before touching auth code.
   ```bash
   vercel deploy --prod --yes
   ```
-  **Always run this from the repo root** (`/Users/siddharthasaha/InstaParkAI`), never
+- **`vercel.json` lives at `apps/super-admin/vercel.json`, not the repo root** — Vercel
+  reads it from the configured Root Directory, so a copy at the root is silently ignored.
+  It currently pins functions to `bom1` (Mumbai); see the Performance section above for
+  why that matters.
+- **Always run this from the repo root** (`/Users/siddharthasaha/InstaParkAI`), never
   from `apps/super-admin`. The Vercel project's Root Directory is configured as
   `apps/super-admin`; running the CLI from inside that directory double-applies it and
   can silently deploy to (or auto-create) a *different* Vercel project instead of

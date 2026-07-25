@@ -356,6 +356,60 @@ keys) to any file, including this one — reference where to find/reset them ins
   confirmed the reason text, then completed a handover and confirmed the picker
   immediately offered the freed-up operator.
 
+- **Performance pass (web) — the app was slow because requests crossed the planet
+  twice.** Reported as "the web application and app feel a bit slow"; audited server,
+  client, and Android. The dominant cause was geography, not code: serverless functions
+  deployed to `iad1` (Virginia) while Supabase lives in `ap-northeast-1` (Tokyo) and the
+  users are in India, so every request went India → Virginia → Tokyo → back. Measured
+  against production, one database round-trip inside a function cost **~650ms** (365ms
+  for a request making zero queries vs ~1010ms for one making a single query).
+  - **Fix with the biggest effect**: pinned functions to `bom1` (Mumbai) via
+    `apps/super-admin/vercel.json`, putting them near both the users and the database.
+    **Median latency for a one-query request went 1.014s → 0.353s (~2.9x).**
+  - **Round-trip reductions** (all verified by counting real queries in
+    `pg_stat_statements`, plus an instrumented dev build): `getValetSession` is now
+    request-memoized with React `cache()` — measured at **2 session queries per page
+    load, now 1**, on every route in both the desktop and mweb trees, since each one
+    verifies the session in `layout.tsx` and again in `page.tsx`. `getSiteName` and
+    `isAutoAllocateEnabled` now share one request-cached `parking_spaces` read instead of
+    querying the same row twice (three times on the auto-allocate path). The five
+    lifecycle mutations ran `getSiteName → fireTrigger → notify → dispatchPush` as a
+    chain; those side effects are independent and each already swallows its own errors
+    and never throws, so they now run concurrently with unchanged failure semantics.
+    Check-in's 5 photo uploads went from sequential to parallel. The Vehicles list and
+    its revenue aggregate now issue together. `createServiceClient()` returns a shared
+    instance rather than rebuilding the client at ~75 call sites.
+  - **Guest tracker**: the poller called `router.refresh()` every 6s, re-running the whole
+    server component and shipping a fresh RSC payload even when nothing had changed. It
+    now polls a status-only Server Action, refreshes only on a real change, and pauses
+    while the tab is hidden. Measured: **0 full re-renders over 21s idle (was 3–4), and
+    exactly 1 on an actual status change.**
+  - **Ordering subtlety preserved**: `requestVehicle` still awaits its own notifications
+    before auto-allocating, so a guest can't receive "on the way" ahead of "pickup
+    requested".
+  - **Indexes are future-proofing only.** `valet_tickets` holds ~20 rows, where Postgres
+    correctly prefers a sequential scan — the new composite indexes change nothing
+    measurable today. The migration header says so explicitly so nobody credits them with
+    the speedup. See `CLAUDE.md`'s Performance section for why round-trip count, not SQL,
+    is the lever in this app.
+  - **Still open — moving Supabase to `ap-south-1` (Mumbai)** would close the remaining
+    ~180ms Mumbai→Tokyo hop, but is **blocked in this environment**: there's no Docker,
+    no `brew`, and no `pg_dump`/`psql`, so `supabase db dump` can't run. A hand-rolled
+    path exists (new project → `supabase db push` for the schema → data via generated
+    INSERTs → the 9 storage objects via the Storage API) but it needs a downtime window,
+    rotation of the three Supabase env vars, and — unavoidably — **a Super Admin password
+    reset**, since `super_admin` is a Supabase Auth user whose password hash can't be
+    moved without auth-schema dump access.
+  - **Android was not changed**: no Java runtime is installed in this environment, so
+    Kotlin changes couldn't be compiled, let alone tested. Worth knowing before chasing
+    Android code: `isMinifyEnabled = false` even for `release` and there's no baseline
+    profile, and the `debug` build type points at `10.0.2.2:3000` — **if the app is being
+    judged on a debug build, that alone explains a lot**, since debug Compose is
+    dramatically slower than release. Two safe wins remain unimplemented: the
+    `HttpLoggingInterceptor` in `AppContainer.kt` is added unconditionally (including
+    release), and the 20s notifications poll has no `repeatOnLifecycle`, so it keeps
+    hitting the network while the app is backgrounded.
+
 - **Native Android app** (`apps/valet-operator-android`) — Kotlin + Jetpack Compose,
   built in 6 phases against a brand-new bearer-token JSON API layer under
   `apps/super-admin/src/app/api/parking-admin/v1/*`, functionally mirroring
