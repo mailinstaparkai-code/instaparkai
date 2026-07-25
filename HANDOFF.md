@@ -14,8 +14,11 @@ keys) to any file, including this one — reference where to find/reset them ins
   - Parking Admin login: `/parking-admin/login`
 - **Repo**: https://github.com/mailinstaparkai-code/instaparkai
 - **Vercel project**: `insta-park-ai/instaparkai-super-admin`
-- **Supabase project**: `mailinstaparkai-code's Project` (ref `iennufkectrehbluhxgl`,
-  region ap-northeast-1)
+- **Supabase project**: `instaparkai-mumbai` (ref `jgerhiooqrcqurirdewz`, region
+  ap-south-1/Mumbai — moved from the original `ap-northeast-1`/Tokyo project on
+  2026-07-25; see the Performance section below for why). The original Tokyo project
+  (ref `iennufkectrehbluhxgl`) is left running, untouched, as a rollback fallback —
+  confirm with the project owner before deleting it.
 
 ## What's built
 
@@ -392,14 +395,42 @@ keys) to any file, including this one — reference where to find/reset them ins
     measurable today. The migration header says so explicitly so nobody credits them with
     the speedup. See `CLAUDE.md`'s Performance section for why round-trip count, not SQL,
     is the lever in this app.
-  - **Still open — moving Supabase to `ap-south-1` (Mumbai)** would close the remaining
-    ~180ms Mumbai→Tokyo hop, but is **blocked in this environment**: there's no Docker,
-    no `brew`, and no `pg_dump`/`psql`, so `supabase db dump` can't run. A hand-rolled
-    path exists (new project → `supabase db push` for the schema → data via generated
-    INSERTs → the 9 storage objects via the Storage API) but it needs a downtime window,
-    rotation of the three Supabase env vars, and — unavoidably — **a Super Admin password
-    reset**, since `super_admin` is a Supabase Auth user whose password hash can't be
-    moved without auth-schema dump access.
+  - **Done — Supabase moved to `ap-south-1` (Mumbai)**, closing the remaining
+    Mumbai→Tokyo hop identified above. No `pg_dump`/`psql`/Docker was available in this
+    environment, so this was done by hand rather than a real dump/restore: a new project
+    (`instaparkai-mumbai`, ref `jgerhiooqrcqurirdewz`) got the schema via `supabase db
+    push` (all 21 migrations, replayed clean), then every row from all 17 `public`
+    tables (171 rows total) via generated `INSERT`s built from a REST export, then the 9
+    `valet-photos` storage objects via `supabase storage cp`. Every row and every photo
+    was verified byte/field-identical against the source before cutover (password
+    hashes, the `valet_accounts.created_by` self-reference, jsonb photo arrays, storage
+    object byte sizes — all matched exactly).
+    - **The earlier note above about needing a Super Admin password reset was wrong.**
+      No `public` table actually has a live FK to `auth.users` in practice —
+      `profiles.id` does reference it, but nothing else references `profiles`, and
+      `handle_new_user()` grants `super_admin` to the *first* signup whenever `profiles`
+      is empty (`20260712082304_fix_handle_new_user_role_cast.sql`). So `profiles` was
+      deliberately **not** migrated — the Super Admin just needs to sign up fresh once
+      against the new project (`/login` → "sign up", or an invite) and gets `super_admin`
+      automatically. No Supabase Auth data had to move at all.
+    - **The real time sink was a Vercel dashboard trap, not the migration itself**:
+      editing an existing **Sensitive** environment variable shows a masked-dot
+      placeholder in the value field instead of the real secret, and a paste that
+      doesn't fully overwrite that placeholder end-to-end leaves literal bullet
+      characters (`•`) baked into the *stored* value — not just a display artifact. This
+      silently broke both `NEXT_PUBLIC_SUPABASE_ANON_KEY` and
+      `SUPABASE_SERVICE_ROLE_KEY` (confirmed via a temporary diagnostic route that
+      decoded the unsigned JWT payload — `segmentCount` was 1 instead of 3, i.e. zero
+      `.` separators, with real content at the start and bullets at the end). **Fix:
+      delete the variable and re-add it fresh, never edit an existing Sensitive var in
+      place.**
+    - **Old project** (`iennufkectrehbluhxgl`, Tokyo) is untouched and left running as a
+      rollback fallback — nothing currently points at it. Confirm with the project owner
+      before deleting it (and before that, update this doc's Live URLs section — already
+      done above).
+    - **Result**: a warm authenticated request that does a session lookup plus a real
+      dashboard query (previously ~1.0s end-to-end before any of this work, ~350ms after
+      the Mumbai-functions-only fix) now completes in **~250–280ms**.
   - **Android was not changed**: no Java runtime is installed in this environment, so
     Kotlin changes couldn't be compiled, let alone tested. Worth knowing before chasing
     Android code: `isMinifyEnabled = false` even for `release` and there's no baseline
