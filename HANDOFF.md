@@ -17,8 +17,8 @@ keys) to any file, including this one — reference where to find/reset them ins
 - **Supabase project**: `instaparkai-mumbai` (ref `jgerhiooqrcqurirdewz`, region
   ap-south-1/Mumbai — moved from the original `ap-northeast-1`/Tokyo project on
   2026-07-25; see the Performance section below for why). The original Tokyo project
-  (ref `iennufkectrehbluhxgl`) is left running, untouched, as a rollback fallback —
-  confirm with the project owner before deleting it.
+  (ref `iennufkectrehbluhxgl`) has been **permanently deleted** — Mumbai is now the only
+  Supabase project.
 
 ## What's built
 
@@ -424,10 +424,9 @@ keys) to any file, including this one — reference where to find/reset them ins
       `.` separators, with real content at the start and bullets at the end). **Fix:
       delete the variable and re-add it fresh, never edit an existing Sensitive var in
       place.**
-    - **Old project** (`iennufkectrehbluhxgl`, Tokyo) is untouched and left running as a
-      rollback fallback — nothing currently points at it. Confirm with the project owner
-      before deleting it (and before that, update this doc's Live URLs section — already
-      done above).
+    - **Old project** (`iennufkectrehbluhxgl`, Tokyo) was kept running untouched as a
+      rollback fallback through verification, then **permanently deleted** once the cutover
+      was confirmed working end-to-end against real migrated data.
     - **Result**: a warm authenticated request that does a session lookup plus a real
       dashboard query (previously ~1.0s end-to-end before any of this work, ~350ms after
       the Mumbai-functions-only fix) now completes in **~250–280ms**.
