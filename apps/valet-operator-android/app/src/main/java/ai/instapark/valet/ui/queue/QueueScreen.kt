@@ -262,12 +262,15 @@ private fun TodaysSummaryStrip(tickets: List<QueueTicket>) {
             Text("Today's Summary", fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf(
-                    Triple("Active", tickets.size, colors.purple),
-                    Triple("Checked In", tickets.count { it.status == "checked_in" }, colors.blue),
-                    Triple("Parked", tickets.count { it.status == "parked" }, colors.green),
-                    Triple("Requested", tickets.count { it.status == "requested" }, colors.warning),
-                ).forEach { (label, count, accent) ->
+                val summary = remember(tickets, colors) {
+                    listOf(
+                        Triple("Active", tickets.size, colors.purple),
+                        Triple("Checked In", tickets.count { it.status == "checked_in" }, colors.blue),
+                        Triple("Parked", tickets.count { it.status == "parked" }, colors.green),
+                        Triple("Requested", tickets.count { it.status == "requested" }, colors.warning),
+                    )
+                }
+                summary.forEach { (label, count, accent) ->
                     Column(
                         modifier = Modifier
                             .weight(1f)

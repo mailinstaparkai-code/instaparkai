@@ -1,8 +1,9 @@
 import "server-only";
 import { cache } from "react";
+import { unstable_cache } from "next/cache";
 import { randomBytes, randomUUID } from "node:crypto";
 import { headers } from "next/headers";
-import type { createServiceClient } from "@/lib/supabase/service";
+import { createServiceClient } from "@/lib/supabase/service";
 import type { ValetSession } from "@/lib/valet-auth/session";
 import { generateOtp } from "@/lib/otp";
 import { BUCKET, uploadTicketPhotos } from "@/lib/valet-photos";
@@ -38,6 +39,43 @@ const DAILY_STATUS_BADGE: Record<string, string> = {
   leave: "On leave",
   break: "On break",
 };
+
+// vehicle_types and tariff_rules change only via the Settings page (edited far
+// less often than every Live Queue load reads them), so both are cached
+// per-site with a short revalidate as a self-healing safety net, on top of
+// revalidateTag() calls from every write path (configuration/actions.ts, plus
+// the Super Admin portal's app/dashboard/parking-spaces/actions.ts for
+// tariff_rules). zones/slots are deliberately NOT cached here -- they embed
+// live slots.status, written directly by ticket mutations.
+export function getCachedVehicleTypes(siteId: string) {
+  return unstable_cache(
+    async () => {
+      const { data } = await createServiceClient()
+        .from("vehicle_types")
+        .select("id, name")
+        .eq("parking_space_id", siteId)
+        .order("name");
+      return data ?? [];
+    },
+    ["vehicle-types", siteId],
+    { tags: [`vehicle-types:${siteId}`], revalidate: 60 }
+  )();
+}
+
+export function getCachedTariffRules(siteId: string) {
+  return unstable_cache(
+    async () => {
+      const { data } = await createServiceClient()
+        .from("tariff_rules")
+        .select("vehicle_category, pricing_type, rate, surge_multiplier, slab_tiers")
+        .eq("parking_space_id", siteId)
+        .returns<TariffRule[]>();
+      return data ?? [];
+    },
+    ["tariff-rules", siteId],
+    { tags: [`tariff-rules:${siteId}`], revalidate: 60 }
+  )();
+}
 
 export type QueueTicket = {
   id: string;
@@ -219,10 +257,10 @@ export async function getQueueData(
   const [
     { data: tickets },
     { data: zones },
-    { data: tariffRules },
+    tariffRules,
     { data: site },
     availableOperators,
-    { data: vehicleTypes },
+    vehicleTypes,
     { count: totalActiveOperators },
   ] = await Promise.all([
     ticketsQuery.order("checked_in_at", { ascending: true }).returns<QueueTicket[]>(),
@@ -230,22 +268,14 @@ export async function getQueueData(
       .from("zones")
       .select("id, name, slots(id, slot_number, status)")
       .eq("parking_space_id", session.assignedSiteId),
-    supabase
-      .from("tariff_rules")
-      .select("vehicle_category, pricing_type, rate, surge_multiplier, slab_tiers")
-      .eq("parking_space_id", session.assignedSiteId)
-      .returns<TariffRule[]>(),
+    getCachedTariffRules(session.assignedSiteId),
     supabase
       .from("parking_spaces")
       .select("auto_allocate_operator")
       .eq("id", session.assignedSiteId)
       .single(),
     getAvailableOperators(supabase, session.assignedSiteId, { respectDailyStatus: false }),
-    supabase
-      .from("vehicle_types")
-      .select("id, name")
-      .eq("parking_space_id", session.assignedSiteId)
-      .order("name"),
+    getCachedVehicleTypes(session.assignedSiteId),
     supabase
       .from("valet_accounts")
       .select("id", { count: "exact", head: true })

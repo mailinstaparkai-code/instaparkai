@@ -430,15 +430,79 @@ keys) to any file, including this one — reference where to find/reset them ins
     - **Result**: a warm authenticated request that does a session lookup plus a real
       dashboard query (previously ~1.0s end-to-end before any of this work, ~350ms after
       the Mumbai-functions-only fix) now completes in **~250–280ms**.
-  - **Android was not changed**: no Java runtime is installed in this environment, so
-    Kotlin changes couldn't be compiled, let alone tested. Worth knowing before chasing
-    Android code: `isMinifyEnabled = false` even for `release` and there's no baseline
-    profile, and the `debug` build type points at `10.0.2.2:3000` — **if the app is being
-    judged on a debug build, that alone explains a lot**, since debug Compose is
-    dramatically slower than release. Two safe wins remain unimplemented: the
+  - **Android was not changed in this pass**: no Java runtime is installed in this
+    environment, so Kotlin changes couldn't be compiled, let alone tested. Worth knowing
+    before chasing Android code: `isMinifyEnabled = false` even for `release` and there's
+    no baseline profile, and the `debug` build type points at `10.0.2.2:3000` — **if the
+    app is being judged on a debug build, that alone explains a lot**, since debug Compose
+    is dramatically slower than release. Two safe wins remain unimplemented: the
     `HttpLoggingInterceptor` in `AppContainer.kt` is added unconditionally (including
     release), and the 20s notifications poll has no `repeatOnLifecycle`, so it keeps
-    hitting the network while the app is backgrounded.
+    hitting the network while the app is backgrounded. *(Both landed in the next pass
+    below — this bullet is kept for the historical record of what blocked them here.)*
+
+- **Performance pass #2 (web + Android) — no UI/UX or functionality change, by design.**
+  A follow-up pass explicitly scoped to changes with zero visible/behavioral difference:
+  smaller assets, one fewer cold-render bailout, cached reference-data reads, and three
+  Android fixes that were blocked in the pass above.
+  - **Web — hero image**: `public/img/valet-hero-mobile.png` (975KB PNG, `priority`, on
+    the mobile dashboard's LCP path) re-encoded via `sharp` (already a transitive
+    dependency, used for Next's own image optimizer) to WebP at quality 90 — **94KB, a
+    ~10x reduction** — visually confirmed byte-for-byte-equivalent-looking via direct
+    side-by-side comparison. `next/image`'s `src` updated to the new `.webp` path; the
+    PNG was deleted, not kept alongside.
+  - **Web — `useSearchParams()` Suspense boundary**: `app-shell.tsx` called it directly
+    with no `<Suspense>` ancestor, which is invalid per Next's own rules for this API even
+    though it was a no-op today (every route using `AppShell` is already forced dynamic by
+    `getValetSession()`'s `cookies()` call, confirmed via a clean `npm run build` with no
+    warnings before *and* after). Fixed by extracting the search box into its own
+    `SearchForm` component wrapped in `<Suspense fallback={<SearchFormFallback />}>`,
+    where the fallback renders the identical markup minus the parts that need the
+    resolved query — pure future-proofing, not a speedup.
+  - **Web — cached reference-data reads**: `vehicle_types` and `tariff_rules` are
+    re-queried on every Live Queue load despite changing only via the Settings page.
+    Wrapped both in `unstable_cache` (`getCachedVehicleTypes`/`getCachedTariffRules` in
+    `lib/parking-admin/queue.ts`), tagged per-site with a 60s revalidate as a self-healing
+    safety net. Invalidated via `updateTag()` (this Next version's
+    read-your-own-writes-in-a-Server-Action API — **not** `revalidateTag`, which now
+    requires a second `profile` argument and is meant for Route Handlers/webhooks; see
+    `node_modules/next/dist/docs/.../updateTag.md`, required reading per this repo's own
+    `AGENTS.md` warning that this Next version isn't the one in anyone's training data) in
+    every write path — including a **second, independent** `tariff_rules` writer in the
+    Super Admin portal (`app/dashboard/parking-spaces/actions.ts`) that would otherwise
+    have let a Super Admin pricing edit go silently stale on the Parking Admin side.
+    `zones`/`slots` were deliberately **excluded** from caching — they embed live
+    `slots.status`, written directly by ticket mutations outside the Settings actions, so
+    caching them would show stale occupancy. Verified live: added a throwaway vehicle
+    type in Settings, confirmed it appeared in the Live Queue's check-in picker on the
+    very next load with zero delay.
+  - **Android — the two items blocked in the prior pass, plus one more, all now
+    verified**: the JBR bundled with Android Studio
+    (`/Applications/Android\ Studio.app/Contents/jbr/Contents/Home`) works as `JAVA_HOME`
+    when the bare system `java` doesn't — that part was never actually the blocker; the
+    real one (disk space, `~/.gradle` cache had filled the volume) resolved itself between
+    sessions. `HttpLoggingInterceptor` now gated behind `BuildConfig.DEBUG` in
+    `AppContainer.kt`. The 20s notifications poll (`NotificationsViewModel.pollWhileActive`
+    + `NotificationsBell`) is now driven by `lifecycleOwner.lifecycle.repeatOnLifecycle
+    (Lifecycle.State.STARTED)` instead of a bare `viewModelScope.launch { while(true) }`,
+    so it pauses while backgrounded and resumes with an immediate refresh on return —
+    zero difference while the app is actually in use. Two small `listOf(...)` literals
+    rebuilt every recomposition (`QueueScreen.kt`'s `TodaysSummaryStrip`,
+    `DashboardScreen.kt`'s `MyStatusCard`) wrapped in `remember` (keyed on `tickets` +
+    `colors` for the former, since those genuinely change; unkeyed for the latter, since
+    it's fully static). The Home-screen hero (`img_hero_valet.png`, 953KB, same
+    photo as the web one) got the identical WebP re-encode treatment. **All verified for
+    real**: booted the project's `Pixel_10_Pro` AVD, installed a freshly built debug APK,
+    logged in against the local dev server (the debug build already points at
+    `10.0.2.2:3000`), and visually confirmed the hero image, the live `TodaysSummaryStrip`
+    counts (7 Active / 3 Parked / 2 Requested, matching real seeded data), and normal
+    login/dashboard/queue behavior — not just a successful `./gradlew assembleDebug`.
+  - **Deliberately excluded, not silently skipped**: R8/minify (no `proguard-rules.pro`
+    exists at all, and Gson's reflection-based DTO parsing could break in ways this
+    environment can't fully regression-test) and the Compose BOM bump (2024.10.01 →
+    2026.06.01 is ~20 releases, real risk of shifting recomposition/animation timing under
+    a zero-behavior-change mandate) — both explicit user calls, not oversights. Revisit
+    either with a session that can run a full release-build regression pass.
 
 - **Native Android app** (`apps/valet-operator-android`) — Kotlin + Jetpack Compose,
   built in 6 phases against a brand-new bearer-token JSON API layer under

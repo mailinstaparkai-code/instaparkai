@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getValetSession } from "@/lib/valet-auth/session";
 
@@ -112,6 +112,7 @@ export async function createVehicleType(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath(PATH);
+  updateTag(`vehicle-types:${session.assignedSiteId}`);
 }
 
 export async function deleteVehicleType(formData: FormData) {
@@ -129,6 +130,7 @@ export async function deleteVehicleType(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath(PATH);
+  updateTag(`vehicle-types:${session.assignedSiteId}`);
 }
 
 // -- Tariff rules -------------------------------------------------------
@@ -173,6 +175,7 @@ export async function createTariffRule(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath(PATH);
+  updateTag(`tariff-rules:${session.assignedSiteId}`);
 }
 
 export async function deleteTariffRule(formData: FormData) {
@@ -190,4 +193,5 @@ export async function deleteTariffRule(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath(PATH);
+  updateTag(`tariff-rules:${session.assignedSiteId}`);
 }

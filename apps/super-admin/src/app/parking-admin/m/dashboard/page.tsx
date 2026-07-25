@@ -29,7 +29,7 @@ export default async function MobileDashboardPage() {
     <div className="flex flex-col gap-6">
       <div className="relative -mx-4 -mt-4 h-44 overflow-hidden">
         <Image
-          src="/img/valet-hero-mobile.png"
+          src="/img/valet-hero-mobile.webp"
           alt=""
           fill
           className="object-cover object-right-top"

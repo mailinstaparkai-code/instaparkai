@@ -27,16 +27,15 @@ class NotificationsViewModel(private val repository: NotificationsRepository) : 
         private set
 
     private var lastUnreadCount: Int? = null
-    private var pollingStarted = false
 
-    fun startPolling() {
-        if (pollingStarted) return
-        pollingStarted = true
-        viewModelScope.launch {
-            while (true) {
-                refresh()
-                delay(POLL_MS)
-            }
+    // Driven by the composable via repeatOnLifecycle(STARTED) so polling pauses
+    // while the app is backgrounded (nothing renders while backgrounded, so this
+    // changes nothing the user sees) and resumes -- with an immediate refresh --
+    // the moment the app is foregrounded again, same as today.
+    suspend fun pollWhileActive() {
+        while (true) {
+            refresh()
+            delay(POLL_MS)
         }
     }
 

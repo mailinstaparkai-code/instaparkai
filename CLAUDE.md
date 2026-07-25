@@ -137,11 +137,26 @@ this app.
   future-proofing and say so in their own header comment — don't credit them with a
   speedup.
 - **What actually costs time is each network round-trip from the serverless function to
-  Supabase.** The two live in different regions (functions `bom1`/Mumbai via
-  `apps/super-admin/vercel.json`, Supabase `ap-north‑east-1`/Tokyo), and the *first*
-  query in a function invocation additionally pays a TLS handshake. So the lever is
-  always **reduce the number of sequential round-trips**: `Promise.all` independent
-  queries, and wrap per-request-stable reads in React `cache()`.
+  Supabase**, and the *first* query in a function invocation additionally pays a TLS
+  handshake. Functions (`bom1`/Mumbai, `apps/super-admin/vercel.json`) and Supabase
+  (`ap-south-1`/Mumbai, moved from Tokyo — see HANDOFF.md) are now co-located, so this
+  matters less than it used to, but the lever is still always **reduce the number of
+  sequential round-trips**: `Promise.all` independent queries, wrap per-request-stable
+  reads in React `cache()`, and cache genuinely low-churn reference data
+  (`getCachedVehicleTypes`/`getCachedTariffRules` in `lib/parking-admin/queue.ts`) with
+  `unstable_cache` — never cache anything that embeds live mutable state (e.g. `zones`'
+  embedded `slots.status`).
+- **This Next.js version's `revalidateTag`/`unstable_cache` cache-invalidation APIs are
+  not the ones in anyone's training data** (per this repo's own `AGENTS.md` — read
+  `node_modules/next/dist/docs/` before writing cache-invalidation code). `revalidateTag`
+  now **requires a second `profile` argument** (`revalidateTag(tag, "max")` or `{expire}`)
+  and is meant for Route Handlers/webhooks with stale-while-revalidate semantics; calling
+  it with one argument is deprecated and will eventually error. Inside a **Server
+  Action** — which is every mutation path in this app — use `updateTag(tag)` instead: it
+  immediately expires the tag for read-your-own-writes, and is the only one of the two
+  that works there. Getting this backwards doesn't fail loudly at the call site; it shows
+  up as a stale-data bug (or a TypeScript arity error, if you're lucky) somewhere else
+  entirely.
 - `getValetSession` / `getValetSessionFromToken` (`lib/valet-auth/session.ts`) and
   `getSiteRow` (`lib/parking-admin/queue.ts`) are **deliberately `cache()`-wrapped** —
   every route verifies the session twice (once in `layout.tsx`, once in `page.tsx`), and

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -25,29 +25,8 @@ export function AppShell({
   const navItems =
     nav === "super-admin" ? superAdminNav : nav === "valet-operator" ? valetOperatorNav : parkingAdminNav;
   const pathname = usePathname();
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const initialSearchQuery = searchParams.get("q") ?? "";
-
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        searchInputRef.current?.focus();
-      }
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
-
-  function handleSearchSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const trimmed = (searchInputRef.current?.value ?? "").trim();
-    router.push(trimmed ? `/parking-admin/vehicles?q=${encodeURIComponent(trimmed)}` : "/parking-admin/vehicles");
-  }
 
   // The dark SaaS revamp (gradient sidebar, glass topbar, glowing active pill) is
   // scoped to the parking-admin/valet-operator surfaces only -- Super Admin keeps
@@ -152,23 +131,9 @@ export function AppShell({
           {nav === "super-admin" ? (
             <div className="flex-1" />
           ) : (
-            <form
-              onSubmit={handleSearchSubmit}
-              className="flex flex-1 items-center gap-2 rounded-lg border border-input bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground focus-within:text-foreground"
-            >
-              <Search className="size-4 shrink-0" />
-              <input
-                key={initialSearchQuery}
-                ref={searchInputRef}
-                type="text"
-                defaultValue={initialSearchQuery}
-                placeholder="Search vehicles…"
-                className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-              />
-              <kbd className="hidden rounded border border-border bg-background px-1.5 py-0.5 text-xs sm:inline">
-                ⌘K
-              </kbd>
-            </form>
+            <Suspense fallback={<SearchFormFallback />}>
+              <SearchForm />
+            </Suspense>
           )}
 
           <span className="hidden items-center gap-1.5 rounded-full bg-status-info/15 px-3 py-1.5 text-sm font-medium text-status-info sm:flex">
@@ -256,5 +221,75 @@ function ThemeToggle() {
         <Moon className="size-5" />
       )}
     </button>
+  );
+}
+
+// Isolated in its own component (rather than inline in AppShell) so the
+// useSearchParams() call it needs can sit behind a <Suspense> boundary --
+// required by Next.js for any component that reads search params, even
+// though this app's routes are already forced fully dynamic by
+// getValetSession()'s cookies() call, so the fallback below is never
+// actually shown in practice.
+function SearchForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const initialSearchQuery = searchParams.get("q") ?? "";
+
+  useEffect(() => {
+    function onKeyDown(event: KeyboardEvent) {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  function handleSearchSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const trimmed = (searchInputRef.current?.value ?? "").trim();
+    router.push(trimmed ? `/parking-admin/vehicles?q=${encodeURIComponent(trimmed)}` : "/parking-admin/vehicles");
+  }
+
+  return (
+    <form
+      onSubmit={handleSearchSubmit}
+      className="flex flex-1 items-center gap-2 rounded-lg border border-input bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground focus-within:text-foreground"
+    >
+      <Search className="size-4 shrink-0" />
+      <input
+        key={initialSearchQuery}
+        ref={searchInputRef}
+        type="text"
+        defaultValue={initialSearchQuery}
+        placeholder="Search vehicles…"
+        className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+      />
+      <kbd className="hidden rounded border border-border bg-background px-1.5 py-0.5 text-xs sm:inline">
+        ⌘K
+      </kbd>
+    </form>
+  );
+}
+
+// Identical markup to SearchForm's initial render, minus the parts that
+// depend on useSearchParams() -- only rendered for the brief instant (if
+// ever) before SearchForm resolves.
+function SearchFormFallback() {
+  return (
+    <div className="flex flex-1 items-center gap-2 rounded-lg border border-input bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground focus-within:text-foreground">
+      <Search className="size-4 shrink-0" />
+      <input
+        type="text"
+        placeholder="Search vehicles…"
+        disabled
+        className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
+      />
+      <kbd className="hidden rounded border border-border bg-background px-1.5 py-0.5 text-xs sm:inline">
+        ⌘K
+      </kbd>
+    </div>
   );
 }

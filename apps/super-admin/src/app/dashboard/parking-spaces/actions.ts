@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -183,6 +183,11 @@ export async function createTariffRule(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath(PATH);
+  // Parking Admin's Live Queue reads tariff_rules through a cached fetcher
+  // (getCachedTariffRules in lib/parking-admin/queue.ts) -- this is the second,
+  // independent write path to that table, so it needs the same invalidation
+  // or an edit made here would silently go stale on the Parking Admin side.
+  updateTag(`tariff-rules:${parking_space_id}`);
 }
 
 export async function createSlot(formData: FormData) {

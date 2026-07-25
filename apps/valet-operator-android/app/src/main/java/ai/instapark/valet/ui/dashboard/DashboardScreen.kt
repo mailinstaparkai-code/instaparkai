@@ -44,6 +44,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -312,12 +313,15 @@ private fun MyStatusCard(viewModel: DashboardViewModel) {
                 }
             }
             Spacer(Modifier.height(12.dp))
-            AnimatedSegmented(
-                options = listOf(
+            val statusOptions = remember {
+                listOf(
                     SegmentOption("in", "IN", Icons.Filled.Check),
                     SegmentOption("break", "BREAK", Icons.Filled.Coffee),
                     SegmentOption("out", "OUT", Icons.Filled.PowerSettingsNew),
-                ),
+                )
+            }
+            AnimatedSegmented(
+                options = statusOptions,
                 selected = viewModel.myStatus,
                 enabled = !viewModel.statusPending && !onLeave,
                 onSelect = { viewModel.setStatus(it) },

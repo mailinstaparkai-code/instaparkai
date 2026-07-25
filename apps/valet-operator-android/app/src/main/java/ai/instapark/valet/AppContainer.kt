@@ -31,7 +31,13 @@ class AppContainer(context: Context) {
 
     private val okHttpClient = OkHttpClient.Builder()
         .addInterceptor(AuthInterceptor(sessionTokenHolder))
-        .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC })
+        .apply {
+            // Logging is dev-only -- it adds real per-request buffering/logcat overhead
+            // and isn't user-visible either way, so it stays out of release builds.
+            if (BuildConfig.DEBUG) {
+                addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BASIC })
+            }
+        }
         .build()
 
     private val retrofit = Retrofit.Builder()

@@ -30,6 +30,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
@@ -51,9 +54,14 @@ fun NotificationsBell() {
         factory = NotificationsViewModelFactory(container.notificationsRepository)
     )
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     var open by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) { viewModel.startPolling() }
+    LaunchedEffect(viewModel, lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewModel.pollWhileActive()
+        }
+    }
     LaunchedEffect(viewModel.vibrateSignal) {
         if (viewModel.vibrateSignal > 0) Haptics.notify(context)
     }
