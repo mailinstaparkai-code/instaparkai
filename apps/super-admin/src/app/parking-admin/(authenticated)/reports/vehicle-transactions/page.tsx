@@ -61,6 +61,11 @@ export default async function VehicleTransactionReportPage({
       .gte("checked_in_at", `${from}T00:00:00`)
       .lte("checked_in_at", `${to}T23:59:59`)
       .order("checked_in_at", { ascending: false })
+      // Bounded so a wide date range on a busy site can't pull an unlimited row
+      // set over the wire. Every ticket unpivots into at least one transaction,
+      // so MAX_ROWS tickets is always enough to fill the MAX_ROWS transaction cap
+      // applied below.
+      .limit(MAX_ROWS)
       .returns<TicketRow[]>(),
     supabase
       .from("valet_accounts")

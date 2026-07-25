@@ -11,21 +11,25 @@ export async function uploadTicketPhotos(
   formData: FormData,
   fields: { name: string; label: string }[]
 ): Promise<{ label: string; path: string }[]> {
-  const uploaded: { label: string; path: string }[] = [];
+  // Uploaded in parallel, not one-at-a-time: check-in has 5 photo fields, and the
+  // storage bucket is a long round-trip from the serverless region, so a
+  // sequential loop made the operator wait for 5 full uploads back-to-back.
+  // `map` + filter preserves the original field order in the returned array.
+  const results = await Promise.all(
+    fields.map(async ({ name, label }) => {
+      const file = formData.get(name);
+      if (!(file instanceof File) || file.size === 0) return null;
 
-  for (const { name, label } of fields) {
-    const file = formData.get(name);
-    if (!(file instanceof File) || file.size === 0) continue;
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const path = `${siteId}/${ticketId}/${stage}-${label}-${Date.now()}.jpg`;
+      const { error } = await supabase.storage
+        .from(BUCKET)
+        .upload(path, buffer, { contentType: file.type || "image/jpeg" });
+      return error ? null : { label, path };
+    })
+  );
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const path = `${siteId}/${ticketId}/${stage}-${label}-${Date.now()}.jpg`;
-    const { error } = await supabase.storage
-      .from(BUCKET)
-      .upload(path, buffer, { contentType: file.type || "image/jpeg" });
-    if (!error) uploaded.push({ label, path });
-  }
-
-  return uploaded;
+  return results.filter((r): r is { label: string; path: string } => r !== null);
 }
 
 export async function uploadOperatorPhoto(

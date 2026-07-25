@@ -146,13 +146,6 @@ export default async function VehicleLogPage({
   }
 
   const from = (page - 1) * PAGE_SIZE;
-  const { data: tickets, count } = await baseQuery
-    .order("checked_in_at", { ascending: false })
-    .range(from, from + PAGE_SIZE - 1)
-    .returns<Ticket[]>();
-
-  const totalCount = count ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   let statsQuery = supabase
     .from("valet_tickets")
@@ -166,10 +159,25 @@ export default async function VehicleLogPage({
     const list = operatorFilter.join(",");
     statsQuery = statsQuery.or(`checked_in_by.in.(${list}),delivered_by.in.(${list})`);
   }
-  const { data: completedForStats } = await statsQuery.returns<
-    { fare_amount: number | null; payment_collected: boolean; checked_in_at: string; completed_at: string | null }[]
-  >();
+  // The paginated row list and the revenue/stats aggregate are independent, so
+  // they go out together rather than one after the other.
+  const [{ data: tickets, count }, { data: completedForStats }] = await Promise.all([
+    baseQuery
+      .order("checked_in_at", { ascending: false })
+      .range(from, from + PAGE_SIZE - 1)
+      .returns<Ticket[]>(),
+    statsQuery.returns<
+      {
+        fare_amount: number | null;
+        payment_collected: boolean;
+        checked_in_at: string;
+        completed_at: string | null;
+      }[]
+    >(),
+  ]);
 
+  const totalCount = count ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const completed = completedForStats ?? [];
   const totalRevenue = completed.reduce((sum, t) => sum + (t.fare_amount ?? 0), 0);
   const paidCount = completed.filter((t) => t.payment_collected).length;

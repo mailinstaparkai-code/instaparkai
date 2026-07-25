@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { randomBytes, randomUUID } from "node:crypto";
 import { headers } from "next/headers";
 import type { createServiceClient } from "@/lib/supabase/service";
@@ -71,21 +72,36 @@ export async function getBaseUrl() {
   return `${host.startsWith("localhost") ? "http" : "https"}://${host}`;
 }
 
+// One request-cached read backing both getSiteName and isAutoAllocateEnabled.
+// These used to be two separate queries for the same row, and getSiteName is hit
+// from four different mutation paths (twice over when auto-allocation chains into
+// dispatchToOperator) -- with the Supabase project a long round-trip away, each
+// of those repeats was real latency on a button press. Safe to memoize: the
+// service client is a stable singleton, so the cache key is stable, and React's
+// cache is request-scoped.
+const getSiteRow = cache(async function getSiteRow(
+  supabase: ReturnType<typeof createServiceClient>,
+  siteId: string
+) {
+  const { data } = await supabase
+    .from("parking_spaces")
+    .select("name, auto_allocate_operator")
+    .eq("id", siteId)
+    .single();
+  return data;
+});
+
 export async function getSiteName(supabase: ReturnType<typeof createServiceClient>, siteId: string) {
-  const { data } = await supabase.from("parking_spaces").select("name").eq("id", siteId).single();
-  return data?.name ?? "Valet parking";
+  const site = await getSiteRow(supabase, siteId);
+  return site?.name ?? "Valet parking";
 }
 
 export async function isAutoAllocateEnabled(
   supabase: ReturnType<typeof createServiceClient>,
   siteId: string
 ) {
-  const { data } = await supabase
-    .from("parking_spaces")
-    .select("auto_allocate_operator")
-    .eq("id", siteId)
-    .single();
-  return data?.auto_allocate_operator ?? false;
+  const site = await getSiteRow(supabase, siteId);
+  return site?.auto_allocate_operator ?? false;
 }
 
 // Shared by the manual dispatch picker and auto-allocation -- moves a "requested"
@@ -106,33 +122,42 @@ async function dispatchToOperator(
     .eq("id", ticket.id);
   if (error) throw new Error(error.message);
 
-  const siteName = await getSiteName(supabase, siteId);
-  await fireTrigger({
-    supabase,
-    siteId,
-    triggerKey: "vehicle_in_transit",
-    ticketId: ticket.id,
-    mobileNumber: ticket.mobile_number,
-    variables: {
-      vehicleNumber: ticket.vehicle_number,
-      siteName,
-      trackingUrl: `${await getBaseUrl()}/track/${ticket.ticket_token}`,
-    },
-  });
-  await notify({
-    supabase,
-    siteId,
-    ticketId: ticket.id,
-    kind: "vehicle_dispatched",
-    message: `${ticket.vehicle_number} dispatched to an operator`,
-  });
-  await dispatchPush(
-    supabase,
-    operatorId,
-    "Vehicle assigned",
-    `${ticket.vehicle_number} is ready for pickup`,
-    { ticketId: ticket.id }
-  );
+  // These three side effects are independent of each other and all three are
+  // best-effort by contract (each swallows its own errors and never throws), so
+  // they run concurrently instead of in a chain -- the guest-facing message, the
+  // in-app bell notification, and the operator's push used to add up to four
+  // serial round-trips before the operator's tap was acknowledged.
+  await Promise.all([
+    (async () => {
+      const [siteName, baseUrl] = await Promise.all([getSiteName(supabase, siteId), getBaseUrl()]);
+      await fireTrigger({
+        supabase,
+        siteId,
+        triggerKey: "vehicle_in_transit",
+        ticketId: ticket.id,
+        mobileNumber: ticket.mobile_number,
+        variables: {
+          vehicleNumber: ticket.vehicle_number,
+          siteName,
+          trackingUrl: `${baseUrl}/track/${ticket.ticket_token}`,
+        },
+      });
+    })(),
+    notify({
+      supabase,
+      siteId,
+      ticketId: ticket.id,
+      kind: "vehicle_dispatched",
+      message: `${ticket.vehicle_number} dispatched to an operator`,
+    }),
+    dispatchPush(
+      supabase,
+      operatorId,
+      "Vehicle assigned",
+      `${ticket.vehicle_number} is ready for pickup`,
+      { ticketId: ticket.id }
+    ),
+  ]);
 }
 
 export async function loadTicket(
@@ -333,28 +358,35 @@ export async function checkInVehicle(
   });
   if (error) throw new Error(error.message);
 
-  const siteName = await getSiteName(supabase, session.assignedSiteId);
-  await fireTrigger({
-    supabase,
-    siteId: session.assignedSiteId,
-    triggerKey: "vehicle_checked_in",
-    ticketId,
-    mobileNumber: mobile_number,
-    variables: {
-      vehicleNumber: vehicle_number,
-      vehicleType: vehicle_type,
-      mobileNumber: mobile_number,
-      siteName,
-      trackingUrl: `${await getBaseUrl()}/track/${ticketToken}`,
-    },
-  });
-  await notify({
-    supabase,
-    siteId: session.assignedSiteId,
-    ticketId,
-    kind: "vehicle_checked_in",
-    message: `${vehicle_number} checked in`,
-  });
+  await Promise.all([
+    (async () => {
+      const [siteName, baseUrl] = await Promise.all([
+        getSiteName(supabase, session.assignedSiteId),
+        getBaseUrl(),
+      ]);
+      await fireTrigger({
+        supabase,
+        siteId: session.assignedSiteId,
+        triggerKey: "vehicle_checked_in",
+        ticketId,
+        mobileNumber: mobile_number,
+        variables: {
+          vehicleNumber: vehicle_number,
+          vehicleType: vehicle_type,
+          mobileNumber: mobile_number,
+          siteName,
+          trackingUrl: `${baseUrl}/track/${ticketToken}`,
+        },
+      });
+    })(),
+    notify({
+      supabase,
+      siteId: session.assignedSiteId,
+      ticketId,
+      kind: "vehicle_checked_in",
+      message: `${vehicle_number} checked in`,
+    }),
+  ]);
 
   return {
     id: ticketId,
@@ -436,26 +468,37 @@ export async function requestVehicle(
     .eq("id", id);
   if (error) throw new Error(error.message);
 
-  const siteName = await getSiteName(supabase, session.assignedSiteId);
-  await fireTrigger({
-    supabase,
-    siteId: session.assignedSiteId,
-    triggerKey: "pickup_requested",
-    ticketId: id,
-    mobileNumber: ticket.mobile_number,
-    variables: {
-      vehicleNumber: ticket.vehicle_number,
-      siteName,
-      trackingUrl: `${await getBaseUrl()}/track/${ticket.ticket_token}`,
-    },
-  });
-  await notify({
-    supabase,
-    siteId: session.assignedSiteId,
-    ticketId: id,
-    kind: "vehicle_requested",
-    message: `${ticket.vehicle_number} pickup requested`,
-  });
+  // Deliberately still awaited *before* the auto-allocate branch below, even
+  // though both are independent: dispatchToOperator fires its own guest-facing
+  // "in transit" message, and the guest should not receive that ahead of this
+  // "pickup requested" one.
+  await Promise.all([
+    (async () => {
+      const [siteName, baseUrl] = await Promise.all([
+        getSiteName(supabase, session.assignedSiteId),
+        getBaseUrl(),
+      ]);
+      await fireTrigger({
+        supabase,
+        siteId: session.assignedSiteId,
+        triggerKey: "pickup_requested",
+        ticketId: id,
+        mobileNumber: ticket.mobile_number,
+        variables: {
+          vehicleNumber: ticket.vehicle_number,
+          siteName,
+          trackingUrl: `${baseUrl}/track/${ticket.ticket_token}`,
+        },
+      });
+    })(),
+    notify({
+      supabase,
+      siteId: session.assignedSiteId,
+      ticketId: id,
+      kind: "vehicle_requested",
+      message: `${ticket.vehicle_number} pickup requested`,
+    }),
+  ]);
 
   if (await isAutoAllocateEnabled(supabase, session.assignedSiteId)) {
     const available = await getAvailableOperators(supabase, session.assignedSiteId);
@@ -514,27 +557,34 @@ export async function markArrived(
     .eq("id", id);
   if (error) throw new Error(error.message);
 
-  const siteName = await getSiteName(supabase, session.assignedSiteId);
-  await fireTrigger({
-    supabase,
-    siteId: session.assignedSiteId,
-    triggerKey: "vehicle_arrived",
-    ticketId: id,
-    mobileNumber: ticket.mobile_number,
-    variables: {
-      vehicleNumber: ticket.vehicle_number,
-      siteName,
-      otp: ticket.otp ?? "",
-      trackingUrl: `${await getBaseUrl()}/track/${ticket.ticket_token}`,
-    },
-  });
-  await notify({
-    supabase,
-    siteId: session.assignedSiteId,
-    ticketId: id,
-    kind: "vehicle_arrived",
-    message: `${ticket.vehicle_number} has arrived`,
-  });
+  await Promise.all([
+    (async () => {
+      const [siteName, baseUrl] = await Promise.all([
+        getSiteName(supabase, session.assignedSiteId),
+        getBaseUrl(),
+      ]);
+      await fireTrigger({
+        supabase,
+        siteId: session.assignedSiteId,
+        triggerKey: "vehicle_arrived",
+        ticketId: id,
+        mobileNumber: ticket.mobile_number,
+        variables: {
+          vehicleNumber: ticket.vehicle_number,
+          siteName,
+          otp: ticket.otp ?? "",
+          trackingUrl: `${baseUrl}/track/${ticket.ticket_token}`,
+        },
+      });
+    })(),
+    notify({
+      supabase,
+      siteId: session.assignedSiteId,
+      ticketId: id,
+      kind: "vehicle_arrived",
+      message: `${ticket.vehicle_number} has arrived`,
+    }),
+  ]);
 }
 
 export async function updateTicketDetails(
@@ -642,27 +692,31 @@ export async function completeHandover(
     await supabase.from("slots").update({ status: "available" }).eq("id", ticket.slot_id);
   }
 
-  const siteName = await getSiteName(supabase, session.assignedSiteId);
-  await fireTrigger({
-    supabase,
-    siteId: session.assignedSiteId,
-    triggerKey: "handover_complete",
-    ticketId: id,
-    mobileNumber: ticket.mobile_number,
-    variables: {
-      vehicleNumber: ticket.vehicle_number,
-      siteName,
-      fareAmount: fareRaw ?? "0",
-      paymentStatus: fields.paymentCollected ? "paid" : "pending",
-    },
-  });
-  await notify({
-    supabase,
-    siteId: session.assignedSiteId,
-    ticketId: id,
-    kind: "handover_complete",
-    message: `${ticket.vehicle_number} handover complete`,
-  });
+  await Promise.all([
+    (async () => {
+      const siteName = await getSiteName(supabase, session.assignedSiteId);
+      await fireTrigger({
+        supabase,
+        siteId: session.assignedSiteId,
+        triggerKey: "handover_complete",
+        ticketId: id,
+        mobileNumber: ticket.mobile_number,
+        variables: {
+          vehicleNumber: ticket.vehicle_number,
+          siteName,
+          fareAmount: fareRaw ?? "0",
+          paymentStatus: fields.paymentCollected ? "paid" : "pending",
+        },
+      });
+    })(),
+    notify({
+      supabase,
+      siteId: session.assignedSiteId,
+      ticketId: id,
+      kind: "handover_complete",
+      message: `${ticket.vehicle_number} handover complete`,
+    }),
+  ]);
 }
 
 export async function getTicketPhotoUrls(

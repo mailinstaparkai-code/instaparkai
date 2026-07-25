@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { randomBytes, createHash } from "node:crypto";
 import { cookies } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/service";
@@ -63,7 +64,16 @@ export async function destroyValetApiToken(token: string) {
   await supabase.from("valet_sessions").delete().eq("token_hash", hashToken(token));
 }
 
-export async function getValetSessionFromToken(token: string): Promise<ValetSession | null> {
+// Memoized per request (React `cache`), keyed by token. Every route in both the
+// `(authenticated)/*` and `m/*` trees verifies the session twice -- once in
+// layout.tsx to guard the subtree, then again in page.tsx to read
+// assignedSiteId/role -- and the Supabase project sits a long way from the
+// serverless region, so that duplicate lookup was a full extra round-trip on
+// every page load. `cache` is request-scoped, never shared across requests, and
+// keyed on the token, so it can't leak one account's session into another's.
+export const getValetSessionFromToken = cache(async function getValetSessionFromToken(
+  token: string
+): Promise<ValetSession | null> {
   const supabase = createServiceClient();
   const tokenHash = hashToken(token);
   const { data } = await supabase
@@ -109,14 +119,14 @@ export async function getValetSessionFromToken(token: string): Promise<ValetSess
     assignedSiteId: account.assigned_site_id,
     fullName: account.full_name,
   };
-}
+});
 
-export async function getValetSession(): Promise<ValetSession | null> {
+export const getValetSession = cache(async function getValetSession(): Promise<ValetSession | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(COOKIE_NAME)?.value;
   if (!token) return null;
   return getValetSessionFromToken(token);
-}
+});
 
 export async function destroyValetSession() {
   const cookieStore = await cookies();

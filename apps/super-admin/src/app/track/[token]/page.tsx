@@ -43,7 +43,11 @@ export default async function GuestTrackingPage({
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background p-6">
-      <StatusPoller active={ticket.status !== "completed"} />
+      <StatusPoller
+        token={token}
+        status={ticket.status}
+        active={ticket.status !== "completed"}
+      />
       <div className="glass-card w-full max-w-sm p-8">
         <h1 className="text-xl font-semibold">
           Insta<span className="text-brand-orange">Park</span> AI
