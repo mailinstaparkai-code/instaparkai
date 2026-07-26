@@ -42,7 +42,7 @@ export default async function GuestTrackingPage({
   const stepIndex = STEPS.findIndex((s) => s.key === ticket.status);
 
   return (
-    <div className="flex min-h-dvh items-center justify-center bg-background p-6">
+    <div className="pa-scope flex min-h-dvh items-center justify-center bg-background p-6">
       <StatusPoller
         token={token}
         status={ticket.status}
