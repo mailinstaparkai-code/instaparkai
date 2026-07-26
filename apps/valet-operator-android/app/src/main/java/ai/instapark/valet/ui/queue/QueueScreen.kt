@@ -26,6 +26,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import java.time.OffsetDateTime
@@ -65,17 +66,19 @@ import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.VpnKey
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -107,6 +110,36 @@ fun QueueScreen() {
         }
         is QueueUiState.Success -> QueueContent(state.response, viewModel)
     }
+}
+
+/** A pill that visibly reads as a tab: filled + elevated when selected, outlined when not. */
+@Composable
+private fun QueueFilterChip(selected: Boolean, label: String, onClick: () -> Unit) {
+    val colors = ValetTheme.colors
+    FilterChip(
+        selected = selected,
+        onClick = onClick,
+        label = { Text(label, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium) },
+        shape = RoundedCornerShape(50),
+        colors = FilterChipDefaults.filterChipColors(
+            containerColor = colors.surface,
+            labelColor = colors.inkSecondary,
+            selectedContainerColor = colors.primary,
+            selectedLabelColor = Color.White,
+        ),
+        border = FilterChipDefaults.filterChipBorder(
+            enabled = true,
+            selected = selected,
+            borderColor = colors.fieldBorder,
+            selectedBorderColor = colors.primary,
+            borderWidth = 1.dp,
+            selectedBorderWidth = 0.dp,
+        ),
+        elevation = FilterChipDefaults.filterChipElevation(
+            elevation = 0.dp,
+            pressedElevation = 2.dp,
+        ),
+    )
 }
 
 @Composable
@@ -149,42 +182,57 @@ private fun QueueContent(response: QueueResponse, viewModel: QueueViewModel) {
 
             if (response.canToggleAutoAllocate) {
                 Spacer(Modifier.height(12.dp))
-                Card {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(Modifier.weight(1f)) {
-                            Text("Auto-allocate operators", fontWeight = FontWeight.Medium)
-                            Text(
-                                "Round-robin dispatch to the next available operator.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(
+                            Brush.horizontalGradient(
+                                listOf(colors.tintBlue, colors.surface),
                             )
-                        }
-                        Switch(
-                            checked = response.autoAllocateEnabled,
-                            onCheckedChange = { viewModel.setAutoAllocate(it) },
+                        )
+                        .border(1.dp, colors.primary.copy(alpha = 0.15f), RoundedCornerShape(18.dp))
+                        .padding(14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Auto-allocate operators", fontWeight = FontWeight.Medium)
+                        Text(
+                            "Round-robin dispatch to the next available operator.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.inkSecondary,
                         )
                     }
+                    Switch(
+                        checked = response.autoAllocateEnabled,
+                        onCheckedChange = { viewModel.setAutoAllocate(it) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = colors.primary,
+                            checkedBorderColor = Color.Transparent,
+                            uncheckedThumbColor = colors.surface,
+                            uncheckedTrackColor = colors.hairlineSoft,
+                            uncheckedBorderColor = Color.Transparent,
+                        ),
+                    )
                 }
             }
 
             Spacer(Modifier.height(12.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 item {
-                    FilterChip(
+                    QueueFilterChip(
                         selected = viewModel.statusFilter == null,
+                        label = "All",
                         onClick = { viewModel.applyStatusFilter(null) },
-                        label = { Text("All") },
                     )
                 }
                 items(response.filters.statusOptions) { option ->
-                    FilterChip(
+                    QueueFilterChip(
                         selected = viewModel.statusFilter == option.value,
+                        label = option.label,
                         onClick = { viewModel.applyStatusFilter(option.value) },
-                        label = { Text(option.label) },
                     )
                 }
             }
@@ -789,7 +837,7 @@ private fun HandoverDialog(
         )
         Spacer(Modifier.height(10.dp))
         OtpBoxInput(value = otp, onValueChange = { otp = it })
-        Spacer(Modifier.height(10.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 14.dp), color = colors.hairlineSoft)
         OutlinedTextField(
             value = fare,
             onValueChange = { fare = it },
@@ -804,7 +852,7 @@ private fun HandoverDialog(
             Spacer(Modifier.width(8.dp))
             Text("Payment collected", style = MaterialTheme.typography.bodySmall)
         }
-        Spacer(Modifier.height(10.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 14.dp), color = colors.hairlineSoft)
         Text("Handover photo (optional)", style = MaterialTheme.typography.labelMedium, color = colors.inkSecondary)
         Spacer(Modifier.height(6.dp))
         PhotoCaptureField("Photo", handoverPhoto, { handoverPhoto = it }, Modifier.fillMaxWidth(0.4f))

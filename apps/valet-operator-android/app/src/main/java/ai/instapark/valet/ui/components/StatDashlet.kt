@@ -32,7 +32,7 @@ fun StatDashlet(
     modifier: Modifier = Modifier,
 ) {
     val colors = ValetTheme.colors
-    GlassCard(modifier = modifier, cornerRadius = 18.dp, contentPadding = 12.dp) {
+    GlassCard(modifier = modifier, cornerRadius = 18.dp, contentPadding = 12.dp, tint = accent) {
         Column {
             Box(
                 modifier = Modifier

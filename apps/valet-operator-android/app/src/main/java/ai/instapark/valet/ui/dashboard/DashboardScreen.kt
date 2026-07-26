@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -55,6 +56,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import ai.instapark.valet.util.Haptics
@@ -111,44 +113,14 @@ private fun DashboardContent(
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
     ) {
-        // Hero header: greeting over the valet-storefront art, blended into the bg
-        Box(modifier = Modifier.fillMaxWidth()) {
-            Image(
-                painter = painterResource(R.drawable.img_hero_valet),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(190.dp),
-                alignment = Alignment.TopEnd,
-            )
-            // Fade the art toward the background on the left + bottom so the text reads
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(190.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                MaterialTheme.colorScheme.background,
-                                MaterialTheme.colorScheme.background.copy(alpha = 0.55f),
-                                Color.Transparent,
-                            )
-                        )
-                    )
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(190.dp)
-                    .background(
-                        Brush.verticalGradient(
-                            colors = listOf(Color.Transparent, MaterialTheme.colorScheme.background),
-                            startY = 260f,
-                        )
-                    )
-            )
-            Column(modifier = Modifier.padding(16.dp)) {
+        // Hero header: greeting beside a framed, rounded photo card (not text-over-photo)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
+            Column(modifier = Modifier.weight(0.95f)) {
                 Text(
                     "${greetingPrefix()},",
                     style = MaterialTheme.typography.headlineSmall,
@@ -158,38 +130,56 @@ private fun DashboardContent(
                     viewModel.greetingName ?: "there",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
+                    color = colors.primary,
                 )
                 Spacer(Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        summary.siteName ?: "Your site",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = colors.inkSecondary,
-                    )
-                    if (summary.valetParkingEnabled) {
-                        Spacer(Modifier.width(8.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
+                Text(
+                    summary.siteName ?: "Your site",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = colors.inkSecondary,
+                )
+                if (summary.valetParkingEnabled) {
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(50))
+                            .background(colors.tintGreen)
+                            .padding(horizontal = 10.dp, vertical = 4.dp),
+                    ) {
+                        Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(50))
-                                .background(colors.tintGreen)
-                                .padding(horizontal = 10.dp, vertical = 4.dp),
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(6.dp)
-                                    .clip(CircleShape)
-                                    .background(colors.success)
-                            )
-                            Text(
-                                "Valet enabled",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = colors.success,
-                                modifier = Modifier.padding(start = 6.dp),
-                            )
-                        }
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(colors.success)
+                        )
+                        Text(
+                            "Valet enabled",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = colors.success,
+                            modifier = Modifier.padding(start = 6.dp),
+                        )
                     }
                 }
+            }
+            Box(modifier = Modifier.weight(1.1f).height(190.dp)) {
+                // Brand-gradient accent peeking from behind the photo's top-left/bottom-right
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .offset(x = (-6).dp, y = (-6).dp)
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(Brush.linearGradient(listOf(colors.primary, colors.accent))),
+                )
+                Image(
+                    painter = painterResource(R.drawable.img_hero_valet),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    alignment = Alignment.TopEnd,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(24.dp)),
+                )
             }
         }
 
@@ -444,16 +434,18 @@ private fun QuickActionRow(
         Box(
             modifier = Modifier
                 .size(28.dp)
-                .clip(CircleShape)
-                .background(accent.copy(alpha = 0.16f)),
+                .clip(RoundedCornerShape(8.dp))
+                .background(accent),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(16.dp))
+            Icon(icon, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
         }
         Text(
             label,
             style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(start = 10.dp).weight(1f),
         )
         Icon(
