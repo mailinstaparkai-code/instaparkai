@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +12,7 @@ export default function ParkingAdminLoginPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -48,13 +50,28 @@ export default function ParkingAdminLoginPage() {
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                name="password"
+                type={passwordVisible ? "text" : "password"}
+                autoComplete="current-password"
+                required
+                className="pr-9"
+              />
+              <button
+                type="button"
+                onClick={() => setPasswordVisible((visible) => !visible)}
+                className="absolute inset-y-0 right-0 flex w-9 items-center justify-center text-muted-foreground hover:text-foreground"
+                aria-label={passwordVisible ? "Hide password" : "Show password"}
+              >
+                {passwordVisible ? (
+                  <EyeOff className="size-4" />
+                ) : (
+                  <Eye className="size-4" />
+                )}
+              </button>
+            </div>
           </div>
 
           {error && (

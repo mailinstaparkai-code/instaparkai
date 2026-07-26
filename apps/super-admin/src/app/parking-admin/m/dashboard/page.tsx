@@ -36,12 +36,12 @@ export default async function MobileDashboardPage() {
           className="object-cover object-right-top"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 p-4">
-          <h1 className="text-xl font-semibold">
+          <h1 className="text-xl font-semibold text-white">
             Good morning, {session.fullName || session.username}
           </h1>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-white/80">
             {summary.siteName ?? "Your site"}
             {summary.valetParkingEnabled && (
               <span className="ml-2 rounded-full bg-status-success/15 px-2 py-0.5 text-xs font-medium text-status-success">

@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -71,7 +72,7 @@ export function HandoverButton({
             />
           </Field>
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="payment_collected" />
+            <Checkbox name="payment_collected" />
             Payment collected (GPay screenshot confirmed)
           </label>
           <div className="w-1/2 sm:w-1/3">

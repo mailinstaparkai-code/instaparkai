@@ -24,7 +24,7 @@ export function AutoAllocateToggle({
   }
 
   return (
-    <div className="glass-card flex items-center justify-between gap-4 p-3">
+    <div className="glass-card flex items-center justify-between gap-4 bg-gradient-to-br from-brand-blue/10 via-card to-card p-3">
       <div>
         <p className="text-sm font-medium">Auto-allocate operators</p>
         <p className="text-xs text-muted-foreground">

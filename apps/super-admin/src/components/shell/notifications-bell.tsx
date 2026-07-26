@@ -1,7 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Bell } from "lucide-react";
+import {
+  Bell,
+  BellOff,
+  Car,
+  Check,
+  Clock,
+  KeyRound,
+  MapPin,
+  Send,
+  XCircle,
+  type LucideIcon,
+} from "lucide-react";
 import {
   getRecentNotifications,
   markAllNotificationsRead,
@@ -20,6 +31,17 @@ const KIND_LABEL: Record<string, string> = {
   handover_complete: "Handover complete",
   vehicle_voided: "Voided",
 };
+
+const KIND_ICON: Record<string, { icon: LucideIcon; className: string }> = {
+  vehicle_checked_in: { icon: Check, className: "bg-status-success/15 text-status-success" },
+  vehicle_parked: { icon: Car, className: "bg-brand-blue/15 text-brand-blue" },
+  vehicle_requested: { icon: Clock, className: "bg-status-warning/15 text-status-warning" },
+  vehicle_dispatched: { icon: Send, className: "bg-brand-blue/15 text-brand-blue" },
+  vehicle_arrived: { icon: MapPin, className: "bg-status-success/15 text-status-success" },
+  handover_complete: { icon: KeyRound, className: "bg-status-success/15 text-status-success" },
+  vehicle_voided: { icon: XCircle, className: "bg-status-danger/15 text-status-danger" },
+};
+const DEFAULT_KIND_ICON = { icon: Bell, className: "bg-muted text-muted-foreground" };
 
 // Foreground-only haptic feedback: vibrates when a poll tick finds MORE unread
 // notifications than the previous tick. Android Chrome only (no-op elsewhere, e.g.
@@ -96,25 +118,38 @@ export function NotificationsBell() {
             className="fixed inset-0 z-40 cursor-default"
             onClick={() => setOpen(false)}
           />
-          <div className="absolute right-0 z-50 mt-2 max-h-96 w-80 overflow-y-auto rounded-lg bg-popover p-2 text-popover-foreground shadow-md ring-1 ring-foreground/10">
-            <p className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+          <div className="absolute right-0 z-50 mt-2 max-h-96 w-80 overflow-hidden rounded-xl bg-popover text-popover-foreground shadow-lg ring-1 ring-foreground/10">
+            <p className="border-b border-border px-3 py-2.5 text-sm font-semibold">
               Notifications
             </p>
-            {notifications.map((n) => (
-              <div key={n.id} className="rounded-lg px-2 py-2 hover:bg-muted">
-                <p className={`text-sm ${n.read_at ? "text-muted-foreground" : "font-medium"}`}>
-                  {n.message}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {KIND_LABEL[n.kind] ?? n.kind} · {formatISTTime(n.created_at)}
-                </p>
-              </div>
-            ))}
-            {!notifications.length && (
-              <p className="px-2 py-4 text-center text-sm text-muted-foreground">
-                No notifications yet.
-              </p>
-            )}
+            <div className="max-h-80 divide-y divide-border overflow-y-auto p-1">
+              {notifications.map((n) => {
+                const { icon: Icon, className } = KIND_ICON[n.kind] ?? DEFAULT_KIND_ICON;
+                return (
+                  <div key={n.id} className="flex items-start gap-3 px-2 py-2.5">
+                    <span
+                      className={`flex size-8 shrink-0 items-center justify-center rounded-full [&_svg]:size-4 ${className}`}
+                    >
+                      <Icon />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className={`text-sm ${n.read_at ? "text-muted-foreground" : "font-medium"}`}>
+                        {n.message}
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {KIND_LABEL[n.kind] ?? n.kind} · {formatISTTime(n.created_at)}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+              {!notifications.length && (
+                <div className="flex flex-col items-center gap-2 px-2 py-8 text-center">
+                  <BellOff className="size-6 text-muted-foreground/60" />
+                  <p className="text-sm text-muted-foreground">No notifications yet.</p>
+                </div>
+              )}
+            </div>
           </div>
         </>
       )}

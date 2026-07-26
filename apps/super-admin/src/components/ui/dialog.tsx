@@ -121,8 +121,8 @@ function DialogIconHeader({
       >
         {icon}
       </span>
-      <div className="flex flex-col gap-0.5 pt-0.5">
-        <DialogTitle className="text-lg">{title}</DialogTitle>
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5 pt-0.5">
+        <DialogTitle className="text-lg leading-snug">{title}</DialogTitle>
         {subtitle && <DialogDescription>{subtitle}</DialogDescription>}
       </div>
     </DialogHeader>
