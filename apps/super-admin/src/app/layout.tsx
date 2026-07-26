@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Inter_Tight, Geist_Mono } from "next/font/google";
+import { Inter, Inter_Tight, Geist_Mono, Poppins } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import "./globals.css";
 
@@ -18,6 +18,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// design.md §7 -- Poppins for the parking-admin/valet surfaces (2026 sky-blue revamp).
+// Scoped via the `.pa-scope` font-family rule in globals.css, not swapped globally --
+// the Super Admin portal keeps Inter (--font-sans) untouched.
+const poppins = Poppins({
+  variable: "--font-poppins",
+  weight: ["400", "500", "600", "700"],
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
   title: "InstaPark AI — Super Admin",
   description: "InstaPark AI enterprise parking management platform",
@@ -31,7 +40,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${interTight.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${interTight.variable} ${geistMono.variable} ${poppins.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">

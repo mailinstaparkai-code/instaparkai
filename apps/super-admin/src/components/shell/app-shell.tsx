@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -51,12 +52,29 @@ export function AppShell({
         {/* Full label at xl+ (1280px); collapses to an icon-only rail between 1024
             and 1280 (design.md §5: "collapses to icon-only under 1280px"). */}
         <div className="flex items-center justify-between px-2 lg:justify-center xl:justify-between">
-          <span className="text-lg font-semibold lg:hidden xl:inline">
-            Insta<span className="text-brand-orange">Park</span> AI
-          </span>
-          <span className="hidden text-lg font-semibold text-brand-orange lg:inline xl:hidden">
-            IP
-          </span>
+          {isParkingSurface ? (
+            <>
+              <Image
+                src="/img/logo-instaparkai.png"
+                alt="InstaParkAi"
+                width={140}
+                height={47}
+                className="h-8 w-auto lg:hidden xl:block"
+              />
+              <span className="hidden text-lg font-semibold text-brand-blue lg:inline xl:hidden">
+                IP
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="text-lg font-semibold lg:hidden xl:inline">
+                Insta<span className="text-brand-orange">Park</span> AI
+              </span>
+              <span className="hidden text-lg font-semibold text-brand-orange lg:inline xl:hidden">
+                IP
+              </span>
+            </>
+          )}
           <button
             aria-label="Close menu"
             className="lg:hidden"
@@ -93,7 +111,7 @@ export function AppShell({
                 className={`flex items-center gap-3 rounded-lg border-l-2 px-3 py-2 text-sm transition-colors lg:justify-center lg:px-2 xl:justify-start xl:px-3 ${
                   active
                     ? isParkingSurface
-                      ? "pa-active-pill border-transparent font-medium"
+                      ? "border-transparent bg-blue-tint font-medium text-brand-blue-deep"
                       : "border-brand-orange bg-sidebar-accent font-medium text-sidebar-accent-foreground"
                     : "border-transparent text-sidebar-foreground hover:bg-sidebar-accent/60"
                 }`}
@@ -106,8 +124,8 @@ export function AppShell({
         </nav>
 
         {isParkingSurface && (
-          <div className="absolute inset-x-4 bottom-4 hidden items-center gap-2 rounded-lg border border-sidebar-border bg-sidebar-accent/40 p-2 xl:flex">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-brand-orange text-sm font-medium text-white">
+          <div className="absolute inset-x-4 bottom-4 hidden items-center gap-2 rounded-2xl bg-blue-tint-soft p-2 xl:flex">
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#3B82F6] to-brand-blue text-sm font-medium text-white">
               {userLabel.slice(0, 1).toUpperCase()}
             </span>
             <div className="min-w-0">
@@ -136,7 +154,11 @@ export function AppShell({
             </Suspense>
           )}
 
-          <span className="hidden items-center gap-1.5 rounded-full bg-status-info/15 px-3 py-1.5 text-sm font-medium text-status-info sm:flex">
+          <span
+            className={`hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium sm:flex ${
+              isParkingSurface ? "bg-blue-tint text-brand-blue-deep" : "bg-status-info/15 text-status-info"
+            }`}
+          >
             <Sparkles className="size-4" />
             AI Copilot
           </span>
@@ -159,7 +181,11 @@ export function AppShell({
               onClick={() => setUserMenuOpen((v) => !v)}
               className="flex items-center gap-2 rounded-lg p-1.5 hover:bg-muted"
             >
-              <span className="flex size-8 items-center justify-center rounded-full bg-brand-orange text-sm font-medium text-white">
+              <span
+                className={`flex size-8 items-center justify-center rounded-full text-sm font-medium text-white ${
+                  isParkingSurface ? "bg-gradient-to-br from-[#3B82F6] to-brand-blue" : "bg-brand-orange"
+                }`}
+              >
                 {userLabel.slice(0, 1).toUpperCase()}
               </span>
             </button>
