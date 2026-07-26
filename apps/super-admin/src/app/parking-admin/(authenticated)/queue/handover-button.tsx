@@ -44,7 +44,9 @@ export function HandoverButton({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<Button size="sm">Complete handover</Button>} />
+      <DialogTrigger
+        render={<Button size="sm" className="bg-brand-orange hover:bg-brand-orange-strong">Complete handover</Button>}
+      />
       <DialogContent>
         <DialogIconHeader
           icon={<KeyRound className="size-5" />}

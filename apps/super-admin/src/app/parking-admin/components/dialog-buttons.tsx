@@ -17,7 +17,7 @@ export function DialogPrimaryButton({
   );
 }
 
-/** Outlined secondary action (Cancel), matching the reference's purple outline. */
+/** design.md §5 "Dialog" -- secondary footer button: white, hairline border, inkBody label. */
 export function DialogSecondaryButton({
   className,
   ...props
@@ -27,7 +27,7 @@ export function DialogSecondaryButton({
       type="button"
       variant="outline"
       className={cn(
-        "flex-1 border-status-disabled text-status-disabled hover:bg-status-disabled/10",
+        "flex-1 border-hairline text-ink-body hover:bg-hairline-soft",
         className
       )}
       {...props}

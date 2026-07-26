@@ -49,7 +49,7 @@ const STATUS_COLOR: Record<string, string> = {
   requested: "bg-status-warning/15 text-status-warning",
   in_transit: "bg-brand-orange/15 text-brand-orange",
   arrived: "bg-status-success/15 text-status-success",
-  completed: "bg-muted text-muted-foreground",
+  completed: "bg-status-success/15 text-status-success",
 };
 
 function parseCsv(value: string | undefined): string[] {

@@ -96,7 +96,7 @@ export default async function ValetOperatorsPage({
           </p>
         </div>
         <FormDialog
-          trigger={<Button size="sm">+ New Operator</Button>}
+          trigger={<Button size="sm" className="bg-brand-orange hover:bg-brand-orange-strong">+ New Operator</Button>}
           title="New valet operator"
           action={createOperator}
           submitLabel="Create"

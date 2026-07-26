@@ -49,7 +49,7 @@ const STATUS_COLOR: Record<string, string> = {
   requested: "bg-status-warning/15 text-status-warning",
   in_transit: "bg-brand-orange/15 text-brand-orange",
   arrived: "bg-status-success/15 text-status-success",
-  completed: "bg-muted text-muted-foreground",
+  completed: "bg-status-success/15 text-status-success",
 };
 
 function parseCsv(value: string | undefined): string[] {
@@ -168,7 +168,7 @@ export default async function LiveQueuePage({
           <p className="text-sm text-muted-foreground">{tickets.length} active vehicle(s)</p>
         </div>
         <FormDialog
-          trigger={<Button size="sm">+ Check-in Vehicle</Button>}
+          trigger={<Button size="sm" className="bg-brand-orange hover:bg-brand-orange-strong">+ Check-in Vehicle</Button>}
           title="Check-in Vehicle"
           subtitle="Enter vehicle details to check-in"
           icon={<Car className="size-5" />}

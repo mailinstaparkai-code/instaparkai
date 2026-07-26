@@ -364,14 +364,35 @@
     box-shadow: 0 12px 28px rgba(15, 23, 42, 0.1), 0 4px 10px rgba(15, 23, 42, 0.06);
   }
 
-  /* Sidebar gradient + active pill (parking-admin scope, dark) */
+  /* design.md §5 "Card" -- borderless surface on a soft shadow, no blur/glow wash.
+     Scoped to .pa-scope (parking-admin/valet) so Super Admin's own glass-card/
+     metric-card usages (dashboard/parking-spaces, login, set-password) keep their
+     existing blurred-glass look untouched. */
+  .pa-scope .glass-card {
+    background: var(--card);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none;
+    border-radius: var(--radius-card, 20px);
+    box-shadow: var(--shadow-card);
+  }
+  .pa-scope .metric-card {
+    border: none;
+    box-shadow: var(--shadow-card);
+  }
+  .pa-scope .metric-card::before {
+    display: none;
+  }
+  .dark.pa-scope .glass-card,
+  .dark .pa-scope .glass-card,
+  .dark.pa-scope .metric-card,
+  .dark .pa-scope .metric-card {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 16px 40px rgba(0, 0, 0, 0.35);
+  }
+
+  /* Sidebar gradient (parking-admin scope, dark) */
   .dark .pa-scope .pa-sidebar-gradient {
     background: linear-gradient(180deg, #0c1122 0%, #12122a 100%);
-  }
-  .pa-active-pill {
-    background: linear-gradient(90deg, var(--brand-orange) 0%, var(--brand-orange-soft) 100%);
-    color: #fff !important;
-    box-shadow: 0 6px 18px color-mix(in srgb, var(--brand-orange) 45%, transparent);
   }
 
   /* Glowing slot pill for the parking map */
