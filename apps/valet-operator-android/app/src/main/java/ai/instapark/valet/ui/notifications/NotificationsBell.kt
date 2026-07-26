@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.DropdownMenu
@@ -76,7 +76,7 @@ fun NotificationsBell() {
                     Badge { Text(if (viewModel.unreadCount > 9) "9+" else viewModel.unreadCount.toString()) }
                 }
             }) {
-                Icon(Icons.Default.Notifications, contentDescription = "Notifications")
+                Icon(Icons.Outlined.Notifications, contentDescription = "Notifications")
             }
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {

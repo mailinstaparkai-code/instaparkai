@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -27,16 +28,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.AddCircle
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.Coffee
-import androidx.compose.material.icons.filled.LocalParking
-import androidx.compose.material.icons.filled.PowerSettingsNew
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Timer
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.AddCircle
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.DirectionsCar
+import androidx.compose.material.icons.outlined.Coffee
+import androidx.compose.material.icons.outlined.LocalParking
+import androidx.compose.material.icons.outlined.PowerSettingsNew
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -48,18 +49,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.Canvas
 import androidx.compose.ui.platform.LocalContext
 import ai.instapark.valet.util.Haptics
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -159,7 +155,7 @@ private fun DashboardContent(
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    "${viewModel.greetingName ?: "there"} 👋",
+                    viewModel.greetingName ?: "there",
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                 )
@@ -168,7 +164,7 @@ private fun DashboardContent(
                     Text(
                         summary.siteName ?: "Your site",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = colors.textSecondary,
+                        color = colors.inkSecondary,
                     )
                     if (summary.valetParkingEnabled) {
                         Spacer(Modifier.width(8.dp))
@@ -176,19 +172,19 @@ private fun DashboardContent(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .clip(RoundedCornerShape(50))
-                                .background(colors.green.copy(alpha = 0.15f))
+                                .background(colors.tintGreen)
                                 .padding(horizontal = 10.dp, vertical = 4.dp),
                         ) {
                             Box(
                                 modifier = Modifier
                                     .size(6.dp)
                                     .clip(CircleShape)
-                                    .background(colors.successGlow)
+                                    .background(colors.success)
                             )
                             Text(
                                 "Valet enabled",
                                 style = MaterialTheme.typography.labelSmall,
-                                color = colors.successGlow,
+                                color = colors.success,
                                 modifier = Modifier.padding(start = 6.dp),
                             )
                         }
@@ -207,34 +203,34 @@ private fun DashboardContent(
             // Stats row (4 dashlets, matching the reference's accent mapping)
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 StatDashlet(
-                    icon = Icons.Filled.DirectionsCar,
+                    icon = Icons.Outlined.DirectionsCar,
                     value = summary.kpis.activeVehicles.toString(),
                     label = "Active Vehicles",
-                    accent = colors.blue,
+                    accent = colors.primary,
                     modifier = Modifier.weight(1f),
                 )
                 StatDashlet(
-                    icon = Icons.Filled.LocalParking,
+                    icon = Icons.Outlined.LocalParking,
                     value = summary.kpis.arrived.toString(),
                     label = "Arrived",
-                    accent = colors.orange,
+                    accent = colors.accent,
                     modifier = Modifier.weight(1f),
                 )
             }
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 StatDashlet(
-                    icon = Icons.Filled.CheckCircle,
+                    icon = Icons.Outlined.CheckCircle,
                     value = summary.kpis.completedToday.toString(),
                     label = "Completed Today",
-                    accent = colors.green,
+                    accent = colors.success,
                     modifier = Modifier.weight(1f),
                 )
                 StatDashlet(
-                    icon = Icons.Filled.Timer,
+                    icon = Icons.Outlined.Timer,
                     value = summary.kpis.avgTurnaroundMinutes?.let { "${it}m" } ?: "—",
                     label = "Avg Turnaround",
-                    accent = colors.purple,
+                    accent = colors.primary,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -291,10 +287,10 @@ private fun MyStatusCard(viewModel: DashboardViewModel) {
                             .clip(CircleShape)
                             .background(
                                 when (viewModel.myStatus) {
-                                    "in" -> colors.successGlow
+                                    "in" -> colors.success
                                     "break" -> colors.warning
-                                    "leave" -> colors.purple
-                                    else -> colors.textSecondary
+                                    "leave" -> colors.primary
+                                    else -> colors.inkSecondary
                                 }
                             )
                     )
@@ -307,7 +303,7 @@ private fun MyStatusCard(viewModel: DashboardViewModel) {
                             else -> "Not marked in"
                         },
                         style = MaterialTheme.typography.bodySmall,
-                        color = colors.textSecondary,
+                        color = colors.inkSecondary,
                         modifier = Modifier.padding(start = 6.dp),
                     )
                 }
@@ -315,9 +311,9 @@ private fun MyStatusCard(viewModel: DashboardViewModel) {
             Spacer(Modifier.height(12.dp))
             val statusOptions = remember {
                 listOf(
-                    SegmentOption("in", "IN", Icons.Filled.Check),
-                    SegmentOption("break", "BREAK", Icons.Filled.Coffee),
-                    SegmentOption("out", "OUT", Icons.Filled.PowerSettingsNew),
+                    SegmentOption("in", "IN", Icons.Outlined.Check),
+                    SegmentOption("break", "BREAK", Icons.Outlined.Coffee),
+                    SegmentOption("out", "OUT", Icons.Outlined.PowerSettingsNew),
                 )
             }
             AnimatedSegmented(
@@ -330,7 +326,7 @@ private fun MyStatusCard(viewModel: DashboardViewModel) {
                 Text(
                     "You're marked on leave today — ask your Parking Admin to change it.",
                     style = MaterialTheme.typography.bodySmall,
-                    color = colors.textSecondary,
+                    color = colors.inkSecondary,
                     modifier = Modifier.padding(top = 10.dp),
                 )
             }
@@ -361,7 +357,7 @@ private fun QueuePreviewCard(activeCount: Int, onGoToQueue: () -> Unit, modifier
                 Text(
                     "View all",
                     style = MaterialTheme.typography.labelMedium,
-                    color = colors.blue,
+                    color = colors.primary,
                     modifier = Modifier.clickable { onGoToQueue() },
                 )
             }
@@ -371,9 +367,9 @@ private fun QueuePreviewCard(activeCount: Int, onGoToQueue: () -> Unit, modifier
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Icon(
-                    Icons.Filled.DirectionsCar,
+                    Icons.Outlined.DirectionsCar,
                     contentDescription = null,
-                    tint = colors.textSecondary.copy(alpha = 0.45f),
+                    tint = colors.inkTertiary,
                     modifier = Modifier.size(44.dp),
                 )
                 Spacer(Modifier.height(8.dp))
@@ -382,7 +378,7 @@ private fun QueuePreviewCard(activeCount: Int, onGoToQueue: () -> Unit, modifier
                     Text(
                         "New arrivals will appear here",
                         style = MaterialTheme.typography.labelSmall,
-                        color = colors.textSecondary,
+                        color = colors.inkSecondary,
                     )
                 } else {
                     Text(
@@ -392,7 +388,7 @@ private fun QueuePreviewCard(activeCount: Int, onGoToQueue: () -> Unit, modifier
                     Text(
                         "Open the Queue tab to act",
                         style = MaterialTheme.typography.labelSmall,
-                        color = colors.textSecondary,
+                        color = colors.inkSecondary,
                     )
                 }
             }
@@ -412,15 +408,15 @@ private fun QuickActionsCard(
             Text("Quick Actions", fontWeight = FontWeight.SemiBold)
             Spacer(Modifier.height(10.dp))
             QuickActionRow(
-                icon = Icons.Filled.AddCircle,
-                accent = colors.orange,
+                icon = Icons.Outlined.AddCircle,
+                accent = colors.accent,
                 label = "Check-in Vehicle",
                 onClick = onGoToQueue,
             )
             Spacer(Modifier.height(8.dp))
             QuickActionRow(
-                icon = Icons.Filled.Search,
-                accent = colors.blue,
+                icon = Icons.Outlined.Search,
+                accent = colors.primary,
                 label = "Find Vehicle",
                 onClick = onGoToVehicles,
             )
@@ -440,7 +436,7 @@ private fun QuickActionRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
-            .background(colors.backgroundDeep)
+            .background(colors.hairlineSoft)
             .clickable { onClick() }
             .padding(horizontal = 12.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -449,7 +445,7 @@ private fun QuickActionRow(
             modifier = Modifier
                 .size(28.dp)
                 .clip(CircleShape)
-                .background(accent.copy(alpha = 0.20f)),
+                .background(accent.copy(alpha = 0.16f)),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(16.dp))
@@ -461,74 +457,54 @@ private fun QuickActionRow(
             modifier = Modifier.padding(start = 10.dp).weight(1f),
         )
         Icon(
-            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            Icons.AutoMirrored.Outlined.KeyboardArrowRight,
             contentDescription = null,
-            tint = colors.textSecondary,
+            tint = colors.inkSecondary,
             modifier = Modifier.size(18.dp),
         )
     }
 }
 
+/** design.md §6 -- capacity as a slim labelled meter bar (the donut was retired: "it cost 100px for one number"). */
 @Composable
 private fun CapacityCard(total: Int, occupied: Int) {
     val colors = ValetTheme.colors
-    val fraction = if (total > 0) occupied.toFloat() / total else 0f
+    val fraction = if (total > 0) (occupied.toFloat() / total).coerceIn(0f, 1f) else 0f
     GlassCard(modifier = Modifier.fillMaxWidth()) {
         Column {
-            Text("Today's Overview", fontWeight = FontWeight.SemiBold)
-            Spacer(Modifier.height(14.dp))
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(contentAlignment = Alignment.Center) {
-                    Canvas(modifier = Modifier.size(96.dp)) {
-                        val stroke = Stroke(width = 10.dp.toPx(), cap = StrokeCap.Round)
-                        val inset = 10.dp.toPx() / 2
-                        val arcSize = Size(size.width - inset * 2, size.height - inset * 2)
-                        drawArc(
-                            color = colors.cardBorder,
-                            startAngle = -90f,
-                            sweepAngle = 360f,
-                            useCenter = false,
-                            style = stroke,
-                            topLeft = Offset(inset, inset),
-                            size = arcSize,
-                        )
-                        if (fraction > 0f) {
-                            drawArc(
-                                brush = Brush.sweepGradient(
-                                    listOf(colors.orange, colors.orange.copy(alpha = 0.6f), colors.orange)
-                                ),
-                                startAngle = -90f,
-                                sweepAngle = 360f * fraction,
-                                useCenter = false,
-                                style = stroke,
-                                topLeft = Offset(inset, inset),
-                                size = arcSize,
-                            )
-                        }
-                    }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            "${(fraction * 100).toInt()}%",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Text("Occupied", style = MaterialTheme.typography.labelSmall, color = colors.textSecondary)
-                    }
-                }
-                Spacer(Modifier.width(20.dp))
-                Column {
-                    Text("Parking Capacity", fontWeight = FontWeight.Medium)
-                    Spacer(Modifier.height(4.dp))
-                    Row {
-                        Text(
-                            "$occupied",
-                            color = colors.orange,
-                            fontWeight = FontWeight.Bold,
-                        )
-                        Text(" / $total Slots", color = colors.textSecondary)
-                    }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("Parking Capacity", fontWeight = FontWeight.SemiBold)
+                Row {
+                    Text("$occupied", color = colors.accent, fontWeight = FontWeight.Bold)
+                    Text(" / $total slots", color = colors.inkSecondary)
                 }
             }
+            Spacer(Modifier.height(12.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(10.dp)
+                    .clip(RoundedCornerShape(50))
+                    .background(colors.hairlineSoft),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(fraction)
+                        .fillMaxHeight()
+                        .clip(RoundedCornerShape(50))
+                        .background(Brush.horizontalGradient(listOf(colors.primaryLight, colors.primary))),
+                )
+            }
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "${(fraction * 100).toInt()}% occupied",
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.inkSecondary,
+            )
         }
     }
 }

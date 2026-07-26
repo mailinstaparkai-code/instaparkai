@@ -14,15 +14,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 /**
- * One of the reference's 4-up stat cards: glowing icon tile in the accent color,
- * big number, muted label. The accent also washes the card via [GlassCard]'s glow.
+ * design.md §5 "StatDashlet" -- tinted icon tile, big value, muted label.
  */
 @Composable
 fun StatDashlet(
@@ -33,31 +32,28 @@ fun StatDashlet(
     modifier: Modifier = Modifier,
 ) {
     val colors = ValetTheme.colors
-    GlassCard(modifier = modifier, accent = accent, cornerRadius = 16.dp) {
+    GlassCard(modifier = modifier, cornerRadius = 18.dp, contentPadding = 12.dp) {
         Column {
             Box(
                 modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(
-                        Brush.linearGradient(
-                            listOf(accent.copy(alpha = 0.30f), accent.copy(alpha = 0.10f))
-                        )
-                    ),
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(11.dp))
+                    .background(accent.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(22.dp))
+                Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(20.dp))
             }
             Text(
                 value,
-                style = MaterialTheme.typography.headlineMedium,
+                style = MaterialTheme.typography.headlineMedium.copy(fontSize = 26.sp),
                 fontWeight = FontWeight.Bold,
+                color = colors.ink,
                 modifier = Modifier.padding(top = 10.dp),
             )
             Text(
                 label,
                 style = MaterialTheme.typography.bodySmall,
-                color = colors.textSecondary,
+                color = colors.inkSecondary,
             )
         }
     }

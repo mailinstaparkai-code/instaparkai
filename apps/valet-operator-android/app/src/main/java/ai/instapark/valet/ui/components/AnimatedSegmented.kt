@@ -42,9 +42,9 @@ data class SegmentOption(
 )
 
 /**
- * The My Status IN | BREAK | OUT control from the Operator Home reference: a
- * green-glow pill slides and spring-bounces to the selected segment (rather than
- * just fading a border), so the toggle reads as physically tactile.
+ * design.md §5 "Segmented control" -- a blue-glow pill slides and spring-bounces to
+ * the selected segment (rather than just fading a border), so the toggle reads as
+ * physically tactile.
  */
 @Composable
 fun AnimatedSegmented(
@@ -79,11 +79,11 @@ fun AnimatedSegmented(
                     .padding(horizontal = 4.dp)
                     .size(width = segmentWidth - 8.dp, height = 56.dp * indicatorScale.coerceIn(0f, 1f))
                     .clip(RoundedCornerShape(14.dp))
-                    .border(1.dp, colors.successGlow, RoundedCornerShape(14.dp))
+                    .border(1.dp, colors.primary, RoundedCornerShape(14.dp))
                     .drawBehind {
                         drawRect(
                             brush = Brush.radialGradient(
-                                colors = listOf(colors.successGlow.copy(alpha = 0.30f), Color.Transparent),
+                                colors = listOf(colors.primary.copy(alpha = 0.30f), Color.Transparent),
                                 radius = size.maxDimension * 0.8f,
                             )
                         )
@@ -95,7 +95,7 @@ fun AnimatedSegmented(
             options.forEach { option ->
                 val active = selected == option.value
                 val contentColor by animateColorAsState(
-                    targetValue = if (active) colors.successGlow else colors.textSecondary,
+                    targetValue = if (active) colors.primary else colors.inkSecondary,
                     animationSpec = tween(200),
                     label = "content",
                 )

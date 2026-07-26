@@ -15,8 +15,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.outlined.CameraAlt
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -87,14 +87,14 @@ fun PhotoCaptureField(
         if (granted) launchCamera(context) { uri -> pendingUri = uri; cameraLauncher.launch(uri) }
     }
 
-    val tint = if (captured) colors.green else colors.textSecondary
+    val tint = if (captured) colors.success else ai.instapark.valet.ui.theme.PrimaryBlue
     Column(
         modifier = modifier
             .fillMaxWidth()
             .aspectRatio(1f)
             .clip(RoundedCornerShape(14.dp))
-            .dashedBorder(if (captured) colors.green else colors.cardBorder)
-            .background(colors.backgroundDeep)
+            .dashedBorder(if (captured) colors.success else ai.instapark.valet.ui.theme.PhotoDashedBorder)
+            .background(colors.tintBlue)
             .clickable {
                 val hasPermission = ContextCompat.checkSelfPermission(
                     context,
@@ -111,7 +111,7 @@ fun PhotoCaptureField(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Icon(
-            if (captured) Icons.Filled.Check else Icons.Filled.CameraAlt,
+            if (captured) Icons.Outlined.Check else Icons.Outlined.CameraAlt,
             contentDescription = null,
             tint = tint,
             modifier = Modifier.padding(bottom = 6.dp),
@@ -119,7 +119,7 @@ fun PhotoCaptureField(
         Text(
             text = if (compressing) "…" else label,
             style = MaterialTheme.typography.labelSmall,
-            color = tint,
+            color = colors.inkSecondary,
             textAlign = TextAlign.Center,
         )
     }

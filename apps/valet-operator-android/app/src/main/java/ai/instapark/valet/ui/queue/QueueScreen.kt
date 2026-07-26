@@ -11,9 +11,11 @@ import ai.instapark.valet.ui.appContainer
 import ai.instapark.valet.ui.components.DialogPrimaryButton
 import ai.instapark.valet.ui.components.DialogSecondaryButton
 import ai.instapark.valet.ui.components.GlassCard
+import ai.instapark.valet.ui.components.OtpBoxInput
 import ai.instapark.valet.ui.components.PhotoCaptureField
 import ai.instapark.valet.ui.components.PremiumDialog
 import ai.instapark.valet.ui.components.StatusPill
+import ai.instapark.valet.ui.components.TappableRowPicker
 import ai.instapark.valet.ui.components.VehicleTypeSelector
 import ai.instapark.valet.ui.components.statusAccent
 import ai.instapark.valet.ui.theme.ValetTheme
@@ -51,16 +53,16 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Group
-import androidx.compose.material.icons.filled.LocalParking
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.PhotoLibrary
-import androidx.compose.material.icons.filled.VpnKey
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.DirectionsCar
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Group
+import androidx.compose.material.icons.outlined.LocalParking
+import androidx.compose.material.icons.outlined.MoreVert
+import androidx.compose.material.icons.outlined.Phone
+import androidx.compose.material.icons.outlined.PhotoLibrary
+import androidx.compose.material.icons.outlined.VpnKey
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -125,12 +127,12 @@ private fun QueueContent(response: QueueResponse, viewModel: QueueViewModel) {
                             modifier = Modifier
                                 .size(7.dp)
                                 .clip(CircleShape)
-                                .background(colors.successGlow)
+                                .background(colors.success)
                         )
                         Text(
                             "${response.tickets.size} active vehicle(s)",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = colors.textSecondary,
+                            color = colors.inkSecondary,
                             modifier = Modifier.padding(start = 6.dp),
                         )
                     }
@@ -138,7 +140,7 @@ private fun QueueContent(response: QueueResponse, viewModel: QueueViewModel) {
                 Button(
                     onClick = { showCheckIn = true },
                     colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                        containerColor = colors.orange,
+                        containerColor = colors.accent,
                         contentColor = Color.White,
                     ),
                     shape = RoundedCornerShape(50),
@@ -264,10 +266,10 @@ private fun TodaysSummaryStrip(tickets: List<QueueTicket>) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 val summary = remember(tickets, colors) {
                     listOf(
-                        Triple("Active", tickets.size, colors.purple),
-                        Triple("Checked In", tickets.count { it.status == "checked_in" }, colors.blue),
-                        Triple("Parked", tickets.count { it.status == "parked" }, colors.green),
-                        Triple("Requested", tickets.count { it.status == "requested" }, colors.warning),
+                        Triple("Active", tickets.size, colors.primary),
+                        Triple("Checked In", tickets.count { it.status == "checked_in" }, colors.statusCheckedIn),
+                        Triple("Parked", tickets.count { it.status == "parked" }, colors.statusParked),
+                        Triple("Requested", tickets.count { it.status == "requested" }, colors.statusRequested),
                     )
                 }
                 summary.forEach { (label, count, accent) ->
@@ -283,7 +285,7 @@ private fun TodaysSummaryStrip(tickets: List<QueueTicket>) {
                         Text(
                             label,
                             style = MaterialTheme.typography.labelSmall,
-                            color = colors.textSecondary,
+                            color = colors.inkSecondary,
                         )
                     }
                 }
@@ -314,7 +316,7 @@ private fun TicketCard(
     val colors = ValetTheme.colors
     val accent = statusAccent(ticket.status)
 
-    GlassCard(modifier = modifier.fillMaxWidth(), accent = accent) {
+    GlassCard(modifier = modifier.fillMaxWidth()) {
         Column {
             // Top row: status ribbon + time-ago + kebab
             Row(
@@ -322,16 +324,16 @@ private fun TicketCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                StatusPill(label = statusLabel(ticket.status).uppercase(), accent = accent)
+                StatusPill(status = ticket.status, label = statusLabel(ticket.status))
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         timeAgo(ticket.checkedInAt),
                         style = MaterialTheme.typography.labelSmall,
-                        color = colors.textSecondary,
+                        color = colors.inkSecondary,
                     )
                     Box {
                         IconButton(onClick = { menuOpen = true }) {
-                            Icon(Icons.Default.MoreVert, contentDescription = "More actions", tint = colors.textSecondary)
+                            Icon(Icons.Outlined.MoreVert, contentDescription = "More actions", tint = colors.inkSecondary)
                         }
                         DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                             DropdownMenuItem(text = { Text("Edit details") }, onClick = { menuOpen = false; showEdit = true })
@@ -363,20 +365,20 @@ private fun TicketCard(
                         Text(
                             ticket.vehicleType.replaceFirstChar { it.uppercase() },
                             style = MaterialTheme.typography.bodySmall,
-                            color = colors.textSecondary,
+                            color = colors.inkSecondary,
                         )
                         Text(" • ", color = accent)
                         Text(
                             ticket.mobileNumber,
                             style = MaterialTheme.typography.bodySmall,
-                            color = colors.textSecondary,
+                            color = colors.inkSecondary,
                         )
                     }
                     Spacer(Modifier.height(6.dp))
                     Text(
                         "Slot: ${ticket.slotNumber ?: "—"}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = colors.textSecondary,
+                        color = colors.inkSecondary,
                     )
                     if (ticket.photoCount > 0) {
                         Text(
@@ -402,8 +404,8 @@ private fun TicketCard(
                     colors = androidx.compose.material3.ButtonDefaults.buttonColors(
                         containerColor = accent.copy(alpha = 0.18f),
                         contentColor = accent,
-                        disabledContainerColor = colors.backgroundDeep,
-                        disabledContentColor = colors.textSecondary,
+                        disabledContainerColor = colors.hairlineSoft,
+                        disabledContentColor = colors.inkSecondary,
                     ),
                     modifier = Modifier.fillMaxWidth(),
                 ) { Text(label, fontWeight = FontWeight.SemiBold) }
@@ -419,7 +421,7 @@ private fun TicketCard(
                     Text(
                         "Waiting for the check-in operator to park",
                         style = MaterialTheme.typography.bodySmall,
-                        color = colors.textSecondary,
+                        color = colors.inkSecondary,
                     )
                 }
                 "parked" -> if (canRequest) {
@@ -434,7 +436,7 @@ private fun TicketCard(
                     Text(
                         "Awaiting dispatch by the Parking Admin",
                         style = MaterialTheme.typography.bodySmall,
-                        color = colors.textSecondary,
+                        color = colors.inkSecondary,
                     )
                 }
                 "in_transit" -> accentAction("Mark arrived") { viewModel.markArrived(ticket.id) {} }
@@ -442,7 +444,7 @@ private fun TicketCard(
                     onClick = { showHandover = true },
                     shape = actionShape,
                     colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                        containerColor = colors.orange,
+                        containerColor = colors.accent,
                         contentColor = Color.White,
                     ),
                     modifier = Modifier.fillMaxWidth(),
@@ -530,10 +532,10 @@ private fun PhotosDialog(ticketId: String, viewModel: QueueViewModel, onDismiss:
     }
 
     PremiumDialog(
-        icon = Icons.Filled.PhotoLibrary,
+        icon = Icons.Outlined.PhotoLibrary,
         title = "Ticket photos",
         subtitle = "Check-in and handover photos for this vehicle",
-        accent = colors.blue,
+        accent = colors.primary,
         onDismissRequest = onDismiss,
         footer = { DialogPrimaryButton("Close", onClick = onDismiss, modifier = Modifier.weight(1f)) },
     ) {
@@ -542,7 +544,7 @@ private fun PhotosDialog(ticketId: String, viewModel: QueueViewModel, onDismiss:
             photos == null -> Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
-            photos!!.isEmpty() -> Text("No photos yet.", color = colors.textSecondary)
+            photos!!.isEmpty() -> Text("No photos yet.", color = colors.inkSecondary)
             else -> photos!!.forEach { photo ->
                 Text(
                     "${photo.stage} · ${photo.label}",
@@ -582,7 +584,7 @@ private fun CheckInDialog(
     val colors = ValetTheme.colors
 
     PremiumDialog(
-        icon = Icons.Filled.DirectionsCar,
+        icon = Icons.Outlined.DirectionsCar,
         title = "Check-in Vehicle",
         subtitle = "Enter vehicle details to check-in",
         onDismissRequest = onDismiss,
@@ -590,7 +592,7 @@ private fun CheckInDialog(
             DialogSecondaryButton("Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
             DialogPrimaryButton(
                 text = if (pending) "Checking in…" else "Check in",
-                icon = Icons.Filled.CheckCircle,
+                icon = Icons.Outlined.CheckCircle,
                 enabled = !pending && vehicleNumber.isNotBlank() && mobileNumber.isNotBlank(),
                 onClick = {
                     val photos = CheckInPhotos(frontPhoto, backPhoto, leftPhoto, rightPhoto, odometerPhoto)
@@ -600,7 +602,7 @@ private fun CheckInDialog(
             )
         },
     ) {
-        Text("Vehicle number", style = MaterialTheme.typography.labelMedium, color = colors.textSecondary)
+        Text("Vehicle number", style = MaterialTheme.typography.labelMedium, color = colors.inkSecondary)
         Spacer(Modifier.height(4.dp))
         OutlinedTextField(
             value = vehicleNumber,
@@ -612,7 +614,7 @@ private fun CheckInDialog(
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(14.dp))
-        Text("Vehicle type", style = MaterialTheme.typography.labelMedium, color = colors.textSecondary)
+        Text("Vehicle type", style = MaterialTheme.typography.labelMedium, color = colors.inkSecondary)
         Spacer(Modifier.height(6.dp))
         VehicleTypeSelector(
             options = vehicleTypeOptions,
@@ -620,23 +622,23 @@ private fun CheckInDialog(
             onSelect = { vehicleType = it },
         )
         Spacer(Modifier.height(14.dp))
-        Text("Mobile number", style = MaterialTheme.typography.labelMedium, color = colors.textSecondary)
+        Text("Mobile number", style = MaterialTheme.typography.labelMedium, color = colors.inkSecondary)
         Spacer(Modifier.height(4.dp))
         OutlinedTextField(
             value = mobileNumber,
             onValueChange = { mobileNumber = it },
             placeholder = { Text("Enter mobile number") },
             singleLine = true,
-            leadingIcon = { Icon(Icons.Filled.Phone, contentDescription = null, tint = colors.textSecondary) },
+            leadingIcon = { Icon(Icons.Outlined.Phone, contentDescription = null, tint = colors.inkSecondary) },
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(14.dp))
-        Text("Check-in photos (optional)", style = MaterialTheme.typography.labelMedium, color = colors.textSecondary)
+        Text("Check-in photos (optional)", style = MaterialTheme.typography.labelMedium, color = colors.inkSecondary)
         Text(
             "Add clear photos of the vehicle",
             style = MaterialTheme.typography.labelSmall,
-            color = colors.textSecondary,
+            color = colors.inkSecondary,
         )
         Spacer(Modifier.height(8.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -661,7 +663,7 @@ private fun CountryChip() {
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
-            .background(colors.purple.copy(alpha = 0.30f))
+            .background(colors.tintBlue)
             .padding(horizontal = 8.dp, vertical = 4.dp),
     ) {
         Text("IND", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
@@ -677,30 +679,29 @@ private fun MarkParkedDialog(
 ) {
     var selected by remember { mutableStateOf(slots.firstOrNull()?.id ?: "") }
     var error by remember { mutableStateOf<String?>(null) }
-    val selectedLabel = slots.firstOrNull { it.id == selected }?.label ?: ""
     val colors = ValetTheme.colors
 
     PremiumDialog(
-        icon = Icons.Filled.LocalParking,
+        icon = Icons.Outlined.LocalParking,
         title = "Mark as Parked",
         subtitle = "Choose the slot this vehicle is parked in",
-        accent = colors.blue,
+        accent = colors.primary,
         onDismissRequest = onDismiss,
         footer = {
             DialogSecondaryButton("Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
             DialogPrimaryButton(
                 text = if (pending) "Saving…" else "Confirm parked",
-                icon = Icons.Filled.CheckCircle,
+                icon = Icons.Outlined.CheckCircle,
                 enabled = !pending && selected.isNotBlank(),
                 onClick = { onConfirm(selected) { message -> error = message } },
                 modifier = Modifier.weight(1.4f),
             )
         },
     ) {
-        SelectField(
+        TappableRowPicker(
             label = "Slot",
-            valueLabel = selectedLabel,
             options = slots.map { it.id to it.label },
+            selected = selected,
             onSelect = { selected = it },
         )
         error?.let {
@@ -719,30 +720,29 @@ private fun DispatchDialog(
 ) {
     var selected by remember { mutableStateOf(operators.firstOrNull()?.id ?: "") }
     var error by remember { mutableStateOf<String?>(null) }
-    val selectedLabel = operators.firstOrNull { it.id == selected }?.label ?: ""
     val colors = ValetTheme.colors
 
     PremiumDialog(
-        icon = Icons.Filled.Group,
+        icon = Icons.Outlined.Group,
         title = "Dispatch Operator",
         subtitle = "Send this vehicle's pickup to an available operator",
-        accent = colors.orange,
+        accent = colors.accent,
         onDismissRequest = onDismiss,
         footer = {
             DialogSecondaryButton("Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
             DialogPrimaryButton(
                 text = if (pending) "Dispatching…" else "Dispatch",
-                icon = Icons.Filled.Group,
+                icon = Icons.Outlined.Group,
                 enabled = !pending && selected.isNotBlank(),
                 onClick = { onConfirm(selected) { message -> error = message } },
                 modifier = Modifier.weight(1.4f),
             )
         },
     ) {
-        SelectField(
+        TappableRowPicker(
             label = "Available operators",
-            valueLabel = selectedLabel,
             options = operators.map { it.id to it.label },
+            selected = selected,
             onSelect = { selected = it },
         )
         error?.let {
@@ -766,16 +766,16 @@ private fun HandoverDialog(
     val colors = ValetTheme.colors
 
     PremiumDialog(
-        icon = Icons.Filled.VpnKey,
+        icon = Icons.Outlined.VpnKey,
         title = "Complete Handover",
         subtitle = "Confirm OTP and collect payment to release the vehicle",
-        accent = colors.green,
+        accent = colors.success,
         onDismissRequest = onDismiss,
         footer = {
             DialogSecondaryButton("Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
             DialogPrimaryButton(
                 text = if (pending) "Completing…" else "Complete handover",
-                icon = Icons.Filled.CheckCircle,
+                icon = Icons.Outlined.CheckCircle,
                 enabled = !pending && otp.isNotBlank(),
                 onClick = { onConfirm(otp, fare.ifBlank { null }, paid, handoverPhoto) { message -> error = message } },
                 modifier = Modifier.weight(1.6f),
@@ -785,17 +785,10 @@ private fun HandoverDialog(
         Text(
             "Ask the guest for the OTP sent to their phone and enter it below to confirm the handover.",
             style = MaterialTheme.typography.bodySmall,
-            color = colors.textSecondary,
+            color = colors.inkSecondary,
         )
         Spacer(Modifier.height(10.dp))
-        OutlinedTextField(
-            value = otp,
-            onValueChange = { otp = it },
-            label = { Text("Enter OTP to confirm") },
-            singleLine = true,
-            shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.fillMaxWidth(),
-        )
+        OtpBoxInput(value = otp, onValueChange = { otp = it })
         Spacer(Modifier.height(10.dp))
         OutlinedTextField(
             value = fare,
@@ -812,7 +805,7 @@ private fun HandoverDialog(
             Text("Payment collected", style = MaterialTheme.typography.bodySmall)
         }
         Spacer(Modifier.height(10.dp))
-        Text("Handover photo (optional)", style = MaterialTheme.typography.labelMedium, color = colors.textSecondary)
+        Text("Handover photo (optional)", style = MaterialTheme.typography.labelMedium, color = colors.inkSecondary)
         Spacer(Modifier.height(6.dp))
         PhotoCaptureField("Photo", handoverPhoto, { handoverPhoto = it }, Modifier.fillMaxWidth(0.4f))
         error?.let {
@@ -836,7 +829,7 @@ private fun EditTicketDialog(
     val colors = ValetTheme.colors
 
     PremiumDialog(
-        icon = Icons.Filled.Edit,
+        icon = Icons.Outlined.Edit,
         title = "Edit Vehicle Details",
         subtitle = "Correct a mis-entered plate or mobile number",
         onDismissRequest = onDismiss,
@@ -865,7 +858,7 @@ private fun EditTicketDialog(
             onValueChange = { mobile = it },
             label = { Text("Mobile number") },
             singleLine = true,
-            leadingIcon = { Icon(Icons.Filled.Phone, contentDescription = null, tint = colors.textSecondary) },
+            leadingIcon = { Icon(Icons.Outlined.Phone, contentDescription = null, tint = colors.inkSecondary) },
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
         )
@@ -887,7 +880,7 @@ private fun VoidTicketDialog(
     val colors = ValetTheme.colors
 
     PremiumDialog(
-        icon = Icons.Filled.DeleteOutline,
+        icon = Icons.Outlined.DeleteOutline,
         title = "Void Ticket",
         subtitle = "Frees the assigned slot and removes this ticket from the queue",
         accent = colors.danger,
@@ -896,7 +889,7 @@ private fun VoidTicketDialog(
             DialogSecondaryButton("Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
             DialogPrimaryButton(
                 text = if (pending) "Voiding…" else "Void",
-                icon = Icons.Filled.DeleteOutline,
+                icon = Icons.Outlined.DeleteOutline,
                 enabled = !pending,
                 containerColor = colors.danger,
                 onClick = { onConfirm(reason.ifBlank { null }) { message -> error = message } },
@@ -919,29 +912,6 @@ private fun VoidTicketDialog(
     }
 }
 
-@Composable
-private fun SelectField(
-    label: String,
-    valueLabel: String,
-    options: List<Pair<String, String>>,
-    onSelect: (String) -> Unit,
-) {
-    var expanded by remember { mutableStateOf(false) }
-    Column {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(4.dp))
-        Box {
-            OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
-                Text(valueLabel.ifBlank { "Select…" }, modifier = Modifier.weight(1f))
-            }
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                options.forEach { (value, optLabel) ->
-                    DropdownMenuItem(text = { Text(optLabel) }, onClick = { onSelect(value); expanded = false })
-                }
-            }
-        }
-    }
-}
 
 private fun statusLabel(status: String): String = when (status) {
     "checked_in" -> "Checked in"

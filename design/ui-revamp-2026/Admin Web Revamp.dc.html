@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #f2f6fc; font-family: Poppins, system-ui, sans-serif; }
+  a { color: #1478FF; text-decoration: none; }
+  a:hover { color: #0B5FD6; }
+  * { box-sizing: border-box; }
+</style>
+</helmet>
+
+<section style="padding: 48px; display: flex; flex-direction: column; gap: 34px;">
+  <div style="display: flex; flex-direction: column; gap: 10px; max-width: 1000px;">
+    <div style="font: 600 12px/1 Poppins; letter-spacing: 0.16em; color: #6C7280; text-transform: uppercase;">Turn 3 · Parking-admin web dashboard</div>
+    <div style="font: 700 40px/1.12 Poppins; color: #0F172A;">Admin web, Sky Field</div>
+    <div style="font: 400 16px/1.6 Poppins; color: #4A5565; text-wrap: pretty;">The same tokens as the app (design.md), laid out for a 1440×900 desk browser: sky-tinted canvas, white sidebar, borderless white cards, brand blue leading and orange kept for the one committing action per view. Nav and data mirror what the current dark dashboard renders — Dashboard, Live Queue, Vehicles, Valet Operators, Reports, Communication, Settings.</div>
+  </div>
+
+  <!-- 3a DASHBOARD -->
+  <div id="3a" style="display: flex; flex-direction: column; gap: 12px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="background: #1478FF; color: #fff; border-radius: 8px; padding: 4px 10px; font: 700 13px/1.4 Poppins;">3a</div>
+      <div style="font: 600 15px/1.3 Poppins; color: #0F172A;">Dashboard</div>
+    </div>
+    <div style="width: 1440px; height: 900px; border-radius: 18px; overflow: hidden; display: flex; background: #EFF5FE; box-shadow: 0 20px 44px rgba(15,23,42,0.16);">
+      <div style="width: 248px; flex: none; background: #fff; border-right: 1px solid #E6EDF7; display: flex; flex-direction: column; padding: 18px 14px;">
+        <div style="padding: 0 6px 18px;"><img src="assets/logo_instaparkai.png" alt="InstaParkAi" style="height: 34px; display: block;"></div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <sc-for list="{{ navDash }}" as="n" hint-placeholder-count="7">
+            <div style="height: 44px; border-radius: 12px; background: {{ n.bg }}; display: flex; align-items: center; gap: 12px; padding: 0 12px;">
+              <div style="width: 20px; height: 20px; display: grid; place-items: center; color: {{ n.color }};">{{ n.icon }}</div>
+              <div style="font: {{ n.weight }} 14px/1 Poppins; color: {{ n.color }};">{{ n.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="flex: 1;"></div>
+        <div style="display: flex; align-items: center; gap: 10px; background: #F7FAFE; border-radius: 14px; padding: 10px 12px;">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(150deg, #1478FF, #0B5FD6); color: #fff; display: grid; place-items: center; font: 700 14px Poppins;">V</div>
+          <div>
+            <div style="font: 600 14px/1.2 Poppins; color: #0F172A;">Vikas</div>
+            <div style="font: 500 11px/1.3 Poppins; color: #6C7280;">Parking Admin</div>
+          </div>
+        </div>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+        <div style="height: 68px; flex: none; background: #fff; border-bottom: 1px solid #E6EDF7; display: flex; align-items: center; gap: 16px; padding: 0 24px;">
+          <div style="flex: 1; max-width: 420px; height: 42px; border-radius: 999px; background: #F4F8FE; border: 1px solid #E6EDF7; display: flex; align-items: center; gap: 10px; padding: 0 16px;">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8A94A6" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><circle cx="11" cy="11" r="6.4"/><path d="M15.8 15.8 20 20"/></svg>
+            <div style="font: 400 14px Poppins; color: #94A3B8;">Search vehicles, plates, operators…</div>
+          </div>
+          <div style="flex: 1;"></div>
+          <div style="height: 42px; padding: 0 18px; border-radius: 999px; background: #E8F2FF; color: #0B5FD6; display: flex; align-items: center; gap: 8px; font: 600 14px Poppins;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M12 4.4 13.5 9 18 10.5 13.5 12 12 16.6 10.5 12 6 10.5 10.5 9Z"/><path d="M18.3 15.2l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7Z"/></svg> AI Insights</div>
+          <div style="position: relative; width: 42px; height: 42px; border-radius: 999px; background: #F4F8FE; display: grid; place-items: center;">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#1478FF" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M6.6 10.4a5.4 5.4 0 0 1 10.8 0c0 3.9 1.6 5.4 1.6 5.4H5s1.6-1.5 1.6-5.4Z"/><path d="M10.1 19a2 2 0 0 0 3.8 0"/></svg>
+            <div style="position: absolute; top: 2px; right: 2px; min-width: 17px; height: 17px; border-radius: 9px; background: #FF6B36; color: #fff; font: 700 10px/17px Poppins; text-align: center;">4</div>
+          </div>
+          <div style="width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(150deg, #1478FF, #0B5FD6); color: #fff; display: grid; place-items: center; font: 700 15px Poppins;">V</div>
+        </div>
+        <div style="flex: 1; overflow: hidden; padding: 22px 24px; display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+              <div style="font: 700 26px/1.2 Poppins; color: #0F172A;">Hotel Parking Test</div>
+              <div style="font: 500 14px/1.4 Poppins; color: #4A5565; margin-top: 4px;">Friday, 25 July · valet enabled · 3 operators on shift</div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <div style="height: 44px; padding: 0 18px; border-radius: 12px; background: #fff; border: 1px solid #DCE5F2; color: #4A5565; display: flex; align-items: center; font: 600 14px Poppins;">Today ▾</div>
+              <div style="height: 44px; padding: 0 20px; border-radius: 12px; background: #FF6B36; color: #fff; display: flex; align-items: center; gap: 8px; font: 600 14px Poppins; box-shadow: 0 6px 14px rgba(255,107,54,0.2);">+ Check-in vehicle</div>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
+            <sc-for list="{{ adminKpis }}" as="k" hint-placeholder-count="4">
+              <div style="background: #fff; border-radius: 18px; padding: 18px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07);">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                  <div style="width: 40px; height: 40px; border-radius: 12px; background: {{ k.tint }}; display: grid; place-items: center; color: {{ k.color }};">{{ k.icon }}</div>
+                  <div style="font: 600 12px/1 Poppins; color: {{ k.deltaColor }}; white-space: nowrap;">{{ k.delta }}</div>
+                </div>
+                <div style="font: 700 32px/1.1 Poppins; color: #0F172A; margin-top: 14px;">{{ k.value }}</div>
+                <div style="font: 500 13px/1.3 Poppins; color: #6C7280;">{{ k.label }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="flex: 1; display: grid; grid-template-columns: 1.55fr 1fr; gap: 16px; overflow: hidden;">
+            <div style="background: #fff; border-radius: 20px; padding: 18px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07); display: flex; flex-direction: column; gap: 14px; overflow: hidden;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font: 600 16px/1 Poppins; color: #0F172A;">Live queue</div>
+                <div style="font: 600 13px/1 Poppins; color: #1478FF;">Open Live Queue →</div>
+              </div>
+              <div style="display: grid; grid-template-columns: 1.25fr 0.95fr 0.55fr 0.85fr 1.35fr; gap: 12px; padding: 0 4px;">
+                <div style="font: 600 12px/1 Poppins; color: #94A3B8;">VEHICLE</div>
+                <div style="font: 600 12px/1 Poppins; color: #94A3B8;">STATUS</div>
+                <div style="font: 600 12px/1 Poppins; color: #94A3B8;">SLOT</div>
+                <div style="font: 600 12px/1 Poppins; color: #94A3B8;">OPERATOR</div>
+                <div style="font: 600 12px/1 Poppins; color: #94A3B8;">ACTION</div>
+              </div>
+              <sc-for list="{{ queueRows }}" as="r" hint-placeholder-count="4">
+                <div style="display: grid; grid-template-columns: 1.25fr 0.95fr 0.55fr 0.85fr 1.35fr; gap: 12px; align-items: center; background: #F7FAFE; border-radius: 14px; padding: 10px 4px 10px 10px;">
+                  <div style="display: flex; align-items: center; gap: 10px;">
+                    {{ r.thumb }}
+                    <div>
+                      <div style="font: 700 14px/1.2 Poppins; color: #0F172A;">{{ r.plate }}</div>
+                      <div style="font: 500 11px/1.3 Poppins; color: #6C7280;">{{ r.type }}</div>
+                    </div>
+                  </div>
+                  <div>
+                    <div style="display: inline-flex; align-items: center; gap: 6px; background: {{ r.pillBg }}; border-radius: 999px; padding: 4px 10px;">
+                      <div style="width: 6px; height: 6px; border-radius: 50%; background: {{ r.accent }};"></div>
+                      <div style="font: 600 11px/1 Poppins; color: {{ r.accentText }};">{{ r.status }}</div>
+                    </div>
+                  </div>
+                  <div style="font: 500 13px/1 Poppins; color: #4A5565;">{{ r.slot }}</div>
+                  <div style="font: 500 13px/1 Poppins; color: #4A5565;">{{ r.operator }}</div>
+                  <div style="height: 36px; border-radius: 10px; background: {{ r.actionBg }}; color: {{ r.actionColor }}; display: inline-flex; align-items: center; padding: 0 14px; font: 600 12px Poppins; white-space: nowrap; justify-self: start;">{{ r.actionShort }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 16px; overflow: hidden;">
+              <div style="background: #fff; border-radius: 20px; padding: 18px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07);">
+                <div style="font: 600 16px/1 Poppins; color: #0F172A;">Occupancy</div>
+                <div style="display: flex; align-items: center; gap: 16px; margin-top: 14px;">
+                  <div style="width: 96px; height: 96px; border-radius: 50%; background: conic-gradient(#1478FF 0deg 79deg, #E6EDF7 79deg 360deg); display: grid; place-items: center; flex: none;">
+                    <div style="width: 72px; height: 72px; border-radius: 50%; background: #fff; display: grid; place-items: center; text-align: center;">
+                      <div>
+                        <div style="font: 700 20px/1 Poppins; color: #0F172A;">22%</div>
+                        <div style="font: 500 10px/1.2 Poppins; color: #6C7280;">occupied</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
+                    <div style="display: flex; justify-content: space-between; font: 500 13px Poppins; color: #4A5565;"><span>Occupied</span><span style="color: #0F172A; font-weight: 700;">18</span></div>
+                    <div style="display: flex; justify-content: space-between; font: 500 13px Poppins; color: #4A5565;"><span>Free</span><span style="color: #0F172A; font-weight: 700;">62</span></div>
+                    <div style="display: flex; justify-content: space-between; font: 500 13px Poppins; color: #4A5565;"><span>Total slots</span><span style="color: #0F172A; font-weight: 700;">80</span></div>
+                  </div>
+                </div>
+              </div>
+              <div style="flex: 1; background: #fff; border-radius: 20px; padding: 18px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07); display: flex; flex-direction: column; gap: 12px; overflow: hidden;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div style="font: 600 16px/1 Poppins; color: #0F172A;">Operators on shift</div>
+                  <div style="font: 600 13px/1 Poppins; color: #1478FF;">Manage</div>
+                </div>
+                <sc-for list="{{ operatorRows }}" as="o" hint-placeholder-count="3">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 36px; height: 36px; border-radius: 50%; background: {{ o.avatarBg }}; color: {{ o.avatarFg }}; display: grid; place-items: center; font: 700 14px Poppins;">{{ o.initial }}</div>
+                    <div style="flex: 1;">
+                      <div style="font: 600 14px/1.2 Poppins; color: #0F172A;">{{ o.name }}</div>
+                      <div style="font: 500 11px/1.3 Poppins; color: #6C7280;">{{ o.meta }}</div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 6px; background: {{ o.pillBg }}; border-radius: 999px; padding: 4px 10px;">
+                      <div style="width: 6px; height: 6px; border-radius: 50%; background: {{ o.accent }};"></div>
+                      <div style="font: 600 11px/1 Poppins; color: {{ o.accentText }};">{{ o.status }}</div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3b LIVE QUEUE -->
+  <div id="3b" style="display: flex; flex-direction: column; gap: 12px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="background: #1478FF; color: #fff; border-radius: 8px; padding: 4px 10px; font: 700 13px/1.4 Poppins;">3b</div>
+      <div style="font: 600 15px/1.3 Poppins; color: #0F172A;">Live Queue</div>
+    </div>
+    <div style="width: 1440px; height: 900px; border-radius: 18px; overflow: hidden; display: flex; background: #EFF5FE; box-shadow: 0 20px 44px rgba(15,23,42,0.16);">
+      <div style="width: 248px; flex: none; background: #fff; border-right: 1px solid #E6EDF7; display: flex; flex-direction: column; padding: 18px 14px;">
+        <div style="padding: 0 6px 18px;"><img src="assets/logo_instaparkai.png" alt="InstaParkAi" style="height: 34px; display: block;"></div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <sc-for list="{{ navQueue }}" as="n" hint-placeholder-count="7">
+            <div style="height: 44px; border-radius: 12px; background: {{ n.bg }}; display: flex; align-items: center; gap: 12px; padding: 0 12px;">
+              <div style="width: 20px; height: 20px; display: grid; place-items: center; color: {{ n.color }};">{{ n.icon }}</div>
+              <div style="font: {{ n.weight }} 14px/1 Poppins; color: {{ n.color }};">{{ n.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="flex: 1;"></div>
+        <div style="display: flex; align-items: center; gap: 10px; background: #F7FAFE; border-radius: 14px; padding: 10px 12px;">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(150deg, #1478FF, #0B5FD6); color: #fff; display: grid; place-items: center; font: 700 14px Poppins;">V</div>
+          <div>
+            <div style="font: 600 14px/1.2 Poppins; color: #0F172A;">Vikas</div>
+            <div style="font: 500 11px/1.3 Poppins; color: #6C7280;">Parking Admin</div>
+          </div>
+        </div>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+        <div style="height: 68px; flex: none; background: #fff; border-bottom: 1px solid #E6EDF7; display: flex; align-items: center; gap: 16px; padding: 0 24px;">
+          <div style="flex: 1; max-width: 420px; height: 42px; border-radius: 999px; background: #F4F8FE; border: 1px solid #E6EDF7; display: flex; align-items: center; gap: 10px; padding: 0 16px;">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8A94A6" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><circle cx="11" cy="11" r="6.4"/><path d="M15.8 15.8 20 20"/></svg>
+            <div style="font: 400 14px Poppins; color: #94A3B8;">Search vehicles, plates, operators…</div>
+          </div>
+          <div style="flex: 1;"></div>
+          <div style="height: 42px; padding: 0 18px; border-radius: 999px; background: #E8F2FF; color: #0B5FD6; display: flex; align-items: center; gap: 8px; font: 600 14px Poppins;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M12 4.4 13.5 9 18 10.5 13.5 12 12 16.6 10.5 12 6 10.5 10.5 9Z"/><path d="M18.3 15.2l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7Z"/></svg> AI Insights</div>
+          <div style="width: 42px; height: 42px; border-radius: 999px; background: #F4F8FE; display: grid; place-items: center;">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#1478FF" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M6.6 10.4a5.4 5.4 0 0 1 10.8 0c0 3.9 1.6 5.4 1.6 5.4H5s1.6-1.5 1.6-5.4Z"/><path d="M10.1 19a2 2 0 0 0 3.8 0"/></svg>
+          </div>
+          <div style="width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(150deg, #1478FF, #0B5FD6); color: #fff; display: grid; place-items: center; font: 700 15px Poppins;">V</div>
+        </div>
+        <div style="flex: 1; overflow: hidden; padding: 22px 24px; display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+              <div style="font: 700 26px/1.2 Poppins; color: #0F172A;">Live Queue</div>
+              <div style="display: flex; align-items: center; gap: 7px; margin-top: 5px;">
+                <div style="width: 7px; height: 7px; border-radius: 50%; background: #12A150;"></div>
+                <div style="font: 500 14px/1 Poppins; color: #4A5565;">4 active vehicles · updated just now</div>
+              </div>
+            </div>
+            <div style="height: 44px; padding: 0 20px; border-radius: 12px; background: #FF6B36; color: #fff; display: flex; align-items: center; gap: 8px; font: 600 14px Poppins; box-shadow: 0 6px 14px rgba(255,107,54,0.2);">+ Check-in vehicle</div>
+          </div>
+          <div style="background: #fff; border-radius: 16px; padding: 14px 18px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07); display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font: 600 15px/1 Poppins; color: #0F172A;">Auto-allocate operators</div>
+              <div style="font: 500 13px/1.4 Poppins; color: #6C7280; margin-top: 3px;">Round-robin dispatch to the next available operator.</div>
+            </div>
+            <div style="width: 52px; height: 30px; border-radius: 999px; background: #1478FF; padding: 3px; display: flex; justify-content: flex-end;">
+              <div style="width: 24px; height: 24px; border-radius: 50%; background: #fff;"></div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <sc-for list="{{ queueChips }}" as="c" hint-placeholder-count="5">
+              <div style="height: 38px; padding: 0 16px; border-radius: 999px; background: {{ c.bg }}; border: 1px solid {{ c.border }}; color: {{ c.color }}; display: flex; align-items: center; font: 500 13px Poppins;">{{ c.label }}</div>
+            </sc-for>
+            <div style="flex: 1;"></div>
+            <div style="height: 38px; padding: 0 16px; border-radius: 999px; background: #fff; border: 1px solid #DCE5F2; color: #4A5565; display: flex; align-items: center; gap: 8px; font: 500 13px Poppins;">Vehicle type ▾</div>
+          </div>
+          <div style="flex: 1; background: #fff; border-radius: 20px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07); overflow: hidden; display: flex; flex-direction: column;">
+            <div style="display: grid; grid-template-columns: 1.5fr 1fr 0.8fr 1.1fr 0.8fr 1.4fr; gap: 14px; padding: 14px 20px; background: #F7FAFE;">
+              <div style="font: 600 12px/1 Poppins; color: #94A3B8;">VEHICLE</div>
+              <div style="font: 600 12px/1 Poppins; color: #94A3B8;">STATUS</div>
+              <div style="font: 600 12px/1 Poppins; color: #94A3B8;">SLOT</div>
+              <div style="font: 600 12px/1 Poppins; color: #94A3B8;">OPERATOR</div>
+              <div style="font: 600 12px/1 Poppins; color: #94A3B8;">WAITING</div>
+              <div style="font: 600 12px/1 Poppins; color: #94A3B8;">ACTION</div>
+            </div>
+            <sc-for list="{{ queueRowsFull }}" as="r" hint-placeholder-count="5">
+              <div style="display: grid; grid-template-columns: 1.5fr 1fr 0.8fr 1.1fr 0.8fr 1.4fr; gap: 14px; align-items: center; padding: 14px 20px; border-bottom: 1px solid #F0F4FA;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  {{ r.thumb }}
+                  <div>
+                    <div style="font: 700 16px/1.2 Poppins; color: #0F172A;">{{ r.plate }}</div>
+                    <div style="font: 500 12px/1.4 Poppins; color: #6C7280;">{{ r.type }} · {{ r.mobile }}</div>
+                  </div>
+                </div>
+                <div>
+                  <div style="display: inline-flex; align-items: center; gap: 6px; background: {{ r.pillBg }}; border-radius: 999px; padding: 5px 11px;">
+                    <div style="width: 6px; height: 6px; border-radius: 50%; background: {{ r.accent }};"></div>
+                    <div style="font: 600 11px/1 Poppins; color: {{ r.accentText }};">{{ r.status }}</div>
+                  </div>
+                </div>
+                <div style="font: 500 14px/1 Poppins; color: #4A5565;">{{ r.slot }}</div>
+                <div style="font: 500 14px/1 Poppins; color: #4A5565;">{{ r.operator }}</div>
+                <div style="font: 500 14px/1 Poppins; color: #94A3B8;">{{ r.waiting }}</div>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <div style="height: 38px; border-radius: 11px; background: {{ r.actionBg }}; color: {{ r.actionColor }}; display: inline-flex; align-items: center; padding: 0 14px; font: 600 13px Poppins;">{{ r.action }}</div>
+                  <div style="width: 34px; height: 34px; border-radius: 10px; background: #F4F8FE; color: #8A94A6; display: grid; place-items: center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><circle cx="5.6" cy="12" r="1.35" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.35" fill="currentColor" stroke="none"/><circle cx="18.4" cy="12" r="1.35" fill="currentColor" stroke="none"/></svg></div>
+                </div>
+              </div>
+            </sc-for>
+            <div style="flex: 1;"></div>
+            <div style="display: flex; gap: 12px; padding: 16px 20px;">
+              <sc-for list="{{ summaryR }}" as="s" hint-placeholder-count="4">
+                <div style="flex: 1; border-radius: 14px; background: {{ s.bg }}; padding: 12px 16px;">
+                  <div style="font: 700 22px/1 Poppins; color: {{ s.color }};">{{ s.value }}</div>
+                  <div style="font: 500 12px/1.3 Poppins; color: #6C7280; margin-top: 3px;">{{ s.label }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3c CHECK-IN MODAL -->
+  <div id="3c" style="display: flex; flex-direction: column; gap: 12px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="background: #1478FF; color: #fff; border-radius: 8px; padding: 4px 10px; font: 700 13px/1.4 Poppins;">3c</div>
+      <div style="font: 600 15px/1.3 Poppins; color: #0F172A;">Check-in modal</div>
+    </div>
+    <div style="width: 1440px; height: 900px; border-radius: 18px; overflow: hidden; position: relative; background: #EFF5FE; box-shadow: 0 20px 44px rgba(15,23,42,0.16);">
+      <div style="position: absolute; inset: 0; background: rgba(11,50,110,0.42);"></div>
+      <div style="position: absolute; inset: 0; display: grid; place-items: center;">
+        <div style="width: 620px; background: #fff; border-radius: 24px; padding: 26px; box-shadow: 0 2px 6px rgba(11,42,90,0.10), 0 28px 64px rgba(11,42,90,0.24); display: flex; flex-direction: column; gap: 18px;">
+          <div style="display: flex; gap: 14px; align-items: flex-start;">
+            <div style="width: 50px; height: 50px; border-radius: 15px; background: #E8F2FF; display: grid; place-items: center; flex: none;">
+              <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#1478FF" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M5.6 12.2 7.2 8A1.9 1.9 0 0 1 9 6.7h6a1.9 1.9 0 0 1 1.8 1.3l1.6 4.2"/><rect x="3.4" y="12.2" width="17.2" height="4.6" rx="1.6"/><circle cx="7.6" cy="18.4" r="1.6"/><circle cx="16.4" cy="18.4" r="1.6"/></svg>
+            </div>
+            <div style="flex: 1;">
+              <div style="font: 700 23px/1.2 Poppins; color: #0F172A;">Check-in vehicle</div>
+              <div style="font: 500 14px/1.4 Poppins; color: #6C7280; margin-top: 3px;">Enter vehicle details to check in</div>
+            </div>
+            <div style="width: 36px; height: 36px; border-radius: 999px; background: #F1F6FD; display: grid; place-items: center; color: #4A5565;"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M6.8 6.8l10.4 10.4M17.2 6.8 6.8 17.2"/></svg></div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="font: 500 13px/1 Poppins; color: #4A5565;">Vehicle number</div>
+              <div style="height: 52px; border-radius: 14px; border: 1.5px solid #1478FF; background: #F7FAFE; display: flex; align-items: center; gap: 10px; padding: 0 12px;">
+                <div style="background: #E8F2FF; color: #0B5FD6; border-radius: 8px; padding: 4px 8px; font: 700 11px Poppins;">IND</div>
+                <div style="font: 600 16px Poppins; color: #0F172A; letter-spacing: 0.04em;">KA01AB1234</div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="font: 500 13px/1 Poppins; color: #4A5565;">Mobile number</div>
+              <div style="height: 52px; border-radius: 14px; border: 1px solid #DCE5F2; display: flex; align-items: center; gap: 10px; padding: 0 12px; font: 500 15px Poppins; color: #94A3B8;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8A94A6" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M5 4.6h3.2l1.4 3.6-2 1.4a11 11 0 0 0 5.4 5.4l1.4-2 3.6 1.4v3.1a1.5 1.5 0 0 1-1.6 1.5A15.5 15.5 0 0 1 3.5 6.1 1.5 1.5 0 0 1 5 4.6Z"/></svg>
+                Enter mobile number
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="font: 500 13px/1 Poppins; color: #4A5565;">Vehicle type</div>
+            <div style="display: flex; gap: 10px;">
+              <sc-for list="{{ typeTiles }}" as="v" hint-placeholder-count="4">
+                <div style="flex: 1; border-radius: 14px; background: {{ v.bg }}; border: 1.5px solid {{ v.border }}; padding: 14px 0; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                  <div style="color: {{ v.fg }}; display: grid; place-items: center;">{{ v.glyph }}</div>
+                  <div style="font: {{ v.weight }} 12px/1 Poppins; color: {{ v.fg }};">{{ v.label }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div>
+              <div style="font: 500 13px/1 Poppins; color: #4A5565;">Check-in photos <span style="color: #94A3B8;">(optional)</span></div>
+              <div style="font: 400 12px/1.4 Poppins; color: #94A3B8; margin-top: 2px;">Front, back, left, right and odometer</div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <sc-for list="{{ photoTilesWeb }}" as="p" hint-placeholder-count="5">
+                <div style="flex: 1; border: 1.5px dashed #C9D9EF; background: #F7FAFE; border-radius: 14px; padding: 18px 0; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#1478FF" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><rect x="3" y="7.6" width="18" height="12.4" rx="2.6"/><circle cx="12" cy="13.8" r="3.4"/><path d="M8.8 7.6 10 5.2h4l1.2 2.4"/></svg>
+                  <div style="font: 500 12px/1 Poppins; color: #4A5565;">{{ p }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <div style="height: 50px; padding: 0 24px; border-radius: 14px; border: 1.5px solid #DCE5F2; color: #4A5565; display: flex; align-items: center; font: 600 15px Poppins;">Cancel</div>
+            <div style="height: 50px; padding: 0 28px; border-radius: 14px; background: #FF6B36; color: #fff; display: flex; align-items: center; font: 600 15px Poppins; box-shadow: 0 6px 14px rgba(255,107,54,0.22);">Check in</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3d VEHICLES -->
+  <div id="3d" style="display: flex; flex-direction: column; gap: 12px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="background: #1478FF; color: #fff; border-radius: 8px; padding: 4px 10px; font: 700 13px/1.4 Poppins;">3d</div>
+      <div style="font: 600 15px/1.3 Poppins; color: #0F172A;">Vehicles</div>
+    </div>
+    <div style="width: 1440px; height: 900px; border-radius: 18px; overflow: hidden; display: flex; background: #EFF5FE; box-shadow: 0 20px 44px rgba(15,23,42,0.16);">
+      <div style="width: 248px; flex: none; background: #fff; border-right: 1px solid #E6EDF7; display: flex; flex-direction: column; padding: 18px 14px;">
+        <div style="padding: 0 6px 18px;"><img src="assets/logo_instaparkai.png" alt="InstaParkAi" style="height: 34px; display: block;"></div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <sc-for list="{{ navVehicles }}" as="n" hint-placeholder-count="7">
+            <div style="height: 44px; border-radius: 12px; background: {{ n.bg }}; display: flex; align-items: center; gap: 12px; padding: 0 12px;">
+              <div style="width: 20px; height: 20px; display: grid; place-items: center; color: {{ n.color }};">{{ n.icon }}</div>
+              <div style="font: {{ n.weight }} 14px/1 Poppins; color: {{ n.color }};">{{ n.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="flex: 1;"></div>
+        <div style="display: flex; align-items: center; gap: 10px; background: #F7FAFE; border-radius: 14px; padding: 10px 12px;">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(150deg, #1478FF, #0B5FD6); color: #fff; display: grid; place-items: center; font: 700 14px Poppins;">V</div>
+          <div>
+            <div style="font: 600 14px/1.2 Poppins; color: #0F172A;">Vikas</div>
+            <div style="font: 500 11px/1.3 Poppins; color: #6C7280;">Parking Admin</div>
+          </div>
+        </div>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+        <div style="height: 68px; flex: none; background: #fff; border-bottom: 1px solid #E6EDF7; display: flex; align-items: center; gap: 16px; padding: 0 24px;">
+          <div style="flex: 1; max-width: 420px; height: 42px; border-radius: 999px; background: #F4F8FE; border: 1px solid #E6EDF7; display: flex; align-items: center; gap: 10px; padding: 0 16px;">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8A94A6" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><circle cx="11" cy="11" r="6.4"/><path d="M15.8 15.8 20 20"/></svg>
+            <div style="font: 500 14px Poppins; color: #0F172A;">KA51</div>
+          </div>
+          <div style="flex: 1;"></div>
+          <div style="height: 42px; padding: 0 18px; border-radius: 999px; background: #E8F2FF; color: #0B5FD6; display: flex; align-items: center; gap: 8px; font: 600 14px Poppins;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M12 4.4 13.5 9 18 10.5 13.5 12 12 16.6 10.5 12 6 10.5 10.5 9Z"/><path d="M18.3 15.2l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7Z"/></svg> AI Insights</div>
+          <div style="width: 42px; height: 42px; border-radius: 999px; background: #F4F8FE; display: grid; place-items: center;">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#1478FF" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M6.6 10.4a5.4 5.4 0 0 1 10.8 0c0 3.9 1.6 5.4 1.6 5.4H5s1.6-1.5 1.6-5.4Z"/><path d="M10.1 19a2 2 0 0 0 3.8 0"/></svg>
+          </div>
+          <div style="width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(150deg, #1478FF, #0B5FD6); color: #fff; display: grid; place-items: center; font: 700 15px Poppins;">V</div>
+        </div>
+        <div style="flex: 1; overflow: hidden; padding: 22px 24px; display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+              <div style="font: 700 26px/1.2 Poppins; color: #0F172A;">Vehicles</div>
+              <div style="font: 500 14px/1.4 Poppins; color: #4A5565; margin-top: 4px;">14 records · last 500 tickets</div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <div style="height: 44px; padding: 0 18px; border-radius: 12px; background: #fff; border: 1px solid #DCE5F2; color: #4A5565; display: flex; align-items: center; font: 600 14px Poppins;">This month ▾</div>
+              <div style="height: 44px; padding: 0 18px; border-radius: 12px; background: #E8F2FF; color: #0B5FD6; display: flex; align-items: center; gap: 8px; font: 600 14px Poppins;">Export CSV</div>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
+            <sc-for list="{{ vehicleStats }}" as="k" hint-placeholder-count="4">
+              <div style="background: #fff; border-radius: 18px; padding: 16px 18px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07); display: flex; align-items: center; gap: 14px;">
+                <div style="width: 44px; height: 44px; border-radius: 13px; background: {{ k.tint }}; display: grid; place-items: center; color: {{ k.color }};">{{ k.glyph }}</div>
+                <div>
+                  <div style="font: 700 24px/1.1 Poppins; color: #0F172A;">{{ k.value }}</div>
+                  <div style="font: 500 12px/1.3 Poppins; color: #6C7280;">{{ k.label }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <sc-for list="{{ queueChips }}" as="c" hint-placeholder-count="5">
+              <div style="height: 38px; padding: 0 16px; border-radius: 999px; background: {{ c.bg }}; border: 1px solid {{ c.border }}; color: {{ c.color }}; display: flex; align-items: center; font: 500 13px Poppins;">{{ c.label }}</div>
+            </sc-for>
+          </div>
+          <div style="flex: 1; background: #fff; border-radius: 20px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07); overflow: hidden; display: flex; flex-direction: column;">
+            <div style="display: grid; grid-template-columns: 1.5fr 1fr 0.8fr 0.9fr 1.4fr 0.7fr; gap: 14px; padding: 14px 20px; background: #F7FAFE;">
+              <div style="font: 600 12px/1 Poppins; color: #94A3B8;">VEHICLE</div>
+              <div style="font: 600 12px/1 Poppins; color: #94A3B8;">STATUS</div>
+              <div style="font: 600 12px/1 Poppins; color: #94A3B8;">SLOT</div>
+              <div style="font: 600 12px/1 Poppins; color: #94A3B8;">FARE</div>
+              <div style="font: 600 12px/1 Poppins; color: #94A3B8;">OPERATORS</div>
+              <div style="font: 600 12px/1 Poppins; color: #94A3B8;">PHOTOS</div>
+            </div>
+            <sc-for list="{{ vehiclesTable }}" as="r" hint-placeholder-count="6">
+              <div style="display: grid; grid-template-columns: 1.5fr 1fr 0.8fr 0.9fr 1.4fr 0.7fr; gap: 14px; align-items: center; padding: 12px 20px; border-bottom: 1px solid #F0F4FA;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  {{ r.thumb }}
+                  <div>
+                    <div style="font: 700 15px/1.2 Poppins; color: #0F172A;">{{ r.plate }}</div>
+                    <div style="font: 500 12px/1.4 Poppins; color: #6C7280;">{{ r.type }} · {{ r.mobile }}</div>
+                  </div>
+                </div>
+                <div>
+                  <div style="display: inline-flex; align-items: center; gap: 6px; background: {{ r.pillBg }}; border-radius: 999px; padding: 5px 11px;">
+                    <div style="width: 6px; height: 6px; border-radius: 50%; background: {{ r.accent }};"></div>
+                    <div style="font: 600 11px/1 Poppins; color: {{ r.accentText }};">{{ r.status }}</div>
+                  </div>
+                </div>
+                <div style="font: 500 14px/1 Poppins; color: #4A5565;">{{ r.slot }}</div>
+                <div style="font: 600 14px/1 Poppins; color: {{ r.fareColor }};">{{ r.fare }}</div>
+                <div style="font: 500 13px/1.4 Poppins; color: #4A5565;">{{ r.operators }}</div>
+                <div style="font: 600 13px/1 Poppins; color: #1478FF;">{{ r.photos }}</div>
+              </div>
+            </sc-for>
+            <div style="flex: 1;"></div>
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-top: 1px solid #F0F4FA;">
+              <div style="font: 500 13px/1 Poppins; color: #6C7280;">Page 1 of 3 · showing 6 of 14</div>
+              <div style="display: flex; gap: 10px;">
+                <div style="height: 40px; padding: 0 18px; border-radius: 12px; border: 1px solid #DCE5F2; color: #94A3B8; display: flex; align-items: center; font: 600 13px Poppins;">Previous</div>
+                <div style="height: 40px; padding: 0 18px; border-radius: 12px; background: #1478FF; color: #fff; display: flex; align-items: center; font: 600 13px Poppins;">Next</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3e VALET OPERATORS -->
+  <div id="3e" style="display: flex; flex-direction: column; gap: 12px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="background: #1478FF; color: #fff; border-radius: 8px; padding: 4px 10px; font: 700 13px/1.4 Poppins;">3e</div>
+      <div style="font: 600 15px/1.3 Poppins; color: #0F172A;">Valet Operators</div>
+    </div>
+    <div style="width: 1440px; height: 900px; border-radius: 18px; overflow: hidden; display: flex; background: #EFF5FE; box-shadow: 0 20px 44px rgba(15,23,42,0.16);">
+      <div style="width: 248px; flex: none; background: #fff; border-right: 1px solid #E6EDF7; display: flex; flex-direction: column; padding: 18px 14px;">
+        <div style="padding: 0 6px 18px;"><img src="assets/logo_instaparkai.png" alt="InstaParkAi" style="height: 34px; display: block;"></div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <sc-for list="{{ navOperators }}" as="n" hint-placeholder-count="7">
+            <div style="height: 44px; border-radius: 12px; background: {{ n.bg }}; display: flex; align-items: center; gap: 12px; padding: 0 12px;">
+              <div style="width: 20px; height: 20px; display: grid; place-items: center; color: {{ n.color }};">{{ n.icon }}</div>
+              <div style="font: {{ n.weight }} 14px/1 Poppins; color: {{ n.color }};">{{ n.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="flex: 1;"></div>
+        <div style="display: flex; align-items: center; gap: 10px; background: #F7FAFE; border-radius: 14px; padding: 10px 12px;">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(150deg, #1478FF, #0B5FD6); color: #fff; display: grid; place-items: center; font: 700 14px Poppins;">V</div>
+          <div>
+            <div style="font: 600 14px/1.2 Poppins; color: #0F172A;">Vikas</div>
+            <div style="font: 500 11px/1.3 Poppins; color: #6C7280;">Parking Admin</div>
+          </div>
+        </div>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+        <div style="height: 68px; flex: none; background: #fff; border-bottom: 1px solid #E6EDF7; display: flex; align-items: center; gap: 16px; padding: 0 24px;">
+          <div style="flex: 1; max-width: 420px; height: 42px; border-radius: 999px; background: #F4F8FE; border: 1px solid #E6EDF7; display: flex; align-items: center; gap: 10px; padding: 0 16px;">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8A94A6" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><circle cx="11" cy="11" r="6.4"/><path d="M15.8 15.8 20 20"/></svg>
+            <div style="font: 400 14px Poppins; color: #94A3B8;">Search operators…</div>
+          </div>
+          <div style="flex: 1;"></div>
+          <div style="width: 42px; height: 42px; border-radius: 999px; background: #F4F8FE; display: grid; place-items: center;">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#1478FF" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M6.6 10.4a5.4 5.4 0 0 1 10.8 0c0 3.9 1.6 5.4 1.6 5.4H5s1.6-1.5 1.6-5.4Z"/><path d="M10.1 19a2 2 0 0 0 3.8 0"/></svg>
+          </div>
+          <div style="width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(150deg, #1478FF, #0B5FD6); color: #fff; display: grid; place-items: center; font: 700 15px Poppins;">V</div>
+        </div>
+        <div style="flex: 1; overflow: hidden; padding: 22px 24px; display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+              <div style="font: 700 26px/1.2 Poppins; color: #0F172A;">Valet Operators</div>
+              <div style="font: 500 14px/1.4 Poppins; color: #4A5565; margin-top: 4px;">6 operators · 3 clocked in · 1 on break</div>
+            </div>
+            <div style="height: 44px; padding: 0 20px; border-radius: 12px; background: #FF6B36; color: #fff; display: flex; align-items: center; gap: 8px; font: 600 14px Poppins; box-shadow: 0 6px 14px rgba(255,107,54,0.2);">+ Add operator</div>
+          </div>
+          <div style="flex: 1; background: #fff; border-radius: 20px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07); overflow: hidden; display: flex; flex-direction: column;">
+            <div style="display: grid; grid-template-columns: 1.6fr 1fr 1fr 0.9fr 0.9fr 1.2fr; gap: 14px; padding: 14px 20px; background: #F7FAFE;">
+              <div style="font: 600 12px/1 Poppins; color: #94A3B8;">OPERATOR</div>
+              <div style="font: 600 12px/1 Poppins; color: #94A3B8;">TODAY</div>
+              <div style="font: 600 12px/1 Poppins; color: #94A3B8;">SHIFT</div>
+              <div style="font: 600 12px/1 Poppins; color: #94A3B8;">ACTIVE</div>
+              <div style="font: 600 12px/1 Poppins; color: #94A3B8;">COMPLETED</div>
+              <div style="font: 600 12px/1 Poppins; color: #94A3B8;">SET STATUS</div>
+            </div>
+            <sc-for list="{{ operatorTable }}" as="o" hint-placeholder-count="6">
+              <div style="display: grid; grid-template-columns: 1.6fr 1fr 1fr 0.9fr 0.9fr 1.2fr; gap: 14px; align-items: center; padding: 13px 20px; border-bottom: 1px solid #F0F4FA;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="width: 40px; height: 40px; border-radius: 50%; background: {{ o.avatarBg }}; color: {{ o.avatarFg }}; display: grid; place-items: center; font: 700 15px Poppins;">{{ o.initial }}</div>
+                  <div>
+                    <div style="font: 600 15px/1.2 Poppins; color: #0F172A;">{{ o.name }}</div>
+                    <div style="font: 500 12px/1.4 Poppins; color: #6C7280;">{{ o.username }}</div>
+                  </div>
+                </div>
+                <div>
+                  <div style="display: inline-flex; align-items: center; gap: 6px; background: {{ o.pillBg }}; border-radius: 999px; padding: 5px 11px;">
+                    <div style="width: 6px; height: 6px; border-radius: 50%; background: {{ o.accent }};"></div>
+                    <div style="font: 600 11px/1 Poppins; color: {{ o.accentText }};">{{ o.status }}</div>
+                  </div>
+                </div>
+                <div style="font: 500 13px/1 Poppins; color: #4A5565;">{{ o.shift }}</div>
+                <div style="font: 600 15px/1 Poppins; color: #0F172A;">{{ o.active }}</div>
+                <div style="font: 600 15px/1 Poppins; color: #0F172A;">{{ o.completed }}</div>
+                <div style="display: flex; gap: 4px; background: #EEF4FC; border-radius: 999px; padding: 3px; justify-self: start;">
+                  <div style="height: 32px; padding: 0 12px; border-radius: 999px; background: {{ o.inBg }}; color: {{ o.inColor }}; display: flex; align-items: center; font: 600 12px Poppins;">IN</div>
+                  <div style="height: 32px; padding: 0 12px; border-radius: 999px; background: {{ o.breakBg }}; color: {{ o.breakColor }}; display: flex; align-items: center; font: 600 12px Poppins;">BREAK</div>
+                  <div style="height: 32px; padding: 0 12px; border-radius: 999px; background: {{ o.outBg }}; color: {{ o.outColor }}; display: flex; align-items: center; font: 600 12px Poppins;">OUT</div>
+                </div>
+              </div>
+            </sc-for>
+            <div style="flex: 1;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3f REPORTS -->
+  <div id="3f" style="display: flex; flex-direction: column; gap: 12px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="background: #1478FF; color: #fff; border-radius: 8px; padding: 4px 10px; font: 700 13px/1.4 Poppins;">3f</div>
+      <div style="font: 600 15px/1.3 Poppins; color: #0F172A;">Reports</div>
+    </div>
+    <div style="width: 1440px; height: 900px; border-radius: 18px; overflow: hidden; display: flex; background: #EFF5FE; box-shadow: 0 20px 44px rgba(15,23,42,0.16);">
+      <div style="width: 248px; flex: none; background: #fff; border-right: 1px solid #E6EDF7; display: flex; flex-direction: column; padding: 18px 14px;">
+        <div style="padding: 0 6px 18px;"><img src="assets/logo_instaparkai.png" alt="InstaParkAi" style="height: 34px; display: block;"></div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <sc-for list="{{ navReports }}" as="n" hint-placeholder-count="7">
+            <div style="height: 44px; border-radius: 12px; background: {{ n.bg }}; display: flex; align-items: center; gap: 12px; padding: 0 12px;">
+              <div style="width: 20px; height: 20px; display: grid; place-items: center; color: {{ n.color }};">{{ n.icon }}</div>
+              <div style="font: {{ n.weight }} 14px/1 Poppins; color: {{ n.color }};">{{ n.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="flex: 1;"></div>
+        <div style="display: flex; align-items: center; gap: 10px; background: #F7FAFE; border-radius: 14px; padding: 10px 12px;">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(150deg, #1478FF, #0B5FD6); color: #fff; display: grid; place-items: center; font: 700 14px Poppins;">V</div>
+          <div>
+            <div style="font: 600 14px/1.2 Poppins; color: #0F172A;">Vikas</div>
+            <div style="font: 500 11px/1.3 Poppins; color: #6C7280;">Parking Admin</div>
+          </div>
+        </div>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+        <div style="height: 68px; flex: none; background: #fff; border-bottom: 1px solid #E6EDF7; display: flex; align-items: center; justify-content: space-between; padding: 0 24px;">
+          <div style="font: 600 15px/1 Poppins; color: #0F172A;">Reports</div>
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="height: 42px; padding: 0 18px; border-radius: 999px; background: #E8F2FF; color: #0B5FD6; display: flex; align-items: center; gap: 8px; font: 600 14px Poppins;"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M12 4.4 13.5 9 18 10.5 13.5 12 12 16.6 10.5 12 6 10.5 10.5 9Z"/><path d="M18.3 15.2l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7Z"/></svg> AI Insights</div>
+            <div style="width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(150deg, #1478FF, #0B5FD6); color: #fff; display: grid; place-items: center; font: 700 15px Poppins;">V</div>
+          </div>
+        </div>
+        <div style="flex: 1; overflow: hidden; padding: 22px 24px; display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+            <div>
+              <div style="font: 700 26px/1.2 Poppins; color: #0F172A;">Reports</div>
+              <div style="font: 500 14px/1.4 Poppins; color: #4A5565; margin-top: 4px;">1 – 25 July 2026 · Hotel Parking Test</div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <div style="height: 44px; padding: 0 18px; border-radius: 12px; background: #fff; border: 1px solid #DCE5F2; color: #4A5565; display: flex; align-items: center; font: 600 14px Poppins;">This month ▾</div>
+              <div style="height: 44px; padding: 0 18px; border-radius: 12px; background: #E8F2FF; color: #0B5FD6; display: flex; align-items: center; font: 600 14px Poppins;">Export CSV</div>
+              <div style="height: 44px; padding: 0 18px; border-radius: 12px; background: #1478FF; color: #fff; display: flex; align-items: center; font: 600 14px Poppins; box-shadow: 0 6px 14px rgba(20,120,255,0.2);">Download PDF</div>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">
+            <sc-for list="{{ reportKpis }}" as="k" hint-placeholder-count="4">
+              <div style="background: #fff; border-radius: 18px; padding: 18px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07);">
+                <div style="font: 500 13px/1 Poppins; color: #6C7280;">{{ k.label }}</div>
+                <div style="font: 700 30px/1.1 Poppins; color: #0F172A; margin-top: 10px;">{{ k.value }}</div>
+                <div style="font: 600 12px/1 Poppins; color: {{ k.deltaColor }}; margin-top: 6px;">{{ k.delta }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="flex: 1; display: grid; grid-template-columns: 1.6fr 1fr; gap: 16px; overflow: hidden;">
+            <div style="background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07); display: flex; flex-direction: column;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font: 600 16px/1 Poppins; color: #0F172A;">Revenue by day</div>
+                <div style="display: flex; align-items: center; gap: 14px;">
+                  <div style="display: flex; align-items: center; gap: 6px; font: 500 12px Poppins; color: #6C7280;"><div style="width: 10px; height: 10px; border-radius: 3px; background: #1478FF;"></div>Collected</div>
+                  <div style="display: flex; align-items: center; gap: 6px; font: 500 12px Poppins; color: #6C7280;"><div style="width: 10px; height: 10px; border-radius: 3px; background: #C9DEFB;"></div>Pending</div>
+                </div>
+              </div>
+              <div style="flex: 1; display: flex; align-items: flex-end; gap: 10px; margin-top: 20px;">
+                <sc-for list="{{ revenueBars }}" as="b" hint-placeholder-count="14">
+                  <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                    <div style="width: 100%; display: flex; flex-direction: column; justify-content: flex-end; gap: 3px; height: 240px;">
+                      <div style="height: {{ b.pending }}px; border-radius: 6px 6px 0 0; background: #C9DEFB;"></div>
+                      <div style="height: {{ b.collected }}px; border-radius: 6px 6px 0 0; background: #1478FF;"></div>
+                    </div>
+                    <div style="font: 500 11px/1 Poppins; color: #94A3B8;">{{ b.label }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 16px; overflow: hidden;">
+              <div style="background: #fff; border-radius: 20px; padding: 18px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07); display: flex; flex-direction: column; gap: 12px;">
+                <div style="font: 600 16px/1 Poppins; color: #0F172A;">Vehicle mix</div>
+                <sc-for list="{{ mixRows }}" as="m" hint-placeholder-count="4">
+                  <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <div style="display: flex; justify-content: space-between; font: 500 13px Poppins; color: #4A5565;"><span>{{ m.label }}</span><span style="color: #0F172A; font-weight: 600;">{{ m.value }}</span></div>
+                    <div style="height: 8px; border-radius: 4px; background: #EDF2F9; overflow: hidden;">
+                      <div style="width: {{ m.pct }}; height: 100%; border-radius: 4px; background: {{ m.color }};"></div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="flex: 1; background: #fff; border-radius: 20px; padding: 18px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07); display: flex; flex-direction: column; gap: 12px; overflow: hidden;">
+                <div style="font: 600 16px/1 Poppins; color: #0F172A;">Top operators</div>
+                <sc-for list="{{ topOperators }}" as="t" hint-placeholder-count="4">
+                  <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 34px; height: 34px; border-radius: 50%; background: #EAF2FE; color: #0B5FD6; display: grid; place-items: center; font: 700 13px Poppins;">{{ t.initial }}</div>
+                    <div style="flex: 1; font: 500 14px/1 Poppins; color: #0F172A;">{{ t.name }}</div>
+                    <div style="font: 600 14px/1 Poppins; color: #4A5565;">{{ t.count }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3g COMMUNICATION -->
+  <div id="3g" style="display: flex; flex-direction: column; gap: 12px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="background: #1478FF; color: #fff; border-radius: 8px; padding: 4px 10px; font: 700 13px/1.4 Poppins;">3g</div>
+      <div style="font: 600 15px/1.3 Poppins; color: #0F172A;">Communication</div>
+    </div>
+    <div style="width: 1440px; height: 900px; border-radius: 18px; overflow: hidden; display: flex; background: #EFF5FE; box-shadow: 0 20px 44px rgba(15,23,42,0.16);">
+      <div style="width: 248px; flex: none; background: #fff; border-right: 1px solid #E6EDF7; display: flex; flex-direction: column; padding: 18px 14px;">
+        <div style="padding: 0 6px 18px;"><img src="assets/logo_instaparkai.png" alt="InstaParkAi" style="height: 34px; display: block;"></div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <sc-for list="{{ navComms }}" as="n" hint-placeholder-count="7">
+            <div style="height: 44px; border-radius: 12px; background: {{ n.bg }}; display: flex; align-items: center; gap: 12px; padding: 0 12px;">
+              <div style="width: 20px; height: 20px; display: grid; place-items: center; color: {{ n.color }};">{{ n.icon }}</div>
+              <div style="font: {{ n.weight }} 14px/1 Poppins; color: {{ n.color }};">{{ n.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="flex: 1;"></div>
+        <div style="display: flex; align-items: center; gap: 10px; background: #F7FAFE; border-radius: 14px; padding: 10px 12px;">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(150deg, #1478FF, #0B5FD6); color: #fff; display: grid; place-items: center; font: 700 14px Poppins;">V</div>
+          <div>
+            <div style="font: 600 14px/1.2 Poppins; color: #0F172A;">Vikas</div>
+            <div style="font: 500 11px/1.3 Poppins; color: #6C7280;">Parking Admin</div>
+          </div>
+        </div>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+        <div style="height: 68px; flex: none; background: #fff; border-bottom: 1px solid #E6EDF7; display: flex; align-items: center; justify-content: space-between; padding: 0 24px;">
+          <div style="font: 600 15px/1 Poppins; color: #0F172A;">Communication</div>
+          <div style="width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(150deg, #1478FF, #0B5FD6); color: #fff; display: grid; place-items: center; font: 700 15px Poppins;">V</div>
+        </div>
+        <div style="flex: 1; overflow: hidden; padding: 22px 24px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 16px;">
+          <div style="display: flex; flex-direction: column; gap: 16px; overflow: hidden;">
+            <div>
+              <div style="font: 700 26px/1.2 Poppins; color: #0F172A;">Guest messaging</div>
+              <div style="font: 500 14px/1.5 Poppins; color: #4A5565; margin-top: 4px;">SMS and WhatsApp templates sent automatically at each ticket stage.</div>
+            </div>
+            <div style="flex: 1; background: #fff; border-radius: 20px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07); overflow: hidden; display: flex; flex-direction: column;">
+              <sc-for list="{{ templates }}" as="t" hint-placeholder-count="5">
+                <div style="display: flex; align-items: center; gap: 14px; padding: 16px 20px; border-bottom: 1px solid #F0F4FA;">
+                  <div style="width: 40px; height: 40px; border-radius: 12px; background: {{ t.tint }}; color: {{ t.color }}; display: grid; place-items: center;">{{ t.glyph }}</div>
+                  <div style="flex: 1;">
+                    <div style="font: 600 15px/1.2 Poppins; color: #0F172A;">{{ t.name }}</div>
+                    <div style="font: 400 13px/1.5 Poppins; color: #6C7280; margin-top: 2px;">{{ t.body }}</div>
+                  </div>
+                  <div style="font: 500 12px/1 Poppins; color: #94A3B8;">{{ t.channel }}</div>
+                  <div style="width: 46px; height: 27px; border-radius: 999px; background: {{ t.switchBg }}; padding: 3px; display: flex; justify-content: {{ t.switchJustify }};">
+                    <div style="width: 21px; height: 21px; border-radius: 50%; background: #fff;"></div>
+                  </div>
+                </div>
+              </sc-for>
+              <div style="flex: 1;"></div>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 16px; overflow: hidden;">
+            <div style="background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07); display: flex; flex-direction: column; gap: 14px;">
+              <div style="font: 600 16px/1 Poppins; color: #0F172A;">Broadcast to operators</div>
+              <div style="display: flex; gap: 8px;">
+                <div style="height: 36px; padding: 0 14px; border-radius: 999px; background: #1478FF; color: #fff; display: flex; align-items: center; font: 600 13px Poppins;">All on shift</div>
+                <div style="height: 36px; padding: 0 14px; border-radius: 999px; background: #fff; border: 1px solid #DCE5F2; color: #4A5565; display: flex; align-items: center; font: 500 13px Poppins;">Everyone</div>
+                <div style="height: 36px; padding: 0 14px; border-radius: 999px; background: #fff; border: 1px solid #DCE5F2; color: #4A5565; display: flex; align-items: center; font: 500 13px Poppins;">Pick people</div>
+              </div>
+              <div style="border: 1px solid #DCE5F2; border-radius: 14px; padding: 14px; min-height: 120px; font: 400 14px/1.6 Poppins; color: #0F172A;">Heavy arrivals expected 7–9pm for the ballroom event. Keep L1 aisle clear for valet pull-outs.</div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font: 500 12px/1 Poppins; color: #94A3B8;">Push + in-app · 3 recipients</div>
+                <div style="height: 46px; padding: 0 22px; border-radius: 14px; background: #FF6B36; color: #fff; display: flex; align-items: center; font: 600 15px Poppins; box-shadow: 0 6px 14px rgba(255,107,54,0.22);">Send broadcast</div>
+              </div>
+            </div>
+            <div style="flex: 1; background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07); display: flex; flex-direction: column; gap: 14px; overflow: hidden;">
+              <div style="font: 600 16px/1 Poppins; color: #0F172A;">Recent activity</div>
+              <sc-for list="{{ commsLog }}" as="l" hint-placeholder-count="5">
+                <div style="display: flex; gap: 12px; align-items: flex-start;">
+                  <div style="width: 8px; height: 8px; border-radius: 50%; background: {{ l.dot }}; margin-top: 6px; flex: none;"></div>
+                  <div style="flex: 1;">
+                    <div style="font: 500 14px/1.4 Poppins; color: #0F172A;">{{ l.text }}</div>
+                    <div style="font: 500 12px/1.3 Poppins; color: #94A3B8; margin-top: 2px;">{{ l.time }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3h SETTINGS -->
+  <div id="3h" style="display: flex; flex-direction: column; gap: 12px;">
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <div style="background: #1478FF; color: #fff; border-radius: 8px; padding: 4px 10px; font: 700 13px/1.4 Poppins;">3h</div>
+      <div style="font: 600 15px/1.3 Poppins; color: #0F172A;">Settings</div>
+    </div>
+    <div style="width: 1440px; height: 900px; border-radius: 18px; overflow: hidden; display: flex; background: #EFF5FE; box-shadow: 0 20px 44px rgba(15,23,42,0.16);">
+      <div style="width: 248px; flex: none; background: #fff; border-right: 1px solid #E6EDF7; display: flex; flex-direction: column; padding: 18px 14px;">
+        <div style="padding: 0 6px 18px;"><img src="assets/logo_instaparkai.png" alt="InstaParkAi" style="height: 34px; display: block;"></div>
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <sc-for list="{{ navSettings }}" as="n" hint-placeholder-count="7">
+            <div style="height: 44px; border-radius: 12px; background: {{ n.bg }}; display: flex; align-items: center; gap: 12px; padding: 0 12px;">
+              <div style="width: 20px; height: 20px; display: grid; place-items: center; color: {{ n.color }};">{{ n.icon }}</div>
+              <div style="font: {{ n.weight }} 14px/1 Poppins; color: {{ n.color }};">{{ n.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="flex: 1;"></div>
+        <div style="display: flex; align-items: center; gap: 10px; background: #F7FAFE; border-radius: 14px; padding: 10px 12px;">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(150deg, #1478FF, #0B5FD6); color: #fff; display: grid; place-items: center; font: 700 14px Poppins;">V</div>
+          <div>
+            <div style="font: 600 14px/1.2 Poppins; color: #0F172A;">Vikas</div>
+            <div style="font: 500 11px/1.3 Poppins; color: #6C7280;">Parking Admin</div>
+          </div>
+        </div>
+      </div>
+      <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+        <div style="height: 68px; flex: none; background: #fff; border-bottom: 1px solid #E6EDF7; display: flex; align-items: center; justify-content: space-between; padding: 0 24px;">
+          <div style="font: 600 15px/1 Poppins; color: #0F172A;">Settings</div>
+          <div style="display: flex; align-items: center; gap: 14px;">
+            <div style="height: 42px; padding: 0 20px; border-radius: 12px; background: #1478FF; color: #fff; display: flex; align-items: center; font: 600 14px Poppins; box-shadow: 0 6px 14px rgba(20,120,255,0.2);">Save changes</div>
+            <div style="width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(150deg, #1478FF, #0B5FD6); color: #fff; display: grid; place-items: center; font: 700 15px Poppins;">V</div>
+          </div>
+        </div>
+        <div style="flex: 1; overflow: hidden; padding: 22px 24px; display: grid; grid-template-columns: 210px 1fr; gap: 20px;">
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <sc-for list="{{ settingsNav }}" as="s" hint-placeholder-count="6">
+              <div style="height: 42px; border-radius: 12px; background: {{ s.bg }}; color: {{ s.color }}; display: flex; align-items: center; padding: 0 14px; font: {{ s.weight }} 14px Poppins;">{{ s.label }}</div>
+            </sc-for>
+          </div>
+          <div style="overflow: hidden; display: flex; flex-direction: column; gap: 16px;">
+            <div>
+              <div style="font: 700 26px/1.2 Poppins; color: #0F172A;">Valet &amp; parking</div>
+              <div style="font: 500 14px/1.5 Poppins; color: #4A5565; margin-top: 4px;">Site-level rules that drive the operator app and the queue.</div>
+            </div>
+            <div style="background: #fff; border-radius: 20px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07); overflow: hidden;">
+              <sc-for list="{{ settingsToggles }}" as="t" hint-placeholder-count="4">
+                <div style="display: flex; align-items: center; gap: 16px; padding: 18px 20px; border-bottom: 1px solid #F0F4FA;">
+                  <div style="flex: 1;">
+                    <div style="font: 600 15px/1.2 Poppins; color: #0F172A;">{{ t.label }}</div>
+                    <div style="font: 400 13px/1.5 Poppins; color: #6C7280; margin-top: 3px;">{{ t.help }}</div>
+                  </div>
+                  <div style="width: 52px; height: 30px; border-radius: 999px; background: {{ t.bg }}; padding: 3px; display: flex; justify-content: {{ t.justify }};">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background: #fff;"></div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07); display: flex; flex-direction: column; gap: 16px;">
+              <div style="font: 600 16px/1 Poppins; color: #0F172A;">Pricing &amp; slots</div>
+              <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+                <sc-for list="{{ settingsFields }}" as="f" hint-placeholder-count="6">
+                  <div style="display: flex; flex-direction: column; gap: 6px;">
+                    <div style="font: 500 13px/1 Poppins; color: #4A5565;">{{ f.label }}</div>
+                    <div style="height: 48px; border-radius: 12px; border: 1px solid #DCE5F2; display: flex; align-items: center; padding: 0 14px; font: 600 15px Poppins; color: #0F172A;">{{ f.value }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="background: #fff; border-radius: 20px; padding: 20px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07); display: flex; align-items: center; justify-content: space-between;">
+              <div>
+                <div style="font: 600 15px/1.2 Poppins; color: #0F172A;">Danger zone</div>
+                <div style="font: 400 13px/1.5 Poppins; color: #6C7280; margin-top: 3px;">Voiding all open tickets frees every slot immediately.</div>
+              </div>
+              <div style="height: 44px; padding: 0 18px; border-radius: 12px; border: 1.5px solid #E23D3D; color: #E23D3D; display: flex; align-items: center; font: 600 14px Poppins;">Void all open tickets</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const ICOS = {
+      car: [["p","M5.6 12.2 7.2 8A1.9 1.9 0 0 1 9 6.7h6a1.9 1.9 0 0 1 1.8 1.3l1.6 4.2"],["r",3.4,12.2,17.2,4.6,1.6],["c",7.6,18.4,1.6],["c",16.4,18.4,1.6]],
+      bike: [["c",6,16.4,3.2],["c",18,16.4,3.2],["p","M9 16.4 12.2 9h3.4l2.4 7.4M11.4 9h4"]],
+      suv: [["p","M5.4 11.6 7 7.4A1.9 1.9 0 0 1 8.8 6.1h6.4a1.9 1.9 0 0 1 1.8 1.3l1.6 4.2"],["r",3.4,11.6,17.2,5.4,1.8],["c",7.6,18.6,1.5],["c",16.4,18.6,1.5]],
+      van: [["r",3,7.8,10.6,8.2,1.6],["p","M13.6 10.6h3.6l2.8 3.2V16h-6.4Z"],["c",7,18.4,1.5],["c",17,18.4,1.5]],
+      list: [["p","M4.5 7h15M4.5 12h15M4.5 17h9.5"]],
+      users: [["c",9.4,8.6,3.3],["p","M3.4 19.4c1.2-3 3.3-4.4 6-4.4s4.8 1.4 6 4.4"],["p","M16.2 6.3a3.3 3.3 0 0 1 0 6.2M17.2 15.2c2 .6 3.3 2 4 4.2"]],
+      grid: [["r",4,4,7,7,1.8],["r",13,4,7,7,1.8],["r",4,13,7,7,1.8],["r",13,13,7,7,1.8]],
+      report: [["p","M6.2 3.8h7L18 8.4v11.8H6.2Z"],["p","M13.2 3.8v4.6H18"],["p","M9.2 16.6v-2.4M12 16.6v-4.4M14.8 16.6v-1.4"]],
+      message: [["p","M4.2 6.6A2.1 2.1 0 0 1 6.3 4.5h11.4a2.1 2.1 0 0 1 2.1 2.1v7a2.1 2.1 0 0 1-2.1 2.1H9.2l-5 3.8Z"]],
+      gear: [["c",12,12,3.1],["p","M12 3.6v2.3M12 18.1v2.3M5.3 7.8l2 1.2M16.7 15l2 1.2M5.3 16.2l2-1.2M16.7 9l2-1.2"]],
+      timer: [["c",12,13.2,7.4],["p","M12 13.2V9.6M9.6 3.6h4.8"]],
+      check: [["c",12,12,8.4],["p","M8.4 12.3 11 14.9l4.7-4.9"]],
+      park: [["r",4.6,4.6,14.8,14.8,4],["p","M10 16.4V8.2h3.2a2.6 2.6 0 0 1 0 5.2H10"]],
+      rupee: [["p","M7.6 5h8.8M7.6 9.4h8.8M14.2 5c0 2.9-2.1 4.4-5.4 4.4H7.6l7.2 9.6"]],
+      hash: [["p","M9.4 4.6 7.8 19.4M16.2 4.6 14.6 19.4M5.2 9.2h13.6M4.4 14.8H18"]],
+      arrowRight: [["p","M4.8 12h14.4M13 5.8 19.2 12 13 18.2"]],
+      xCircle: [["c",12,12,8.4],["p","M9.2 9.2l5.6 5.6M14.8 9.2l-5.6 5.6"]],
+    };
+    const ico = (name, size) => {
+      const kids = (ICOS[name] || []).map((s, i) =>
+        s[0] === "p" ? React.createElement("path", { key: i, d: s[1] })
+        : s[0] === "c" ? React.createElement("circle", { key: i, cx: s[1], cy: s[2], r: s[3] })
+        : React.createElement("rect", { key: i, x: s[1], y: s[2], width: s[3], height: s[4], rx: s[5] }));
+      return React.createElement("svg", { viewBox: "0 0 24 24", width: size || 20, height: size || 20, fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" }, kids);
+    };
+    const ICO_NAV = { Dashboard: "grid", "Live Queue": "list", Vehicles: "car", "Valet Operators": "users", Reports: "report", Communication: "message", Settings: "gear" };
+
+    const svg = (d, size) => React.createElement("svg", { viewBox: "0 0 24 24", width: size || 19, height: size || 19, fill: "currentColor" }, React.createElement("path", { d }));
+    const ICONS = {
+      Dashboard: "M3 13h8V3H3Zm10 8h8v-6h-8ZM3 21h8v-6H3Zm10-10h8V3h-8Z",
+      "Live Queue": "M4 6h16v2H4Zm0 5h16v2H4Zm0 5h10v2H4Z",
+      Vehicles: "M18.9 6.5A1.5 1.5 0 0 0 17.5 5.5h-11A1.5 1.5 0 0 0 5.1 6.5L3 12v6h2.5a2 2 0 0 0 4 0h5a2 2 0 0 0 4 0H21v-6l-2.1-5.5ZM6.5 7h11l1.5 4H5L6.5 7Z",
+      "Valet Operators": "M16 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3Zm-8 0a3 3 0 1 0-3-3 3 3 0 0 0 3 3Zm0 2c-2.3 0-6 1.2-6 3.5V19h12v-2.5C14 14.2 10.3 13 8 13Zm8 0c-.7 0-1.5.1-2.3.3A4.7 4.7 0 0 1 16 16.5V19h6v-2.5c0-2.3-3.7-3.5-6-3.5Z",
+      Reports: "M5 21h14V9l-6-6H5Zm3-4h8v2H8Zm0-4h8v2H8Zm0-4h5v2H8Z",
+      Communication: "M20 4H4a2 2 0 0 0-2 2v12l4-4h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Z",
+      Settings: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Zm9 4-2-1.2.3-2.3-2.2-.8-1-2.1L14 6.3 12 5l-2 1.3-2.1-.7-1 2.1-2.2.8.3 2.3L3 12l2 1.2-.3 2.3 2.2.8 1 2.1 2.1-.7L12 19l2-1.3 2.1.7 1-2.1 2.2-.8-.3-2.3Z",
+    };
+    const NAV = ["Dashboard", "Live Queue", "Vehicles", "Valet Operators", "Reports", "Communication", "Settings"];
+    const navFor = (active) => NAV.map((label) => ({
+      label,
+      icon: ico(ICO_NAV[label], 20),
+      bg: label === active ? "#E8F2FF" : "transparent",
+      color: label === active ? "#0B5FD6" : "#6C7280",
+      weight: label === active ? 600 : 500,
+    }));
+
+    const status = {
+      checked_in: { status: "Checked in", accent: "#0B5FD6", accentText: "#0B5FD6", pillBg: "#EAF2FE" },
+      parked: { status: "Parked", accent: "#1478FF", accentText: "#0B5FD6", pillBg: "#EAF2FE" },
+      requested: { status: "Requested", accent: "#E8890C", accentText: "#B36A05", pillBg: "#FDF3E3" },
+      in_transit: { status: "In transit", accent: "#FF6B36", accentText: "#C24515", pillBg: "#FFEDE4" },
+      arrived: { status: "Arrived", accent: "#12A150", accentText: "#0C7A3D", pillBg: "#E4F7EC" },
+      completed: { status: "Completed", accent: "#12A150", accentText: "#0C7A3D", pillBg: "#E4F7EC" },
+      voided: { status: "Voided", accent: "#E23D3D", accentText: "#C22B2B", pillBg: "#FDECEC" },
+    };
+    const blueAction = { actionBg: "#E8F2FF", actionColor: "#0B5FD6" };
+    const orangeAction = { actionBg: "#FF6B36", actionColor: "#FFFFFF" };
+
+    const thumb = (img, size, radius) => React.createElement("div", { style: { width: size, height: size, borderRadius: radius, flex: "none", backgroundColor: "#EEF2F9", backgroundImage: "url('" + img + "')", backgroundSize: "cover", backgroundPosition: "center" } });
+    const withThumb = (rows, size, radius) => rows.map((r) => ({ ...r, thumb: thumb(r.img, size, radius) }));
+    // thumbnails built here so no unresolved {{ }} URL is ever requested
+
+    return {
+      navDash: navFor("Dashboard"),
+      navQueue: navFor("Live Queue"),
+      navVehicles: navFor("Vehicles"),
+      navOperators: navFor("Valet Operators"),
+      navReports: navFor("Reports"),
+      navComms: navFor("Communication"),
+      navSettings: navFor("Settings"),
+
+      adminKpis: [
+        { value: "4", label: "Active vehicles", tint: "#E8F2FF", color: "#1478FF", delta: "+2 today", deltaColor: "#12A150", icon: ico("car", 21) },
+        { value: "11", label: "Completed today", tint: "#E4F7EC", color: "#12A150", delta: "+18%", deltaColor: "#12A150", icon: ico("check", 21) },
+        { value: "₹2,070", label: "Revenue today", tint: "#FFEDE4", color: "#FF6B36", delta: "₹800 pending", deltaColor: "#E8890C", icon: ico("rupee", 21) },
+        { value: "14m", label: "Avg turnaround", tint: "#EAF2FE", color: "#0B5FD6", delta: "−3m vs last week", deltaColor: "#12A150", icon: ico("timer", 21) },
+      ],
+
+      queueRows: withThumb([
+        { plate: "KA123555", type: "Bike", slot: "4", operator: "Test Operator", img: "assets/img_vehicle_bike.png", actionShort: "Handover", ...status.arrived, ...orangeAction },
+        { plate: "KA04NB5432", type: "Xuv", slot: "L1-01", operator: "Vikas", img: "assets/img_vehicle_car.png", actionShort: "Requested", ...status.parked, ...blueAction },
+        { plate: "KA51MN6460", type: "Car", slot: "A-101", operator: "Vikas", img: "assets/img_vehicle_sedan.png", actionShort: "Dispatch", ...status.requested, ...orangeAction },
+        { plate: "MH12QP8801", type: "Sedan", slot: "—", operator: "Unassigned", img: "assets/img_vehicle_sedan.png", actionShort: "Mark parked", ...status.checked_in, ...blueAction },
+      ], 40, 10),
+      queueRowsFull: withThumb([
+        { plate: "KA123555", type: "Bike", mobile: "8050105778", slot: "4", operator: "Test Operator", waiting: "2d", img: "assets/img_vehicle_bike.png", action: "Complete handover", ...status.arrived, ...orangeAction },
+        { plate: "KA04NB5432", type: "Xuv", mobile: "9353240270", slot: "L1-01", operator: "Vikas", waiting: "just now", img: "assets/img_vehicle_car.png", action: "Guest requested", ...status.parked, ...blueAction },
+        { plate: "KA51MN6460", type: "Car", mobile: "8969977921", slot: "A-101", operator: "Vikas", waiting: "6m", img: "assets/img_vehicle_sedan.png", action: "Dispatch operator", ...status.requested, ...orangeAction },
+        { plate: "MH12QP8801", type: "Sedan", mobile: "9812345678", slot: "—", operator: "Unassigned", waiting: "2m", img: "assets/img_vehicle_sedan.png", action: "Mark as parked", ...status.checked_in, ...blueAction },
+        { plate: "KA09TT4477", type: "Scooter", mobile: "9900112233", slot: "B-14", operator: "Ravi", waiting: "18m", img: "assets/img_vehicle_scooter.png", action: "Mark arrived", ...status.in_transit, ...blueAction },
+      ], 48, 12),
+      summaryR: [
+        { value: "4", label: "Active", color: "#1478FF", bg: "#EAF2FE" },
+        { value: "1", label: "Checked in", color: "#0B5FD6", bg: "#EAF2FE" },
+        { value: "1", label: "Parked", color: "#12A150", bg: "#E4F7EC" },
+        { value: "1", label: "Requested", color: "#E8890C", bg: "#FDF3E3" },
+      ],
+      queueChips: [
+        { label: "All", active: true },
+        { label: "Checked in", active: false },
+        { label: "Parked", active: false },
+        { label: "Requested", active: false },
+        { label: "In transit", active: false },
+      ].map((c) => ({
+        ...c,
+        bg: c.active ? "#1478FF" : "#FFFFFF",
+        color: c.active ? "#FFFFFF" : "#4A5565",
+        border: c.active ? "#1478FF" : "#DCE5F2",
+      })),
+
+      typeTiles: [
+        { label: "4-Wheeler", glyph: ico("car", 22), bg: "#E8F2FF", border: "#1478FF", fg: "#0B5FD6", weight: 600 },
+        { label: "Bike", glyph: ico("bike", 22), bg: "#F7FAFE", border: "#DCE5F2", fg: "#6C7280", weight: 500 },
+        { label: "Car", glyph: ico("suv", 22), bg: "#F7FAFE", border: "#DCE5F2", fg: "#6C7280", weight: 500 },
+        { label: "SUV", glyph: ico("van", 22), bg: "#F7FAFE", border: "#DCE5F2", fg: "#6C7280", weight: 500 },
+      ],
+      photoTilesWeb: ["Front", "Back", "Left", "Right", "Odometer"],
+
+      vehicleStats: [
+        { value: "14", label: "Records", tint: "#E8F2FF", color: "#1478FF", glyph: ico("list", 21) },
+        { value: "11", label: "Completed", tint: "#E4F7EC", color: "#12A150", glyph: ico("check", 21) },
+        { value: "₹2,070", label: "Revenue", tint: "#FFEDE4", color: "#FF6B36", glyph: ico("rupee", 21) },
+        { value: "2", label: "Voided", tint: "#FDECEC", color: "#E23D3D", glyph: ico("xCircle", 21) },
+      ],
+      vehiclesTable: withThumb([
+        { plate: "TESTPHASEA1", type: "Car", mobile: "9998887770", slot: "L1-01", fare: "—", fareColor: "#94A3B8", operators: "In: Vikas", photos: "4 photos", img: "assets/img_vehicle_sedan.png", ...status.voided },
+        { plate: "KA123555", type: "Bike", mobile: "8050105778", slot: "4", fare: "₹50", fareColor: "#0F172A", operators: "In: Test Operator Final", photos: "2 photos", img: "assets/img_vehicle_bike.png", ...status.arrived },
+        { plate: "KA51MN6460", type: "Car", mobile: "8969977921", slot: "A-101", fare: "₹800 pending", fareColor: "#E8890C", operators: "In: Vikas · Out: Test Operator", photos: "5 photos", img: "assets/img_vehicle_sedan.png", ...status.completed },
+        { plate: "MH14ZZ1111", type: "Car", mobile: "9812345678", slot: "—", fare: "—", fareColor: "#94A3B8", operators: "In: Ravi", photos: "1 photo", img: "assets/img_vehicle_car.png", ...status.voided },
+        { plate: "KA09TT4477", type: "Scooter", mobile: "9900112233", slot: "B-14", fare: "₹120", fareColor: "#0F172A", operators: "In: Ravi · Out: Vikas", photos: "3 photos", img: "assets/img_vehicle_scooter.png", ...status.completed },
+        { plate: "KA04NB5432", type: "Xuv", mobile: "9353240270", slot: "L1-01", fare: "—", fareColor: "#94A3B8", operators: "In: Vikas", photos: "2 photos", img: "assets/img_vehicle_car.png", ...status.parked },
+      ], 44, 11),
+
+      operatorRows: [
+        { initial: "V", name: "Vikas", meta: "2 active · since 6:02pm", status: "IN", accent: "#12A150", accentText: "#0C7A3D", pillBg: "#E4F7EC", avatarBg: "linear-gradient(150deg, #1478FF, #0B5FD6)", avatarFg: "#fff" },
+        { initial: "T", name: "Test Operator Final", meta: "1 active · since 5:30pm", status: "IN", accent: "#12A150", accentText: "#0C7A3D", pillBg: "#E4F7EC", avatarBg: "#EEF4FC", avatarFg: "#4A5565" },
+        { initial: "R", name: "Ravi", meta: "on break · 12m", status: "BREAK", accent: "#E8890C", accentText: "#B36A05", pillBg: "#FDF3E3", avatarBg: "#EEF4FC", avatarFg: "#4A5565" },
+      ],
+      operatorTable: [
+        { initial: "V", name: "Vikas", username: "@vikas", status: "IN", shift: "6:02pm – now", active: "2", completed: "7", accent: "#12A150", accentText: "#0C7A3D", pillBg: "#E4F7EC", avatarBg: "linear-gradient(150deg, #1478FF, #0B5FD6)", avatarFg: "#fff", inBg: "#1478FF", inColor: "#fff", breakBg: "transparent", breakColor: "#6C7280", outBg: "transparent", outColor: "#6C7280" },
+        { initial: "T", name: "Test Operator Final", username: "@testop", status: "IN", shift: "5:30pm – now", active: "1", completed: "3", accent: "#12A150", accentText: "#0C7A3D", pillBg: "#E4F7EC", avatarBg: "#EEF4FC", avatarFg: "#4A5565", inBg: "#1478FF", inColor: "#fff", breakBg: "transparent", breakColor: "#6C7280", outBg: "transparent", outColor: "#6C7280" },
+        { initial: "R", name: "Ravi", username: "@ravi", status: "BREAK", shift: "4:00pm – now", active: "0", completed: "5", accent: "#E8890C", accentText: "#B36A05", pillBg: "#FDF3E3", avatarBg: "#EEF4FC", avatarFg: "#4A5565", inBg: "transparent", inColor: "#6C7280", breakBg: "#E8890C", breakColor: "#fff", outBg: "transparent", outColor: "#6C7280" },
+        { initial: "S", name: "Suresh", username: "@suresh", status: "OUT", shift: "—", active: "0", completed: "0", accent: "#94A3B8", accentText: "#6C7280", pillBg: "#EEF4FC", avatarBg: "#EEF4FC", avatarFg: "#4A5565", inBg: "transparent", inColor: "#6C7280", breakBg: "transparent", breakColor: "#6C7280", outBg: "#8A94A6", outColor: "#fff" },
+        { initial: "A", name: "Anil", username: "@anil", status: "On leave", shift: "—", active: "0", completed: "0", accent: "#1478FF", accentText: "#0B5FD6", pillBg: "#EAF2FE", avatarBg: "#EEF4FC", avatarFg: "#4A5565", inBg: "transparent", inColor: "#C9D9EF", breakBg: "transparent", breakColor: "#C9D9EF", outBg: "transparent", outColor: "#C9D9EF" },
+        { initial: "M", name: "Mahesh", username: "@mahesh", status: "OUT", shift: "9:00am – 2:00pm", active: "0", completed: "6", accent: "#94A3B8", accentText: "#6C7280", pillBg: "#EEF4FC", avatarBg: "#EEF4FC", avatarFg: "#4A5565", inBg: "transparent", inColor: "#6C7280", breakBg: "transparent", breakColor: "#6C7280", outBg: "#8A94A6", outColor: "#fff" },
+      ],
+
+      reportKpis: [
+        { label: "Tickets", value: "312", delta: "+11% vs June", deltaColor: "#12A150" },
+        { label: "Revenue", value: "₹48,320", delta: "+₹5,120", deltaColor: "#12A150" },
+        { label: "Pending payment", value: "₹2,400", delta: "6 tickets", deltaColor: "#E8890C" },
+        { label: "Avg turnaround", value: "14m", delta: "−3m", deltaColor: "#12A150" },
+      ],
+      revenueBars: [
+        ["1", 120, 14], ["3", 96, 0], ["5", 148, 20], ["7", 110, 8], ["9", 172, 0], ["11", 132, 26],
+        ["13", 156, 0], ["15", 188, 12], ["17", 140, 0], ["19", 164, 18], ["21", 126, 0], ["23", 196, 22], ["25", 152, 10],
+      ].map(([label, collected, pending]) => ({ label, collected, pending })),
+      mixRows: [
+        { label: "Car", value: "58%", pct: "58%", color: "#1478FF" },
+        { label: "SUV / Xuv", value: "22%", pct: "22%", color: "#0B5FD6" },
+        { label: "Bike", value: "14%", pct: "14%", color: "#12A150" },
+        { label: "Scooter", value: "6%", pct: "6%", color: "#E8890C" },
+      ],
+      topOperators: [
+        { initial: "V", name: "Vikas", count: "96" },
+        { initial: "R", name: "Ravi", count: "74" },
+        { initial: "T", name: "Test Operator Final", count: "61" },
+        { initial: "M", name: "Mahesh", count: "48" },
+      ],
+
+      templates: [
+        { name: "Check-in confirmation", body: "Your vehicle {plate} is with InstaPark valet. Ticket {id}.", channel: "SMS", glyph: ico("check", 21), tint: "#E8F2FF", color: "#1478FF", switchBg: "#12A150", switchJustify: "flex-end" },
+        { name: "Vehicle parked", body: "Parked safely in slot {slot}. Request it anytime from this link.", channel: "SMS", glyph: ico("park", 20), tint: "#EAF2FE", color: "#0B5FD6", switchBg: "#12A150", switchJustify: "flex-end" },
+        { name: "Pickup OTP", body: "Your pickup OTP is {otp}. Share it with the valet on arrival.", channel: "SMS", glyph: ico("hash", 20), tint: "#E4F7EC", color: "#12A150", switchBg: "#12A150", switchJustify: "flex-end" },
+        { name: "Vehicle on the way", body: "{operator} is bringing {plate} to the entrance now.", channel: "WhatsApp", glyph: ico("arrowRight", 20), tint: "#FFEDE4", color: "#FF6B36", switchBg: "#12A150", switchJustify: "flex-end" },
+        { name: "Payment receipt", body: "₹{fare} received for ticket {id}. Thanks for parking with us.", channel: "SMS", glyph: ico("rupee", 21), tint: "#FDF3E3", color: "#E8890C", switchBg: "#DCE5F2", switchJustify: "flex-start" },
+      ],
+      commsLog: [
+        { text: "Pickup OTP sent to 9353240270 · KA04NB5432", time: "2 minutes ago", dot: "#12A150" },
+        { text: "Broadcast \"Ballroom event\" sent to 3 operators", time: "18 minutes ago", dot: "#1478FF" },
+        { text: "Payment receipt failed — invalid number for MH14ZZ1111", time: "1 hour ago", dot: "#E23D3D" },
+        { text: "Check-in confirmation sent to 8050105778 · KA123555", time: "2 hours ago", dot: "#12A150" },
+        { text: "Vehicle parked SMS sent to 8969977921 · KA51MN6460", time: "3 hours ago", dot: "#12A150" },
+      ],
+
+      settingsNav: [
+        { label: "Site profile", active: false },
+        { label: "Valet & parking", active: true },
+        { label: "Slots & zones", active: false },
+        { label: "Pricing", active: false },
+        { label: "Roles & access", active: false },
+        { label: "Notifications", active: false },
+      ].map((s) => ({
+        ...s,
+        bg: s.active ? "#E8F2FF" : "transparent",
+        color: s.active ? "#0B5FD6" : "#4A5565",
+        weight: s.active ? 600 : 500,
+      })),
+      settingsToggles: [
+        { label: "Valet parking enabled", help: "Turns the operator app's check-in and queue on for this site.", bg: "#12A150", justify: "flex-end" },
+        { label: "Auto-allocate operators", help: "Round-robin dispatch to the next operator marked IN for the day.", bg: "#12A150", justify: "flex-end" },
+        { label: "Require pickup OTP", help: "Handover cannot be completed without the guest's OTP.", bg: "#12A150", justify: "flex-end" },
+        { label: "Mandatory check-in photos", help: "Front, back, left, right and odometer must be captured before check-in.", bg: "#DCE5F2", justify: "flex-start" },
+      ],
+      settingsFields: [
+        { label: "Base fare", value: "₹50" },
+        { label: "Per extra hour", value: "₹30" },
+        { label: "Daily cap", value: "₹300" },
+        { label: "Total slots", value: "80" },
+        { label: "Valet-only slots", value: "24" },
+        { label: "Grace period", value: "15 min" },
+      ],
+    };
+  }
+}
+
+</script>
+</body>
+</html>

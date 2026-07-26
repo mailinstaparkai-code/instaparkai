@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #f2f6fc; font-family: Poppins, system-ui, sans-serif; }
+  a { color: #1478FF; text-decoration: none; }
+  a:hover { color: #0B5FD6; }
+  * { box-sizing: border-box; }
+</style>
+</helmet>
+
+<section style="padding: 48px; display: flex; flex-direction: column; gap: 34px; border-bottom: 1px solid #dde5f0; font-family: Inter, system-ui, sans-serif;">
+  <div style="display: flex; flex-direction: column; gap: 10px; max-width: 1000px;">
+    <div style="font: 600 12px/1 Inter; letter-spacing: 0.16em; color: #64748B; text-transform: uppercase;">Turn 4 · Premium pass</div>
+    <div style="font: 700 42px/1.1 Inter; letter-spacing: -0.02em; color: #0F172A;">InstaPark Valet — flagship polish</div>
+    <div style="font: 400 16px/1.65 Inter; color: #475569; text-wrap: pretty;">Same screens, same flows, same labels — rebuilt on an 8pt grid with Inter, a #F7F9FC → #EEF4FF canvas, 26px floating cards on ambient shadows, 56px gradient CTAs, a frosted pill dock and Lucide-weight 24px icons. Whitespace is up ~35%; every divider is now a shadow or a tint. Tokens are in <span style="font-family: ui-monospace, monospace; font-size: 13px;">design.md</span> §9.</div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 34px; align-items: flex-start;">
+
+    <!-- 4a LOGIN -->
+    <div id="4a" style="display: flex; flex-direction: column; gap: 12px; width: 390px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="background: #2563EB; color: #fff; border-radius: 9px; padding: 4px 10px; font: 700 13px/1.4 Inter;">4a</div>
+        <div style="font: 600 15px/1.3 Inter; color: #0F172A;">Login</div>
+      </div>
+      <div style="width: 390px; height: 844px; border-radius: 30px; overflow: hidden; position: relative; background: linear-gradient(180deg, #F7F9FC 0%, #EEF4FF 100%); font-family: Inter, system-ui, sans-serif; box-shadow: 0 24px 60px rgba(15,23,42,0.16);">
+        <img src="assets/img_hero_valet.webp" alt="" style="position: absolute; top: 0; left: 0; width: 100%; height: 340px; object-fit: cover;">
+        <div style="position: absolute; top: 0; left: 0; right: 0; height: 340px; background: linear-gradient(180deg, rgba(15,23,42,0.30) 0%, rgba(15,23,42,0.05) 45%, rgba(247,249,252,0.96) 100%);"></div>
+        <div style="position: absolute; top: 24px; left: 24px; background: rgba(255,255,255,0.92); backdrop-filter: blur(12px); border-radius: 16px; padding: 10px 14px; box-shadow: 0 8px 24px rgba(15,23,42,0.14);">
+          <img src="assets/logo_instaparkai.png" alt="InstaParkAi" style="height: 30px; display: block;">
+        </div>
+        <div style="position: absolute; top: 300px; left: 24px; right: 24px; display: flex; flex-direction: column; align-items: center;">
+          <div style="width: 64px; height: 64px; border-radius: 22px; background: linear-gradient(140deg, #3B82F6, #2563EB); display: grid; place-items: center; box-shadow: 0 14px 30px rgba(37,99,235,0.35); position: relative; z-index: 2;">
+            <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#fff" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M12 3.5 19 6v5.5c0 4.3-3 7.4-7 9-4-1.6-7-4.7-7-9V6Z"/><path d="M9.3 12.2 11.4 14.3 15 10.6"/></svg>
+          </div>
+          <div style="margin-top: -32px; padding-top: 46px; width: 100%; background: #FFFFFF; border: 1px solid rgba(15,23,42,0.04); border-radius: 28px; box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 22px 50px rgba(15,23,42,0.10); padding-left: 24px; padding-right: 24px; padding-bottom: 24px; display: flex; flex-direction: column; gap: 20px;">
+            <div style="text-align: center;">
+              <div style="font: 700 26px/1.25 Inter; letter-spacing: -0.02em; color: #0F172A;">Welcome back</div>
+              <div style="font: 400 14px/1.5 Inter; color: #64748B; margin-top: 6px;">Sign in to continue to your dashboard</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="font: 500 13px/1 Inter; color: #475569;">Username</div>
+                <div style="height: 56px; border-radius: 16px; background: #F8FAFD; border: 1px solid #E7EDF6; display: flex; align-items: center; gap: 12px; padding: 0 16px;">
+                  <div style="color: #94A3B8; display: grid; place-items: center;">{{ iconUser }}</div>
+                  <div style="font: 500 15px/1 Inter; color: #0F172A;">vikas</div>
+                </div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="font: 500 13px/1 Inter; color: #475569;">Password</div>
+                <div style="height: 56px; border-radius: 16px; background: #F8FAFD; border: 1px solid #E7EDF6; display: flex; align-items: center; gap: 12px; padding: 0 16px;">
+                  <div style="color: #94A3B8; display: grid; place-items: center;">{{ iconLock }}</div>
+                  <div style="flex: 1; font: 600 16px/1 Inter; color: #0F172A; letter-spacing: 0.18em;">••••••••</div>
+                  <div style="color: #94A3B8; display: grid; place-items: center;">{{ iconEye }}</div>
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="width: 22px; height: 22px; border-radius: 7px; background: #2563EB; display: grid; place-items: center;">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" style="stroke-width: 2.4px; stroke-linecap: round; stroke-linejoin: round;"><path d="M6.5 12.4 10 15.9l7.5-7.8"/></svg>
+                </div>
+                <div style="font: 500 13px/1 Inter; color: #475569;">Remember me</div>
+              </div>
+              <div style="font: 500 13px/1 Inter; color: #2563EB;">Forgot password?</div>
+            </div>
+            <div style="height: 56px; border-radius: 18px; background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); box-shadow: 0 12px 26px rgba(37,99,235,0.30); display: flex; align-items: center; justify-content: center; gap: 10px; color: #fff; font: 600 16px/1 Inter;">
+              Sign in <span style="display: grid; place-items: center; color: #fff;">{{ iconArrow }}</span>
+            </div>
+            <div style="font: 400 13px/1.6 Inter; color: #94A3B8; text-align: center;">Trouble signing in? Ask your site admin to reset your password.</div>
+          </div>
+        </div>
+        <div style="position: absolute; bottom: 22px; left: 0; right: 0; display: flex; align-items: center; justify-content: center; gap: 8px; color: #94A3B8;">
+          <div style="display: grid; place-items: center; color: #94A3B8;">{{ iconShieldSm }}</div>
+          <div style="font: 500 12px/1 Inter; color: #94A3B8;">InstaPark AI v0.4.1</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4b HOME -->
+    <div id="4b" style="display: flex; flex-direction: column; gap: 12px; width: 390px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="background: #2563EB; color: #fff; border-radius: 9px; padding: 4px 10px; font: 700 13px/1.4 Inter;">4b</div>
+        <div style="font: 600 15px/1.3 Inter; color: #0F172A;">Home</div>
+      </div>
+      <div style="width: 390px; height: 844px; border-radius: 30px; overflow: hidden; position: relative; background: linear-gradient(180deg, #F7F9FC 0%, #EEF4FF 100%); font-family: Inter, system-ui, sans-serif; box-shadow: 0 24px 60px rgba(15,23,42,0.16);">
+        <div style="position: absolute; inset: 0; padding: 20px 20px 104px; display: flex; flex-direction: column; gap: 12px; overflow: hidden;">
+          <div style="flex: none; display: flex; align-items: flex-start; justify-content: space-between;">
+            <div>
+              <div style="color: #94A3B8; display: grid; place-items: center; width: 24px;">{{ iconMenu }}</div>
+              <div style="font: 400 14px/1 Inter; color: #64748B; margin-top: 10px;">Good evening,</div>
+              <div style="font: 700 26px/1.2 Inter; letter-spacing: -0.02em; color: #0F172A; margin-top: 4px;">Vikas</div>
+              <div style="font: 400 13px/1 Inter; color: #94A3B8; margin-top: 6px;">Hotel Parking Test</div>
+            </div>
+            <div style="position: relative; width: 48px; height: 48px; border-radius: 18px; background: #FFFFFF; border: 1px solid rgba(15,23,42,0.04); box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 10px 24px rgba(15,23,42,0.07); display: grid; place-items: center; color: #2563EB;">
+              {{ iconBell }}
+              <div style="position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; border-radius: 10px; background: #FF6A3D; color: #fff; font: 700 11px/20px Inter; text-align: center; border: 2px solid #fff;">3</div>
+            </div>
+          </div>
+
+          <div style="flex: none; background: #fff; border: 1px solid rgba(15,23,42,0.04); border-radius: 24px; padding: 16px; box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 16px 40px rgba(15,23,42,0.07);">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div style="font: 600 15px/1 Inter; color: #0F172A;">My status</div>
+              <div style="display: flex; align-items: center; gap: 7px;">
+                <div style="width: 8px; height: 8px; border-radius: 50%; background: #16A34A;"></div>
+                <div style="font: 500 13px/1 Inter; color: #15803D;">Clocked In</div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 6px; margin-top: 12px; background: #F3F6FC; border-radius: 18px; padding: 5px;">
+              <div style="flex: 1; height: 48px; border-radius: 14px; background: linear-gradient(135deg, #3B82F6, #2563EB); color: #fff; display: grid; place-items: center; font: 600 14px/1 Inter; box-shadow: 0 6px 14px rgba(37,99,235,0.28);">IN</div>
+              <div style="flex: 1; height: 48px; border-radius: 14px; color: #64748B; display: grid; place-items: center; font: 500 14px/1 Inter;">BREAK</div>
+              <div style="flex: 1; height: 48px; border-radius: 14px; color: #64748B; display: grid; place-items: center; font: 500 14px/1 Inter;">OUT</div>
+            </div>
+          </div>
+
+          <div style="flex: none; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <sc-for list="{{ premiumKpis }}" as="k" hint-placeholder-count="4">
+              <div style="background: #fff; border: 1px solid rgba(15,23,42,0.04); border-radius: 22px; padding: 14px; box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 16px 40px rgba(15,23,42,0.06); display: flex; align-items: center; gap: 12px;">
+                <div style="width: 40px; height: 40px; border-radius: 13px; background: {{ k.tint }}; color: {{ k.color }}; display: grid; place-items: center; flex: none;">{{ k.icon }}</div>
+                <div>
+                  <div style="font: 700 22px/1.05 Inter; letter-spacing: -0.02em; color: #0F172A;">{{ k.value }}</div>
+                  <div style="font: 500 11px/1.3 Inter; color: #64748B; margin-top: 3px;">{{ k.label }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="flex: none; background: #fff; border: 1px solid rgba(15,23,42,0.04); border-radius: 26px; padding: 18px; box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 16px 40px rgba(15,23,42,0.07); display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div style="font: 600 15px/1 Inter; color: #0F172A;">Queue · 1 active</div>
+              <div style="font: 600 13px/1 Inter; color: #2563EB;">View all</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px; background: #F8FAFD; border-radius: 16px; padding: 12px 14px;">
+              <img src="assets/img_vehicle_car.png" alt="" style="width: 40px; height: 40px; border-radius: 12px; object-fit: cover;">
+              <div style="flex: 1;">
+                <div style="font: 600 15px/1.2 Inter; color: #0F172A;">KA04NB5432</div>
+                <div style="font: 400 12px/1.3 Inter; color: #64748B; margin-top: 1px;">Parked · Slot L1-01</div>
+              </div>
+              <div style="color: #CBD5E1; display: grid; place-items: center;">{{ iconChevron }}</div>
+            </div>
+            <div style="height: 56px; border-radius: 18px; background: linear-gradient(135deg, #FF7A4D 0%, #FF6A3D 100%); color: #fff; display: flex; align-items: center; justify-content: center; gap: 8px; font: 600 16px/1 Inter; box-shadow: 0 10px 24px rgba(255,106,61,0.26);">+ Check-in vehicle</div>
+          </div>
+
+          <div style="flex: none; background: #fff; border: 1px solid rgba(15,23,42,0.04); border-radius: 24px; padding: 16px 18px; box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 16px 40px rgba(15,23,42,0.06);">
+            <div style="display: flex; align-items: baseline; justify-content: space-between;">
+              <div style="font: 600 14px/1 Inter; color: #0F172A;">Parking capacity</div>
+              <div style="font: 500 13px/1 Inter; color: #64748B;"><span style="color: #2563EB; font-weight: 700;">18</span> / 80 slots · 22%</div>
+            </div>
+            <div style="height: 10px; border-radius: 6px; background: #EEF2F9; margin-top: 12px; overflow: hidden;">
+              <div style="width: 22%; height: 100%; border-radius: 6px; background: linear-gradient(90deg, #2563EB, #60A5FA);"></div>
+            </div>
+          </div>
+        </div>
+        <div style="position: absolute; left: 16px; right: 16px; bottom: 16px; height: 76px; border-radius: 26px; background: rgba(255,255,255,0.78); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.8); box-shadow: 0 10px 30px rgba(15,23,42,0.12); display: flex; align-items: center; padding: 0 8px;">
+          <sc-for list="{{ dockHome }}" as="t" hint-placeholder-count="4">
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+              <div style="width: 46px; height: 32px; border-radius: 14px; background: {{ t.bg }}; color: {{ t.iconColor }}; display: grid; place-items: center;">{{ t.icon }}</div>
+              <div style="font: {{ t.weight }} 11px/1 Inter; color: {{ t.labelColor }};">{{ t.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4c LIVE QUEUE -->
+    <div id="4c" style="display: flex; flex-direction: column; gap: 12px; width: 390px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="background: #2563EB; color: #fff; border-radius: 9px; padding: 4px 10px; font: 700 13px/1.4 Inter;">4c</div>
+        <div style="font: 600 15px/1.3 Inter; color: #0F172A;">Live Queue</div>
+      </div>
+      <div style="width: 390px; height: 844px; border-radius: 30px; overflow: hidden; position: relative; background: linear-gradient(180deg, #F7F9FC 0%, #EEF4FF 100%); font-family: Inter, system-ui, sans-serif; box-shadow: 0 24px 60px rgba(15,23,42,0.16);">
+        <div style="position: absolute; inset: 0; padding: 20px 20px 108px; display: flex; flex-direction: column; gap: 14px; overflow: hidden;">
+          <div style="flex: none; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font: 700 26px/1.2 Inter; letter-spacing: -0.02em; color: #0F172A;">Live Queue</div>
+              <div style="display: flex; align-items: center; gap: 7px; margin-top: 6px;">
+                <div style="width: 8px; height: 8px; border-radius: 50%; background: #16A34A;"></div>
+                <div style="font: 400 13px/1 Inter; color: #64748B;">2 vehicles active</div>
+              </div>
+            </div>
+            <div style="height: 48px; padding: 0 20px; border-radius: 18px; background: linear-gradient(135deg, #FF7A4D 0%, #FF6A3D 100%); color: #fff; display: flex; align-items: center; font: 600 15px/1 Inter; box-shadow: 0 10px 24px rgba(255,106,61,0.26);">+ Check-in</div>
+          </div>
+
+          <div style="flex: none; display: flex; gap: 8px;">
+            <div style="height: 40px; padding: 0 18px; border-radius: 999px; background: linear-gradient(135deg, #3B82F6, #2563EB); color: #fff; display: flex; align-items: center; font: 600 13px/1 Inter; box-shadow: 0 8px 18px rgba(37,99,235,0.24);">All</div>
+            <div style="height: 40px; padding: 0 16px; border-radius: 999px; background: #fff; border: 1px solid rgba(15,23,42,0.06); color: #475569; display: flex; align-items: center; font: 500 13px/1 Inter; box-shadow: 0 6px 16px rgba(15,23,42,0.05);">Checked In</div>
+            <div style="height: 40px; padding: 0 16px; border-radius: 999px; background: #fff; border: 1px solid rgba(15,23,42,0.06); color: #475569; display: flex; align-items: center; font: 500 13px/1 Inter; box-shadow: 0 6px 16px rgba(15,23,42,0.05);">Parked</div>
+            <div style="height: 40px; padding: 0 16px; border-radius: 999px; background: #fff; border: 1px solid rgba(15,23,42,0.06); color: #475569; display: flex; align-items: center; font: 500 13px/1 Inter; box-shadow: 0 6px 16px rgba(15,23,42,0.05);">Requested</div>
+          </div>
+
+          <sc-for list="{{ premiumQueue }}" as="q" hint-placeholder-count="2">
+            <div style="flex: none; background: #fff; border: 1px solid rgba(15,23,42,0.04); border-radius: 26px; padding: 18px; box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 16px 40px rgba(15,23,42,0.07); display: flex; flex-direction: column; gap: 14px;">
+              <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 7px; background: {{ q.chipBg }}; border-radius: 999px; padding: 6px 12px;">
+                  <div style="width: 7px; height: 7px; border-radius: 50%; background: {{ q.accent }};"></div>
+                  <div style="font: 600 11px/1 Inter; letter-spacing: 0.06em; color: {{ q.chipText }};">{{ q.status }}</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div style="font: 400 12px/1 Inter; color: #94A3B8;">{{ q.time }}</div>
+                  <div style="color: #CBD5E1; display: grid; place-items: center;">{{ iconDots }}</div>
+                </div>
+              </div>
+              <div style="display: flex; gap: 16px; align-items: center;">
+                {{ q.thumb }}
+
+                <div>
+                  <div style="font: 700 22px/1.15 Inter; letter-spacing: -0.02em; color: #0F172A;">{{ q.plate }}</div>
+                  <div style="font: 400 13px/1.5 Inter; color: #64748B; margin-top: 4px;">{{ q.model }}</div>
+                  <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                    <div style="font: 500 13px/1 Inter; color: #475569;">{{ q.meta }}</div>
+                    <div style="font: 500 13px/1 Inter; color: #2563EB;">{{ q.photos }}</div>
+                  </div>
+                </div>
+              </div>
+              <div style="height: 56px; border-radius: 18px; display: grid; place-items: center; font: 600 16px/1 Inter; {{ q.ctaStyle }}">{{ q.cta }}</div>
+            </div>
+          </sc-for>
+
+          <div style="flex: none; background: #fff; border: 1px solid rgba(15,23,42,0.04); border-radius: 24px; padding: 16px 18px; box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 16px 40px rgba(15,23,42,0.06);">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div style="font: 600 14px/1 Inter; color: #0F172A;">Today's summary</div>
+              <div style="font: 600 12px/1 Inter; color: #2563EB;">View all</div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 14px;">
+              <sc-for list="{{ summaryR }}" as="s" hint-placeholder-count="4">
+                <div style="flex: 1; border-radius: 16px; background: {{ s.bg }}; padding: 12px 0; text-align: center;">
+                  <div style="font: 700 20px/1 Inter; color: {{ s.color }};">{{ s.value }}</div>
+                  <div style="font: 500 11px/1.3 Inter; color: #64748B; margin-top: 4px;">{{ s.label }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <div style="position: absolute; left: 16px; right: 16px; bottom: 16px; height: 76px; border-radius: 26px; background: rgba(255,255,255,0.78); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.8); box-shadow: 0 10px 30px rgba(15,23,42,0.12); display: flex; align-items: center; padding: 0 8px;">
+          <sc-for list="{{ dockQueue }}" as="t" hint-placeholder-count="4">
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+              <div style="width: 46px; height: 32px; border-radius: 14px; background: {{ t.bg }}; color: {{ t.iconColor }}; display: grid; place-items: center;">{{ t.icon }}</div>
+              <div style="font: {{ t.weight }} 11px/1 Inter; color: {{ t.labelColor }};">{{ t.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4d VEHICLES -->
+    <div id="4d" style="display: flex; flex-direction: column; gap: 12px; width: 390px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="background: #2563EB; color: #fff; border-radius: 9px; padding: 4px 10px; font: 700 13px/1.4 Inter;">4d</div>
+        <div style="font: 600 15px/1.3 Inter; color: #0F172A;">Vehicles</div>
+      </div>
+      <div style="width: 390px; height: 844px; border-radius: 30px; overflow: hidden; position: relative; background: linear-gradient(180deg, #F7F9FC 0%, #EEF4FF 100%); font-family: Inter, system-ui, sans-serif; box-shadow: 0 24px 60px rgba(15,23,42,0.16);">
+        <div style="position: absolute; inset: 0; padding: 20px 20px 108px; display: flex; flex-direction: column; gap: 14px; overflow: hidden;">
+          <div style="flex: none; display: flex; align-items: flex-start; justify-content: space-between;">
+            <div>
+              <div style="font: 700 26px/1.2 Inter; letter-spacing: -0.02em; color: #0F172A;">Vehicles</div>
+              <div style="font: 400 13px/1 Inter; color: #64748B; margin-top: 6px;">14 records</div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <div style="width: 44px; height: 44px; border-radius: 16px; background: #fff; border: 1px solid rgba(15,23,42,0.04); box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 10px 24px rgba(15,23,42,0.06); display: grid; place-items: center; color: #475569;">{{ iconSearch }}</div>
+              <div style="width: 44px; height: 44px; border-radius: 16px; background: #fff; border: 1px solid rgba(15,23,42,0.04); box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 10px 24px rgba(15,23,42,0.06); display: grid; place-items: center; color: #2563EB;">{{ iconBell }}</div>
+            </div>
+          </div>
+
+          <div style="flex: none; display: flex; gap: 12px;">
+            <div style="flex: 1; background: #fff; border: 1px solid rgba(15,23,42,0.04); border-radius: 22px; padding: 14px; box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 14px 34px rgba(15,23,42,0.06); display: flex; align-items: center; gap: 12px;">
+              <div style="width: 40px; height: 40px; border-radius: 13px; background: #EFF5FF; color: #2563EB; display: grid; place-items: center;">{{ iconCheckSq }}</div>
+              <div>
+                <div style="font: 700 20px/1 Inter; color: #0F172A;">11</div>
+                <div style="font: 500 11px/1.3 Inter; color: #64748B; margin-top: 3px;">Completed</div>
+              </div>
+            </div>
+            <div style="flex: 1; background: #fff; border: 1px solid rgba(15,23,42,0.04); border-radius: 22px; padding: 14px; box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 14px 34px rgba(15,23,42,0.06); display: flex; align-items: center; gap: 12px;">
+              <div style="width: 40px; height: 40px; border-radius: 13px; background: #EBFAF0; color: #16A34A; display: grid; place-items: center;">{{ iconRupee }}</div>
+              <div>
+                <div style="font: 700 20px/1 Inter; color: #0F172A;">₹2,070</div>
+                <div style="font: 500 11px/1.3 Inter; color: #64748B; margin-top: 3px;">Revenue</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="flex: none; display: flex; gap: 8px;">
+            <div style="height: 38px; padding: 0 18px; border-radius: 999px; background: linear-gradient(135deg, #3B82F6, #2563EB); color: #fff; display: flex; align-items: center; font: 600 13px/1 Inter; box-shadow: 0 8px 18px rgba(37,99,235,0.24);">All</div>
+            <div style="height: 38px; padding: 0 16px; border-radius: 999px; background: #fff; border: 1px solid rgba(15,23,42,0.06); color: #475569; display: flex; align-items: center; font: 500 13px/1 Inter;">Checked In</div>
+            <div style="height: 38px; padding: 0 16px; border-radius: 999px; background: #fff; border: 1px solid rgba(15,23,42,0.06); color: #475569; display: flex; align-items: center; font: 500 13px/1 Inter;">Parked</div>
+            <div style="height: 38px; padding: 0 16px; border-radius: 999px; background: #fff; border: 1px solid rgba(15,23,42,0.06); color: #475569; display: flex; align-items: center; font: 500 13px/1 Inter;">Requested</div>
+          </div>
+
+          <sc-for list="{{ premiumVehicles }}" as="v" hint-placeholder-count="4">
+            <div style="flex: none; background: #fff; border: 1px solid rgba(15,23,42,0.04); border-radius: 24px; padding: 14px; box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 14px 34px rgba(15,23,42,0.06); display: flex; gap: 14px; align-items: center;">
+              {{ v.thumb }}
+              <div style="flex: 1;">
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;">
+                  <div style="font: 700 18px/1.2 Inter; letter-spacing: -0.01em; color: #0F172A;">{{ v.plate }}</div>
+                  <div style="display: flex; align-items: center; gap: 6px; background: {{ v.chipBg }}; border-radius: 999px; padding: 5px 10px; flex: none;">
+                    <div style="width: 6px; height: 6px; border-radius: 50%; background: {{ v.accent }};"></div>
+                    <div style="font: 600 11px/1 Inter; color: {{ v.accent }};">{{ v.status }}</div>
+                  </div>
+                </div>
+                <div style="font: 400 12px/1.5 Inter; color: #64748B; margin-top: 3px;">{{ v.line1 }}</div>
+                <div style="font: 500 12px/1.4 Inter; color: #475569;">{{ v.line2 }}</div>
+                <div style="font: 400 11px/1.4 Inter; color: #94A3B8;">{{ v.line3 }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="position: absolute; left: 16px; right: 16px; bottom: 16px; height: 76px; border-radius: 26px; background: rgba(255,255,255,0.78); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.8); box-shadow: 0 10px 30px rgba(15,23,42,0.12); display: flex; align-items: center; padding: 0 8px;">
+          <sc-for list="{{ dockVehicles }}" as="t" hint-placeholder-count="4">
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+              <div style="width: 46px; height: 32px; border-radius: 14px; background: {{ t.bg }}; color: {{ t.iconColor }}; display: grid; place-items: center;">{{ t.icon }}</div>
+              <div style="font: {{ t.weight }} 11px/1 Inter; color: {{ t.labelColor }};">{{ t.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4e PROFILE -->
+    <div id="4e" style="display: flex; flex-direction: column; gap: 12px; width: 390px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="background: #2563EB; color: #fff; border-radius: 9px; padding: 4px 10px; font: 700 13px/1.4 Inter;">4e</div>
+        <div style="font: 600 15px/1.3 Inter; color: #0F172A;">Profile</div>
+      </div>
+      <div style="width: 390px; height: 844px; border-radius: 30px; overflow: hidden; position: relative; background: linear-gradient(180deg, #F7F9FC 0%, #EEF4FF 100%); font-family: Inter, system-ui, sans-serif; box-shadow: 0 24px 60px rgba(15,23,42,0.16);">
+        <div style="position: absolute; top: 0; left: 0; right: 0; height: 230px; background: linear-gradient(150deg, #3B82F6 0%, #2563EB 60%, #1D4FD8 100%); border-radius: 0 0 34px 34px;"></div>
+        <div style="position: absolute; inset: 0; padding: 24px 20px 108px; display: flex; flex-direction: column; gap: 16px; overflow: hidden;">
+          <div style="flex: none; display: flex; align-items: flex-start; justify-content: space-between;">
+            <div style="width: 76px; height: 76px; border-radius: 26px; background: #fff; display: grid; place-items: center; box-shadow: 0 14px 30px rgba(15,23,42,0.18); padding: 8px;">
+              <img src="assets/logo_instaparkai.png" alt="InstaParkAi" style="width: 100%; display: block;">
+            </div>
+            <div style="width: 44px; height: 44px; border-radius: 16px; background: rgba(255,255,255,0.22); display: grid; place-items: center; color: #fff;">{{ iconEdit }}</div>
+          </div>
+
+          <div style="flex: none; background: #fff; border: 1px solid rgba(15,23,42,0.04); border-radius: 26px; padding: 18px; box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 18px 44px rgba(15,23,42,0.10); display: flex; align-items: center; gap: 16px;">
+            <div style="width: 64px; height: 64px; border-radius: 22px; background: linear-gradient(140deg, #3B82F6, #2563EB); color: #fff; display: grid; place-items: center; font: 700 24px/1 Inter; box-shadow: 0 10px 22px rgba(37,99,235,0.28);">V</div>
+            <div>
+              <div style="font: 700 20px/1.2 Inter; letter-spacing: -0.01em; color: #0F172A;">Vikas</div>
+              <div style="font: 400 13px/1.5 Inter; color: #64748B; margin-top: 3px;">Valet Operator · Hotel Parking Test</div>
+            </div>
+          </div>
+
+          <div style="flex: none; background: #fff; border: 1px solid rgba(15,23,42,0.04); border-radius: 24px; padding: 16px 18px; box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 14px 34px rgba(15,23,42,0.06); display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font: 600 15px/1 Inter; color: #0F172A;">Appearance</div>
+              <div style="font: 400 13px/1.4 Inter; color: #64748B; margin-top: 4px;">Light is the brand default</div>
+            </div>
+            <div style="display: flex; gap: 4px; background: #F3F6FC; border-radius: 999px; padding: 4px;">
+              <div style="width: 42px; height: 34px; border-radius: 999px; background: #fff; color: #2563EB; display: grid; place-items: center; box-shadow: 0 2px 8px rgba(15,23,42,0.10);">{{ iconSun }}</div>
+              <div style="width: 42px; height: 34px; border-radius: 999px; color: #94A3B8; display: grid; place-items: center;">{{ iconMoon }}</div>
+            </div>
+          </div>
+
+          <div style="flex: none; background: #fff; border: 1px solid rgba(15,23,42,0.04); border-radius: 24px; box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 14px 34px rgba(15,23,42,0.06); overflow: hidden;">
+            <sc-for list="{{ profileRows }}" as="r" hint-placeholder-count="3">
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px; border-bottom: 1px solid #F4F7FC;">
+                <div style="font: 500 15px/1 Inter; color: #0F172A;">{{ r.label }}</div>
+                <div style="display: flex; align-items: center; gap: 7px;">
+                  <div style="width: 7px; height: 7px; border-radius: 50%; background: #16A34A; display: {{ r.showDot }};"></div>
+                  <div style="font: 500 13px/1 Inter; color: {{ r.valueColor }};">{{ r.value }}</div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="flex: none; height: 56px; border-radius: 18px; background: #fff; border: 1px solid #FBD5D5; color: #EF4444; display: flex; align-items: center; justify-content: center; gap: 10px; font: 600 16px/1 Inter; box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 12px 28px rgba(239,68,68,0.10);">
+            <span style="display: grid; place-items: center;">{{ iconSignOut }}</span> Sign out
+          </div>
+        </div>
+        <div style="position: absolute; left: 16px; right: 16px; bottom: 16px; height: 76px; border-radius: 26px; background: rgba(255,255,255,0.78); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.8); box-shadow: 0 10px 30px rgba(15,23,42,0.12); display: flex; align-items: center; padding: 0 8px;">
+          <sc-for list="{{ dockProfile }}" as="t" hint-placeholder-count="4">
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+              <div style="width: 46px; height: 32px; border-radius: 14px; background: {{ t.bg }}; color: {{ t.iconColor }}; display: grid; place-items: center;">{{ t.icon }}</div>
+              <div style="font: {{ t.weight }} 11px/1 Inter; color: {{ t.labelColor }};">{{ t.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4f CHECK-IN SHEET -->
+    <div id="4f" style="display: flex; flex-direction: column; gap: 12px; width: 390px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="background: #2563EB; color: #fff; border-radius: 9px; padding: 4px 10px; font: 700 13px/1.4 Inter;">4f</div>
+        <div style="font: 600 15px/1.3 Inter; color: #0F172A;">Check-in sheet</div>
+      </div>
+      <div style="width: 390px; height: 844px; border-radius: 30px; overflow: hidden; position: relative; background: linear-gradient(180deg, #F7F9FC 0%, #EEF4FF 100%); font-family: Inter, system-ui, sans-serif; box-shadow: 0 24px 60px rgba(15,23,42,0.16);">
+        <div style="position: absolute; inset: 0; background: rgba(15,23,42,0.42); backdrop-filter: blur(3px);"></div>
+        <div style="position: absolute; left: 0; right: 0; bottom: 0; background: #fff; border-radius: 32px 32px 30px 30px; padding: 10px 22px 22px; box-shadow: 0 -12px 50px rgba(15,23,42,0.22); display: flex; flex-direction: column; gap: 18px;">
+          <div style="width: 44px; height: 5px; border-radius: 3px; background: #E2E8F2; margin: 4px auto 0;"></div>
+          <div style="display: flex; align-items: flex-start; gap: 14px;">
+            <div style="width: 48px; height: 48px; border-radius: 16px; background: #EFF5FF; color: #2563EB; display: grid; place-items: center; flex: none;">{{ iconCar }}</div>
+            <div style="flex: 1;">
+              <div style="font: 700 20px/1.25 Inter; letter-spacing: -0.01em; color: #0F172A;">Check-in vehicle</div>
+              <div style="font: 400 13px/1.5 Inter; color: #64748B; margin-top: 3px;">Enter vehicle details to check in</div>
+            </div>
+            <div style="width: 36px; height: 36px; border-radius: 999px; background: #F3F6FC; color: #64748B; display: grid; place-items: center; flex: none;">{{ iconClose }}</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="font: 500 13px/1 Inter; color: #475569;">Vehicle number</div>
+            <div style="height: 56px; border-radius: 16px; background: #F8FAFD; border: 1.5px solid #2563EB; display: flex; align-items: center; gap: 12px; padding: 0 16px; box-shadow: 0 0 0 4px rgba(37,99,235,0.10);">
+              <div style="background: #EFF5FF; color: #1D4FD8; border-radius: 9px; padding: 5px 9px; font: 700 11px/1 Inter;">IND</div>
+              <div style="flex: 1; font: 600 17px/1 Inter; letter-spacing: 0.04em; color: #0F172A;">KA01AB1234</div>
+              <div style="color: #94A3B8; display: grid; place-items: center;">{{ iconScan }}</div>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="font: 500 13px/1 Inter; color: #475569;">Vehicle type</div>
+            <div style="display: flex; gap: 10px;">
+              <sc-for list="{{ typeTiles }}" as="v" hint-placeholder-count="4">
+                <div style="flex: 1; border-radius: 18px; background: {{ v.bgP }}; border: 1.5px solid {{ v.borderP }}; padding: 14px 0; display: flex; flex-direction: column; align-items: center; gap: 8px; box-shadow: {{ v.shadowP }};">
+                  <div style="color: {{ v.fgP }}; display: grid; place-items: center;">{{ v.glyph }}</div>
+                  <div style="font: {{ v.weight }} 11px/1 Inter; color: {{ v.fgP }};">{{ v.label }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="font: 500 13px/1 Inter; color: #475569;">Mobile number</div>
+            <div style="height: 56px; border-radius: 16px; background: #F8FAFD; border: 1px solid #E7EDF6; display: flex; align-items: center; gap: 12px; padding: 0 16px; font: 400 15px/1 Inter; color: #94A3B8;">
+              <div style="color: #94A3B8; display: grid; place-items: center;">{{ iconPhone }}</div>
+              Enter mobile number
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div>
+              <div style="font: 500 13px/1 Inter; color: #475569;">Check-in photos <span style="color: #94A3B8;">(optional)</span></div>
+              <div style="font: 400 12px/1.5 Inter; color: #94A3B8; margin-top: 3px;">Front, back, left, right and odometer</div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <sc-for list="{{ photoTiles }}" as="p" hint-placeholder-count="4">
+                <div style="flex: 1; border-radius: 18px; background: #F8FAFD; border: 1.5px dashed #D8E2F0; padding: 16px 0; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                  <div style="color: #2563EB; display: grid; place-items: center;">{{ iconCamera }}</div>
+                  <div style="font: 500 11px/1 Inter; color: #475569;">{{ p }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display: flex; gap: 12px;">
+            <div style="flex: 1; height: 56px; border-radius: 18px; background: #F3F6FC; color: #475569; display: grid; place-items: center; font: 600 16px/1 Inter;">Cancel</div>
+            <div style="flex: 1.6; height: 56px; border-radius: 18px; background: linear-gradient(135deg, #FF7A4D 0%, #FF6A3D 100%); color: #fff; display: grid; place-items: center; font: 600 16px/1 Inter; box-shadow: 0 12px 26px rgba(255,106,61,0.28);">Check in</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4g HANDOVER + OTHER SHEETS -->
+    <div id="4g" style="display: flex; flex-direction: column; gap: 12px; width: 390px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="background: #2563EB; color: #fff; border-radius: 9px; padding: 4px 10px; font: 700 13px/1.4 Inter;">4g</div>
+        <div style="font: 600 15px/1.3 Inter; color: #0F172A;">Handover &amp; remaining sheets</div>
+      </div>
+      <div style="width: 390px; display: flex; flex-direction: column; gap: 16px;">
+        <div style="background: #fff; border: 1px solid rgba(15,23,42,0.04); border-radius: 28px; padding: 22px; box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 20px 46px rgba(15,23,42,0.10); display: flex; flex-direction: column; gap: 18px;">
+          <div style="display: flex; align-items: flex-start; gap: 14px;">
+            <div style="width: 48px; height: 48px; border-radius: 16px; background: #EBFAF0; color: #16A34A; display: grid; place-items: center; flex: none;">{{ iconKey }}</div>
+            <div style="flex: 1;">
+              <div style="font: 700 20px/1.25 Inter; letter-spacing: -0.01em; color: #0F172A;">Complete handover</div>
+              <div style="font: 400 13px/1.5 Inter; color: #64748B; margin-top: 3px;">KA123555 · Bike · Slot 4</div>
+            </div>
+            <div style="width: 36px; height: 36px; border-radius: 999px; background: #F3F6FC; color: #64748B; display: grid; place-items: center; flex: none;">{{ iconClose }}</div>
+          </div>
+          <div style="font: 400 13px/1.6 Inter; color: #475569;">Ask the guest for the OTP sent to their phone, then confirm the fare.</div>
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <div style="font: 500 13px/1 Inter; color: #475569;">Enter OTP</div>
+            <div style="display: flex; gap: 10px;">
+              <div style="flex: 1; height: 62px; border-radius: 18px; background: #F8FAFD; border: 1.5px solid #2563EB; display: grid; place-items: center; font: 700 24px/1 Inter; color: #0F172A; box-shadow: 0 0 0 4px rgba(37,99,235,0.10);">1</div>
+              <div style="flex: 1; height: 62px; border-radius: 18px; background: #F8FAFD; border: 1.5px solid #2563EB; display: grid; place-items: center; font: 700 24px/1 Inter; color: #0F172A; box-shadow: 0 0 0 4px rgba(37,99,235,0.10);">2</div>
+              <div style="flex: 1; height: 62px; border-radius: 18px; background: #F8FAFD; border: 1.5px solid #2563EB; display: grid; place-items: center; font: 700 24px/1 Inter; color: #0F172A; box-shadow: 0 0 0 4px rgba(37,99,235,0.10);">3</div>
+              <div style="flex: 1; height: 62px; border-radius: 18px; background: #F8FAFD; border: 1px solid #E7EDF6; display: grid; place-items: center; font: 700 24px/1 Inter; color: #CBD5E1;">4</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 7px;">
+              <div style="width: 6px; height: 6px; border-radius: 50%; background: #EF4444;"></div>
+              <div style="font: 500 12px/1 Inter; color: #EF4444;">Incorrect OTP — ask the guest to read it again</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 12px;">
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+              <div style="font: 500 13px/1 Inter; color: #475569;">Fare amount</div>
+              <div style="height: 56px; border-radius: 16px; background: #F8FAFD; border: 1px solid #E7EDF6; display: flex; align-items: center; gap: 8px; padding: 0 16px;">
+                <div style="font: 500 16px/1 Inter; color: #94A3B8;">₹</div>
+                <div style="font: 600 16px/1 Inter; color: #0F172A;">50</div>
+              </div>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+              <div style="font: 500 13px/1 Inter; color: #475569;">Payment collected</div>
+              <div style="height: 56px; border-radius: 16px; background: #EBFAF0; display: flex; align-items: center; justify-content: space-between; padding: 0 14px;">
+                <div style="font: 500 14px/1 Inter; color: #15803D;">Yes</div>
+                <div style="width: 52px; height: 32px; border-radius: 999px; background: #16A34A; padding: 3px; display: flex; justify-content: flex-end;">
+                  <div style="width: 26px; height: 26px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(15,23,42,0.18);"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px; border-radius: 18px; background: #F8FAFD; border: 1.5px dashed #D8E2F0; padding: 16px;">
+            <div style="color: #2563EB; display: grid; place-items: center;">{{ iconCamera }}</div>
+            <div style="font: 500 13px/1 Inter; color: #475569;">Handover photo (optional)</div>
+          </div>
+          <div style="display: flex; gap: 12px;">
+            <div style="flex: 1; height: 56px; border-radius: 18px; background: #F3F6FC; color: #475569; display: grid; place-items: center; font: 600 16px/1 Inter;">Cancel</div>
+            <div style="flex: 1.7; height: 56px; border-radius: 18px; background: linear-gradient(135deg, #FF7A4D 0%, #FF6A3D 100%); color: #fff; display: grid; place-items: center; font: 600 16px/1 Inter; box-shadow: 0 12px 26px rgba(255,106,61,0.28);">Complete handover</div>
+          </div>
+        </div>
+
+        <div style="background: #fff; border: 1px solid rgba(15,23,42,0.04); border-radius: 28px; box-shadow: 0 1px 2px rgba(15,23,42,0.04), 0 20px 46px rgba(15,23,42,0.08); overflow: hidden;">
+          <div style="padding: 20px 22px 6px; font: 600 15px/1 Inter; color: #0F172A;">Remaining sheets</div>
+          <sc-for list="{{ moreSheets }}" as="m" hint-placeholder-count="4">
+            <div style="display: flex; align-items: center; gap: 14px; padding: 16px 22px; border-bottom: 1px solid #F4F7FC;">
+              <div style="width: 44px; height: 44px; border-radius: 15px; background: {{ m.tint }}; color: {{ m.color }}; display: grid; place-items: center; flex: none;">{{ m.icon }}</div>
+              <div style="flex: 1;">
+                <div style="font: 600 15px/1.2 Inter; color: #0F172A;">{{ m.title }}</div>
+                <div style="font: 400 12px/1.5 Inter; color: #64748B; margin-top: 2px;">{{ m.sub }}</div>
+              </div>
+              <div style="color: #CBD5E1; display: grid; place-items: center;">{{ iconChevron }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section style="padding: 48px; display: flex; flex-direction: column; gap: 32px; border-bottom: 1px solid #dde5f0;">
+  <div style="display: flex; flex-direction: column; gap: 10px; max-width: 1000px;">
+    <div style="font: 600 12px/1 Poppins; letter-spacing: 0.16em; color: #6C7280; text-transform: uppercase;">Turn 2 · Sky Field applied to the whole app</div>
+    <div style="font: 700 40px/1.12 Poppins; color: #0F172A;">Valet operator app — full screen set</div>
+    <div style="font: 400 16px/1.6 Poppins; color: #4A5565; text-wrap: pretty; max-width: 900px;">Direction <a href="#1a">1a</a> rolled across Login, Live Queue, Vehicles, Profile and the queue dialogs. Home is <a href="#1a">1a</a> itself, unchanged. Every status colour, filter chip, field, role-gated action and dialog field is the one the Compose code renders today — only the skin changed. Specs and paste-ready Compose tokens are in <span style="font-family: ui-monospace, monospace; font-size: 13px;">design.md</span>.</div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start;">
+
+    <!-- LOGIN -->
+    <div id="2a" style="display: flex; flex-direction: column; gap: 12px; width: 390px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="background: #1478FF; color: #fff; border-radius: 8px; padding: 4px 10px; font: 700 13px/1.4 Poppins;">2a</div>
+        <div style="font: 600 15px/1.3 Poppins; color: #0F172A;">Login</div>
+      </div>
+      <div style="width: 390px; height: 844px; border-radius: 26px; overflow: hidden; background: linear-gradient(180deg, #CFE4FF 0%, #E8F2FF 40%, #F4F8FE 100%); display: flex; flex-direction: column; justify-content: center; padding: 24px; gap: 18px; box-shadow: 0 20px 44px rgba(15,23,42,0.16);">
+        <div style="background: #fff; border-radius: 999px; padding: 10px 18px; align-self: flex-start; box-shadow: 0 1px 2px rgba(16,42,80,0.06), 0 10px 24px rgba(16,42,80,0.10);">
+          <img src="assets/logo_instaparkai.png" alt="InstaParkAi" style="height: 34px; display: block;">
+        </div>
+        <div>
+          <div style="font: 700 30px/1.2 Poppins; color: #0F172A;">Valet sign-in</div>
+          <div style="font: 400 15px/1.5 Poppins; color: #4A5565; margin-top: 6px;">Use the credentials your Parking Admin issued.</div>
+        </div>
+        <div style="background: #fff; border-radius: 22px; padding: 18px; box-shadow: 0 1px 2px rgba(16,42,80,0.06), 0 16px 36px rgba(16,42,80,0.10); display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="font: 500 13px/1 Poppins; color: #4A5565;">Username</div>
+            <div style="height: 52px; border-radius: 14px; border: 1.5px solid #1478FF; background: #F7FAFE; display: flex; align-items: center; padding: 0 14px; font: 500 15px Poppins; color: #0F172A;">vikas</div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <div style="font: 500 13px/1 Poppins; color: #4A5565;">Password</div>
+            <div style="height: 52px; border-radius: 14px; border: 1px solid #DCE5F2; display: flex; align-items: center; justify-content: space-between; padding: 0 14px; font: 500 15px Poppins; color: #0F172A;">
+              <span style="letter-spacing: 3px;">••••••••</span>
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#8A94A6" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M2.6 12S6.1 6.6 12 6.6 21.4 12 21.4 12 17.9 17.4 12 17.4 2.6 12 2.6 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+            </div>
+          </div>
+          <div style="height: 54px; border-radius: 16px; background: #FF6B36; color: #fff; display: grid; place-items: center; font: 600 17px Poppins; box-shadow: 0 8px 18px rgba(255,107,54,0.22);">Sign in</div>
+        </div>
+        <div style="font: 400 13px/1.6 Poppins; color: #6C7280; text-align: center;">Trouble signing in? Ask your site admin to reset your password.</div>
+      </div>
+    </div>
+
+    <!-- LIVE QUEUE -->
+    <div id="2b" style="display: flex; flex-direction: column; gap: 12px; width: 390px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="background: #1478FF; color: #fff; border-radius: 8px; padding: 4px 10px; font: 700 13px/1.4 Poppins;">2b</div>
+        <div style="font: 600 15px/1.3 Poppins; color: #0F172A;">Live Queue</div>
+      </div>
+      <div style="width: 390px; height: 844px; border-radius: 26px; overflow: hidden; background: #EFF5FE; display: flex; flex-direction: column; box-shadow: 0 20px 44px rgba(15,23,42,0.16);">
+        <div style="flex: none; background: #fff; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #E6EDF7;">
+          <img src="assets/logo_instaparkai.png" alt="InstaParkAi" style="height: 28px; display: block;">
+          <div style="position: relative; width: 40px; height: 40px; border-radius: 999px; background: #F1F6FD; display: grid; place-items: center;">
+            <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="#1478FF" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M6.6 10.4a5.4 5.4 0 0 1 10.8 0c0 3.9 1.6 5.4 1.6 5.4H5s1.6-1.5 1.6-5.4Z"/><path d="M10.1 19a2 2 0 0 0 3.8 0"/></svg>
+            <div style="position: absolute; top: 0; right: 0; min-width: 17px; height: 17px; border-radius: 9px; background: #FF6B36; color: #fff; font: 700 10px/17px Poppins; text-align: center;">2</div>
+          </div>
+        </div>
+        <div style="flex: none; padding: 14px 16px 10px; display: flex; flex-direction: column;">
+          <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+            <div>
+              <div style="font: 700 24px/1.2 Poppins; color: #0F172A;">Live Queue</div>
+              <div style="display: flex; align-items: center; gap: 6px; margin-top: 3px;">
+                <div style="width: 7px; height: 7px; border-radius: 50%; background: #12A150;"></div>
+                <div style="font: 500 14px/1 Poppins; color: #4A5565;">2 active vehicles</div>
+              </div>
+            </div>
+            <div style="height: 46px; padding: 0 18px; border-radius: 999px; background: #FF6B36; color: #fff; display: flex; align-items: center; gap: 6px; font: 600 15px Poppins; box-shadow: 0 6px 14px rgba(255,107,54,0.22);">+ Check-in</div>
+          </div>
+        </div>
+        <div style="flex: none; padding: 0 16px 10px; display: flex; gap: 8px;">
+          <sc-for list="{{ queueChips }}" as="c" hint-placeholder-count="4">
+            <div style="height: 36px; padding: 0 14px; border-radius: 999px; background: {{ c.bg }}; border: 1px solid {{ c.border }}; color: {{ c.color }}; display: flex; align-items: center; font: 500 13px Poppins;">{{ c.label }}</div>
+          </sc-for>
+        </div>
+        <div style="flex: 1; overflow: hidden; padding: 0 16px 12px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="flex: none; background: #fff; border-radius: 20px; padding: 14px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center; gap: 7px; background: #E4F7EC; border-radius: 999px; padding: 5px 11px;">
+                <div style="width: 7px; height: 7px; border-radius: 50%; background: #12A150;"></div>
+                <div style="font: 700 11px/1 Poppins; color: #0C7A3D; letter-spacing: 0.06em;">ARRIVED</div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="font: 500 12px/1 Poppins; color: #94A3B8;">2d ago</div>
+                <div style="color: #8A94A6; display: grid; place-items: center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><circle cx="12" cy="5.6" r="1.35" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.35" fill="currentColor" stroke="none"/><circle cx="12" cy="18.4" r="1.35" fill="currentColor" stroke="none"/></svg></div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 12px;">
+              <img src="assets/img_vehicle_bike.png" alt="" style="width: 72px; height: 72px; border-radius: 14px; object-fit: cover;">
+              <div>
+                <div style="font: 700 21px/1.15 Poppins; color: #0F172A;">KA123555</div>
+                <div style="font: 500 13px/1.5 Poppins; color: #6C7280;">Bike · 8050105778<br>Slot 4 · <span style="color: #1478FF; font-weight: 600;">2 photos</span></div>
+              </div>
+            </div>
+            <div style="height: 50px; border-radius: 14px; background: #FF6B36; color: #fff; display: grid; place-items: center; font: 600 16px Poppins; margin-top: 12px; box-shadow: 0 6px 14px rgba(255,107,54,0.2);">Complete handover</div>
+          </div>
+          <div style="flex: none; background: #fff; border-radius: 20px; padding: 14px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center; gap: 7px; background: #EAF2FE; border-radius: 999px; padding: 5px 11px;">
+                <div style="width: 7px; height: 7px; border-radius: 50%; background: #1478FF;"></div>
+                <div style="font: 700 11px/1 Poppins; color: #0B5FD6; letter-spacing: 0.06em;">PARKED</div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="font: 500 12px/1 Poppins; color: #94A3B8;">just now</div>
+                <div style="color: #8A94A6; display: grid; place-items: center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><circle cx="12" cy="5.6" r="1.35" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.35" fill="currentColor" stroke="none"/><circle cx="12" cy="18.4" r="1.35" fill="currentColor" stroke="none"/></svg></div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 12px; margin-top: 12px;">
+              <img src="assets/img_vehicle_car.png" alt="" style="width: 72px; height: 72px; border-radius: 14px; object-fit: cover;">
+              <div>
+                <div style="font: 700 21px/1.15 Poppins; color: #0F172A;">KA04NB5432</div>
+                <div style="font: 500 13px/1.5 Poppins; color: #6C7280;">Xuv · 9353240270<br>Slot L1-01</div>
+              </div>
+            </div>
+            <div style="height: 50px; border-radius: 14px; background: #E8F2FF; color: #0B5FD6; display: grid; place-items: center; font: 600 16px Poppins; margin-top: 12px;">Guest requested</div>
+          </div>
+          <div style="flex: none; background: #fff; border-radius: 20px; padding: 14px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07);">
+            <div style="font: 600 15px/1 Poppins; color: #0F172A;">Today's summary</div>
+            <div style="display: flex; gap: 8px; margin-top: 10px;">
+              <sc-for list="{{ summaryR }}" as="s" hint-placeholder-count="4">
+                <div style="flex: 1; border-radius: 12px; background: {{ s.bg }}; padding: 9px 0; text-align: center;">
+                  <div style="font: 700 17px/1 Poppins; color: {{ s.color }};">{{ s.value }}</div>
+                  <div style="font: 500 10px/1.3 Poppins; color: #6C7280; margin-top: 3px;">{{ s.label }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <div style="flex: none; background: #fff; border-top: 1px solid #E6EDF7; padding: 8px 8px 12px; display: flex;">
+          <sc-for list="{{ tabsQueue }}" as="t" hint-placeholder-count="4">
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 0;">
+              <div style="padding: 4px 20px; border-radius: 14px; background: {{ t.bg }}; color: {{ t.color }}; display: grid; place-items: center;">{{ t.icon }}</div>
+              <div style="font: {{ t.weight }} 12px/1 Poppins; color: {{ t.color }};">{{ t.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- VEHICLES -->
+    <div id="2c" style="display: flex; flex-direction: column; gap: 12px; width: 390px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="background: #1478FF; color: #fff; border-radius: 8px; padding: 4px 10px; font: 700 13px/1.4 Poppins;">2c</div>
+        <div style="font: 600 15px/1.3 Poppins; color: #0F172A;">Vehicles</div>
+      </div>
+      <div style="width: 390px; height: 844px; border-radius: 26px; overflow: hidden; background: #EFF5FE; display: flex; flex-direction: column; box-shadow: 0 20px 44px rgba(15,23,42,0.16);">
+        <div style="flex: none; background: #fff; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #E6EDF7;">
+          <img src="assets/logo_instaparkai.png" alt="InstaParkAi" style="height: 28px; display: block;">
+          <div style="width: 40px; height: 40px; border-radius: 999px; background: #F1F6FD; display: grid; place-items: center;">
+            <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="#1478FF" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M6.6 10.4a5.4 5.4 0 0 1 10.8 0c0 3.9 1.6 5.4 1.6 5.4H5s1.6-1.5 1.6-5.4Z"/><path d="M10.1 19a2 2 0 0 0 3.8 0"/></svg>
+          </div>
+        </div>
+        <div style="flex: none; padding: 14px 16px 10px;">
+          <div style="font: 700 24px/1.2 Poppins; color: #0F172A;">Vehicles</div>
+          <div style="font: 500 14px/1 Poppins; color: #4A5565; margin-top: 3px;">14 records</div>
+          <div style="display: flex; gap: 10px; margin-top: 12px;">
+            <div style="flex: 1; background: #fff; border-radius: 16px; padding: 12px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07); display: flex; align-items: center; gap: 10px;">
+              <div style="width: 40px; height: 40px; border-radius: 12px; background: #EAF2FE; display: grid; place-items: center;">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#1478FF" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><rect x="4.6" y="4.6" width="14.8" height="14.8" rx="3.4"/><path d="M8.6 12.2 11.2 14.8 15.8 9.8"/></svg>
+              </div>
+              <div>
+                <div style="font: 700 20px/1 Poppins; color: #0F172A;">11</div>
+                <div style="font: 500 11px/1.3 Poppins; color: #6C7280;">Completed</div>
+              </div>
+            </div>
+            <div style="flex: 1; background: #fff; border-radius: 16px; padding: 12px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07); display: flex; align-items: center; gap: 10px;">
+              <div style="width: 40px; height: 40px; border-radius: 12px; background: #E4F7EC; display: grid; place-items: center; font: 700 19px Poppins; color: #12A150;">₹</div>
+              <div>
+                <div style="font: 700 20px/1 Poppins; color: #0F172A;">₹2,070</div>
+                <div style="font: 500 11px/1.3 Poppins; color: #6C7280;">Revenue</div>
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; margin-top: 12px;">
+            <sc-for list="{{ queueChips }}" as="c" hint-placeholder-count="4">
+              <div style="height: 36px; padding: 0 14px; border-radius: 999px; background: {{ c.bg }}; border: 1px solid {{ c.border }}; color: {{ c.color }}; display: flex; align-items: center; font: 500 13px Poppins;">{{ c.label }}</div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="flex: 1; overflow: hidden; padding: 0 16px 12px; display: flex; flex-direction: column; gap: 10px;">
+          <sc-for list="{{ vehiclesR }}" as="v" hint-placeholder-count="4">
+            <div style="flex: none; background: #fff; border-radius: 18px; padding: 12px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07); display: flex; gap: 12px;">
+              {{ v.thumb }}
+              <div style="flex: 1;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                  <div style="font: 700 17px/1.2 Poppins; color: #0F172A;">{{ v.plate }}</div>
+                  <div style="display: flex; align-items: center; gap: 6px; background: {{ v.pillBg }}; border-radius: 999px; padding: 4px 10px; flex: none;">
+                    <div style="width: 6px; height: 6px; border-radius: 50%; background: {{ v.accent }};"></div>
+                    <div style="font: 600 11px/1 Poppins; color: {{ v.accent }};">{{ v.status }}</div>
+                  </div>
+                </div>
+                <div style="font: 500 12px/1.5 Poppins; color: #6C7280; margin-top: 2px;">{{ v.type }} · {{ v.mobile }}</div>
+                <div style="font: 500 12px/1.4 Poppins; color: #4A5565;">{{ v.meta }}</div>
+                <div style="font: 500 11px/1.4 Poppins; color: #94A3B8;">{{ v.extra }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="flex: none; background: #fff; border-top: 1px solid #E6EDF7; padding: 8px 8px 12px; display: flex;">
+          <sc-for list="{{ tabsVehicles }}" as="t" hint-placeholder-count="4">
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 0;">
+              <div style="padding: 4px 20px; border-radius: 14px; background: {{ t.bg }}; color: {{ t.color }}; display: grid; place-items: center;">{{ t.icon }}</div>
+              <div style="font: {{ t.weight }} 12px/1 Poppins; color: {{ t.color }};">{{ t.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div id="2d" style="display: flex; flex-direction: column; gap: 12px; width: 390px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="background: #1478FF; color: #fff; border-radius: 8px; padding: 4px 10px; font: 700 13px/1.4 Poppins;">2d</div>
+        <div style="font: 600 15px/1.3 Poppins; color: #0F172A;">Profile</div>
+      </div>
+      <div style="width: 390px; height: 844px; border-radius: 26px; overflow: hidden; background: linear-gradient(180deg, #CFE4FF 0%, #E8F2FF 30%, #F4F8FE 60%); display: flex; flex-direction: column; box-shadow: 0 20px 44px rgba(15,23,42,0.16);">
+        <div style="flex: none; padding: 14px 16px 0; display: flex; align-items: center; justify-content: space-between;">
+          <div style="background: #fff; border-radius: 999px; padding: 7px 14px; box-shadow: 0 1px 2px rgba(16,42,80,0.06), 0 8px 20px rgba(16,42,80,0.10);">
+            <img src="assets/logo_instaparkai.png" alt="InstaParkAi" style="height: 28px; display: block;">
+          </div>
+        </div>
+        <div style="flex: 1; overflow: hidden; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+          <div style="font: 700 24px/1.2 Poppins; color: #0F172A;">Profile</div>
+          <div style="flex: none; background: #fff; border-radius: 20px; padding: 16px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07); display: flex; align-items: center; gap: 14px;">
+            <div style="width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(150deg, #1478FF, #0B5FD6); color: #fff; display: grid; place-items: center; font: 700 22px Poppins;">V</div>
+            <div style="flex: 1;">
+              <div style="font: 600 17px/1.2 Poppins; color: #0F172A;">Vikas</div>
+              <div style="font: 500 13px/1.4 Poppins; color: #6C7280;">Valet Operator · Hotel Parking Test</div>
+            </div>
+          </div>
+          <div style="flex: none; background: #fff; border-radius: 20px; padding: 14px 16px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07); display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font: 600 15px/1 Poppins; color: #0F172A;">Appearance</div>
+              <div style="font: 500 12px/1.4 Poppins; color: #6C7280; margin-top: 3px;">Light is the brand default</div>
+            </div>
+            <div style="display: flex; gap: 4px; background: #EEF4FC; border-radius: 999px; padding: 4px;">
+              <div style="width: 40px; height: 34px; border-radius: 999px; background: #fff; display: grid; place-items: center; font: 500 15px Poppins; box-shadow: 0 1px 3px rgba(16,42,80,0.10); color: #0B5FD6;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><circle cx="12" cy="12" r="3.8"/><path d="M12 3.4v2.2M12 18.4v2.2M3.4 12h2.2M18.4 12h2.2M6 6l1.6 1.6M16.4 16.4 18 18M18 6l-1.6 1.6M7.6 16.4 6 18"/></svg></div>
+              <div style="width: 40px; height: 34px; border-radius: 999px; display: grid; place-items: center; color: #8A94A6; display: grid; place-items: center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M20 14.2A8.2 8.2 0 0 1 9.8 4 8.4 8.4 0 1 0 20 14.2Z"/></svg></div>
+            </div>
+          </div>
+          <div style="flex: none; background: #fff; border-radius: 20px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07); overflow: hidden;">
+            <div style="padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #F0F4FA;">
+              <div style="font: 500 15px/1 Poppins; color: #0F172A;">My shift status</div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <div style="width: 7px; height: 7px; border-radius: 50%; background: #12A150;"></div>
+                <div style="font: 600 13px/1 Poppins; color: #0C7A3D;">Clocked In</div>
+              </div>
+            </div>
+            <div style="padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #F0F4FA;">
+              <div style="font: 500 15px/1 Poppins; color: #0F172A;">Notifications</div>
+              <div style="font: 500 13px/1 Poppins; color: #6C7280;">On · push + in-app</div>
+            </div>
+            <div style="padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
+              <div style="font: 500 15px/1 Poppins; color: #0F172A;">App version</div>
+              <div style="font: 500 13px/1 Poppins; color: #6C7280;">0.4.1 (build 5)</div>
+            </div>
+          </div>
+          <div style="flex: none; height: 52px; border-radius: 16px; border: 1.5px solid #E23D3D; color: #E23D3D; display: grid; place-items: center; font: 600 16px Poppins; background: #fff;">Sign out</div>
+        </div>
+        <div style="flex: none; background: #fff; border-top: 1px solid #E6EDF7; padding: 8px 8px 12px; display: flex;">
+          <sc-for list="{{ tabsProfile }}" as="t" hint-placeholder-count="4">
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 0;">
+              <div style="padding: 4px 20px; border-radius: 14px; background: {{ t.bg }}; color: {{ t.color }}; display: grid; place-items: center;">{{ t.icon }}</div>
+              <div style="font: {{ t.weight }} 12px/1 Poppins; color: {{ t.color }};">{{ t.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHECK-IN DIALOG -->
+    <div id="2e" style="display: flex; flex-direction: column; gap: 12px; width: 390px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="background: #1478FF; color: #fff; border-radius: 8px; padding: 4px 10px; font: 700 13px/1.4 Poppins;">2e</div>
+        <div style="font: 600 15px/1.3 Poppins; color: #0F172A;">Check-in dialog</div>
+      </div>
+      <div style="width: 390px; height: 844px; border-radius: 26px; overflow: hidden; background: #EFF5FE; position: relative; box-shadow: 0 20px 44px rgba(15,23,42,0.16);">
+        <div style="position: absolute; inset: 0; background: rgba(11,50,110,0.42);"></div>
+        <div style="position: absolute; inset: 16px; display: grid; place-items: center;">
+          <div style="width: 100%; background: #fff; border-radius: 24px; padding: 18px; box-shadow: 0 2px 6px rgba(11,42,90,0.10), 0 26px 60px rgba(11,42,90,0.24); display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: flex; gap: 12px; align-items: flex-start;">
+              <div style="width: 46px; height: 46px; border-radius: 14px; background: #E8F2FF; display: grid; place-items: center; flex: none;">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="#1478FF" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M5.6 12.2 7.2 8A1.9 1.9 0 0 1 9 6.7h6a1.9 1.9 0 0 1 1.8 1.3l1.6 4.2"/><rect x="3.4" y="12.2" width="17.2" height="4.6" rx="1.6"/><circle cx="7.6" cy="18.4" r="1.6"/><circle cx="16.4" cy="18.4" r="1.6"/></svg>
+              </div>
+              <div style="flex: 1;">
+                <div style="font: 700 20px/1.2 Poppins; color: #0F172A;">Check-in vehicle</div>
+                <div style="font: 500 13px/1.4 Poppins; color: #6C7280; margin-top: 2px;">Enter vehicle details to check in</div>
+              </div>
+              <div style="width: 34px; height: 34px; border-radius: 999px; background: #F1F6FD; display: grid; place-items: center; color: #4A5565; flex: none;"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M6.8 6.8l10.4 10.4M17.2 6.8 6.8 17.2"/></svg></div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="font: 500 13px/1 Poppins; color: #4A5565;">Vehicle number</div>
+              <div style="height: 52px; border-radius: 14px; border: 1.5px solid #1478FF; background: #F7FAFE; display: flex; align-items: center; gap: 10px; padding: 0 12px;">
+                <div style="background: #E8F2FF; color: #0B5FD6; border-radius: 8px; padding: 4px 8px; font: 700 11px Poppins;">IND</div>
+                <div style="font: 600 16px Poppins; color: #0F172A; letter-spacing: 0.04em;">KA01AB1234</div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div style="font: 500 13px/1 Poppins; color: #4A5565;">Vehicle type</div>
+              <div style="display: flex; gap: 8px;">
+                <sc-for list="{{ typeTiles }}" as="v" hint-placeholder-count="4">
+                  <div style="flex: 1; border-radius: 14px; background: {{ v.bg }}; border: 1.5px solid {{ v.border }}; padding: 11px 0; display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                    <div style="color: {{ v.fg }}; display: grid; place-items: center;">{{ v.glyph }}</div>
+                    <div style="font: {{ v.weight }} 11px/1 Poppins; color: {{ v.fg }};">{{ v.label }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="font: 500 13px/1 Poppins; color: #4A5565;">Mobile number</div>
+              <div style="height: 52px; border-radius: 14px; border: 1px solid #DCE5F2; display: flex; align-items: center; gap: 10px; padding: 0 12px; font: 500 15px Poppins; color: #94A3B8;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8A94A6" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M5 4.6h3.2l1.4 3.6-2 1.4a11 11 0 0 0 5.4 5.4l1.4-2 3.6 1.4v3.1a1.5 1.5 0 0 1-1.6 1.5A15.5 15.5 0 0 1 3.5 6.1 1.5 1.5 0 0 1 5 4.6Z"/></svg>
+                Enter mobile number
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div>
+                <div style="font: 500 13px/1 Poppins; color: #4A5565;">Check-in photos <span style="color: #94A3B8;">(optional)</span></div>
+                <div style="font: 400 12px/1.4 Poppins; color: #94A3B8; margin-top: 2px;">Add clear photos of the vehicle</div>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <sc-for list="{{ photoTiles }}" as="p" hint-placeholder-count="4">
+                  <div style="flex: 1; border: 1.5px dashed #C9D9EF; background: #F7FAFE; border-radius: 14px; padding: 12px 0; display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                    <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#1478FF" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><rect x="3" y="7.6" width="18" height="12.4" rx="2.6"/><circle cx="12" cy="13.8" r="3.4"/><path d="M8.8 7.6 10 5.2h4l1.2 2.4"/></svg>
+                    <div style="font: 500 11px/1 Poppins; color: #4A5565;">{{ p }}</div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="width: 25%; border: 1.5px dashed #C9D9EF; background: #F7FAFE; border-radius: 14px; padding: 12px 0; display: flex; flex-direction: column; align-items: center; gap: 5px;">
+                <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#1478FF" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><rect x="3" y="7.6" width="18" height="12.4" rx="2.6"/><circle cx="12" cy="13.8" r="3.4"/><path d="M8.8 7.6 10 5.2h4l1.2 2.4"/></svg>
+                <div style="font: 500 11px/1 Poppins; color: #4A5565;">Odometer</div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <div style="flex: 1; height: 50px; border-radius: 14px; border: 1.5px solid #DCE5F2; color: #4A5565; display: grid; place-items: center; font: 600 15px Poppins;">Cancel</div>
+              <div style="flex: 1.5; height: 50px; border-radius: 14px; background: #FF6B36; color: #fff; display: grid; place-items: center; font: 600 15px Poppins; box-shadow: 0 6px 14px rgba(255,107,54,0.22);">Check in</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HANDOVER + OTHER DIALOGS -->
+    <div id="2f" style="display: flex; flex-direction: column; gap: 12px; width: 390px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="background: #1478FF; color: #fff; border-radius: 8px; padding: 4px 10px; font: 700 13px/1.4 Poppins;">2f</div>
+        <div style="font: 600 15px/1.3 Poppins; color: #0F172A;">Complete handover</div>
+      </div>
+      <div style="width: 390px; height: 844px; border-radius: 26px; overflow: hidden; background: #EFF5FE; position: relative; box-shadow: 0 20px 44px rgba(15,23,42,0.16);">
+        <div style="position: absolute; inset: 0; background: rgba(11,50,110,0.42);"></div>
+        <div style="position: absolute; inset: 16px; display: grid; place-items: center;">
+          <div style="width: 100%; background: #fff; border-radius: 24px; padding: 18px; box-shadow: 0 2px 6px rgba(11,42,90,0.10), 0 26px 60px rgba(11,42,90,0.24); display: flex; flex-direction: column; gap: 14px;">
+            <div style="display: flex; gap: 12px; align-items: flex-start;">
+              <div style="width: 46px; height: 46px; border-radius: 14px; background: #E4F7EC; display: grid; place-items: center; flex: none;">
+                <svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="#12A150" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><circle cx="9" cy="15" r="3.4"/><path d="M11.4 12.6 19.5 4.5M16.8 7.2l2.2 2.2"/></svg>
+              </div>
+              <div style="flex: 1;">
+                <div style="font: 700 20px/1.2 Poppins; color: #0F172A;">Complete handover</div>
+                <div style="font: 500 13px/1.4 Poppins; color: #6C7280; margin-top: 2px;">KA123555 · Bike · Slot 4</div>
+              </div>
+              <div style="width: 34px; height: 34px; border-radius: 999px; background: #F1F6FD; display: grid; place-items: center; color: #4A5565; flex: none;"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M6.8 6.8l10.4 10.4M17.2 6.8 6.8 17.2"/></svg></div>
+            </div>
+            <div style="font: 400 13px/1.55 Poppins; color: #4A5565;">Ask the guest for the OTP sent to their phone, then confirm the fare.</div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="font: 500 13px/1 Poppins; color: #4A5565;">Enter OTP</div>
+              <div style="display: flex; gap: 8px;">
+                <div style="flex: 1; height: 58px; border-radius: 14px; border: 1.5px solid #1478FF; background: #F7FAFE; display: grid; place-items: center; font: 700 22px Poppins; color: #0F172A;">1</div>
+                <div style="flex: 1; height: 58px; border-radius: 14px; border: 1.5px solid #1478FF; background: #F7FAFE; display: grid; place-items: center; font: 700 22px Poppins; color: #0F172A;">2</div>
+                <div style="flex: 1; height: 58px; border-radius: 14px; border: 1.5px solid #1478FF; background: #F7FAFE; display: grid; place-items: center; font: 700 22px Poppins; color: #0F172A;">3</div>
+                <div style="flex: 1; height: 58px; border-radius: 14px; border: 1.5px solid #DCE5F2; display: grid; place-items: center; font: 700 22px Poppins; color: #C9D9EF;">4</div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+                <div style="width: 6px; height: 6px; border-radius: 50%; background: #E23D3D;"></div>
+                <div style="font: 500 12px/1 Poppins; color: #E23D3D;">Incorrect OTP — ask the guest to read it again</div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div style="font: 500 13px/1 Poppins; color: #4A5565;">Fare amount</div>
+              <div style="height: 52px; border-radius: 14px; border: 1px solid #DCE5F2; display: flex; align-items: center; gap: 8px; padding: 0 12px;">
+                <div style="font: 600 16px Poppins; color: #6C7280;">₹</div>
+                <div style="font: 600 16px Poppins; color: #0F172A;">50</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: space-between; background: #F7FAFE; border-radius: 14px; padding: 12px 14px;">
+              <div style="font: 500 15px/1 Poppins; color: #0F172A;">Payment collected</div>
+              <div style="width: 52px; height: 30px; border-radius: 999px; background: #12A150; padding: 3px; display: flex; justify-content: flex-end;">
+                <div style="width: 24px; height: 24px; border-radius: 50%; background: #fff;"></div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px; border: 1.5px dashed #C9D9EF; background: #F7FAFE; border-radius: 14px; padding: 12px 14px;">
+              <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="#1478FF" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><rect x="3" y="7.6" width="18" height="12.4" rx="2.6"/><circle cx="12" cy="13.8" r="3.4"/><path d="M8.8 7.6 10 5.2h4l1.2 2.4"/></svg>
+              <div style="font: 500 13px/1 Poppins; color: #4A5565;">Handover photo (optional)</div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <div style="flex: 1; height: 50px; border-radius: 14px; border: 1.5px solid #DCE5F2; color: #4A5565; display: grid; place-items: center; font: 600 15px Poppins;">Cancel</div>
+              <div style="flex: 1.6; height: 50px; border-radius: 14px; background: #FF6B36; color: #fff; display: grid; place-items: center; font: 600 15px Poppins; box-shadow: 0 6px 14px rgba(255,107,54,0.22);">Complete handover</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SMALL DIALOGS -->
+    <div id="2g" style="display: flex; flex-direction: column; gap: 12px; width: 390px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="background: #1478FF; color: #fff; border-radius: 8px; padding: 4px 10px; font: 700 13px/1.4 Poppins;">2g</div>
+        <div style="font: 600 15px/1.3 Poppins; color: #0F172A;">Remaining dialogs</div>
+      </div>
+      <div style="width: 390px; display: flex; flex-direction: column; gap: 14px;">
+
+        <div style="background: #fff; border-radius: 24px; padding: 18px; box-shadow: 0 1px 2px rgba(16,42,80,0.06), 0 16px 36px rgba(16,42,80,0.11); display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <div style="width: 44px; height: 44px; border-radius: 14px; background: #E8F2FF; display: grid; place-items: center; flex: none; font: 700 19px Poppins; color: #1478FF;">P</div>
+            <div style="flex: 1;">
+              <div style="font: 700 19px/1.2 Poppins; color: #0F172A;">Mark as parked</div>
+              <div style="font: 500 13px/1.4 Poppins; color: #6C7280;">Choose the slot this vehicle is in</div>
+            </div>
+            <div style="width: 32px; height: 32px; border-radius: 999px; background: #F1F6FD; display: grid; place-items: center; color: #4A5565;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M6.8 6.8l10.4 10.4M17.2 6.8 6.8 17.2"/></svg></div>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <div style="height: 44px; padding: 0 16px; border-radius: 12px; background: #1478FF; color: #fff; display: flex; align-items: center; font: 600 14px Poppins;">L1-01</div>
+            <div style="height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid #DCE5F2; color: #4A5565; display: flex; align-items: center; font: 500 14px Poppins;">L1-02</div>
+            <div style="height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid #DCE5F2; color: #4A5565; display: flex; align-items: center; font: 500 14px Poppins;">L1-03</div>
+            <div style="height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid #DCE5F2; color: #4A5565; display: flex; align-items: center; font: 500 14px Poppins;">A-101</div>
+            <div style="height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid #DCE5F2; color: #4A5565; display: flex; align-items: center; font: 500 14px Poppins;">A-102</div>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <div style="flex: 1; height: 48px; border-radius: 14px; border: 1.5px solid #DCE5F2; color: #4A5565; display: grid; place-items: center; font: 600 15px Poppins;">Cancel</div>
+            <div style="flex: 1.4; height: 48px; border-radius: 14px; background: #1478FF; color: #fff; display: grid; place-items: center; font: 600 15px Poppins; box-shadow: 0 6px 14px rgba(20,120,255,0.22);">Confirm parked</div>
+          </div>
+        </div>
+
+        <div style="background: #fff; border-radius: 24px; padding: 18px; box-shadow: 0 1px 2px rgba(16,42,80,0.06), 0 16px 36px rgba(16,42,80,0.11); display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <div style="width: 44px; height: 44px; border-radius: 14px; background: #FFEDE4; display: grid; place-items: center; flex: none;">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#FF6B36" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><circle cx="9.4" cy="8.6" r="3.3"/><path d="M3.4 19.4c1.2-3 3.3-4.4 6-4.4s4.8 1.4 6 4.4"/><path d="M16.2 6.3a3.3 3.3 0 0 1 0 6.2M17.2 15.2c2 .6 3.3 2 4 4.2"/></svg>
+            </div>
+            <div style="flex: 1;">
+              <div style="font: 700 19px/1.2 Poppins; color: #0F172A;">Dispatch operator</div>
+              <div style="font: 500 13px/1.4 Poppins; color: #6C7280;">Send this pickup to an available operator</div>
+            </div>
+            <div style="width: 32px; height: 32px; border-radius: 999px; background: #F1F6FD; display: grid; place-items: center; color: #4A5565;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M6.8 6.8l10.4 10.4M17.2 6.8 6.8 17.2"/></svg></div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 12px; border: 1.5px solid #1478FF; background: #F7FAFE; border-radius: 14px; padding: 12px 14px;">
+              <div style="width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(150deg, #1478FF, #0B5FD6); color: #fff; display: grid; place-items: center; font: 700 15px Poppins;">V</div>
+              <div style="flex: 1;">
+                <div style="font: 600 15px/1.2 Poppins; color: #0F172A;">Vikas</div>
+                <div style="font: 500 12px/1.3 Poppins; color: #6C7280;">Clocked in · 2 active</div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px; background: #E4F7EC; border-radius: 999px; padding: 4px 10px;">
+                <div style="width: 6px; height: 6px; border-radius: 50%; background: #12A150;"></div>
+                <div style="font: 600 11px/1 Poppins; color: #0C7A3D;">IN</div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px; border: 1px solid #DCE5F2; border-radius: 14px; padding: 12px 14px;">
+              <div style="width: 38px; height: 38px; border-radius: 50%; background: #EEF4FC; color: #4A5565; display: grid; place-items: center; font: 700 15px Poppins;">T</div>
+              <div style="flex: 1;">
+                <div style="font: 600 15px/1.2 Poppins; color: #0F172A;">Test Operator Final</div>
+                <div style="font: 500 12px/1.3 Poppins; color: #6C7280;">Clocked in · idle</div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 6px; background: #E4F7EC; border-radius: 999px; padding: 4px 10px;">
+                <div style="width: 6px; height: 6px; border-radius: 50%; background: #12A150;"></div>
+                <div style="font: 600 11px/1 Poppins; color: #0C7A3D;">IN</div>
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <div style="flex: 1; height: 48px; border-radius: 14px; border: 1.5px solid #DCE5F2; color: #4A5565; display: grid; place-items: center; font: 600 15px Poppins;">Cancel</div>
+            <div style="flex: 1.4; height: 48px; border-radius: 14px; background: #FF6B36; color: #fff; display: grid; place-items: center; font: 600 15px Poppins; box-shadow: 0 6px 14px rgba(255,107,54,0.22);">Dispatch</div>
+          </div>
+        </div>
+
+        <div style="background: #fff; border-radius: 24px; padding: 18px; box-shadow: 0 1px 2px rgba(16,42,80,0.06), 0 16px 36px rgba(16,42,80,0.11); display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <div style="width: 44px; height: 44px; border-radius: 14px; background: #E8F2FF; display: grid; place-items: center; flex: none;">
+              <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="#1478FF" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M5 19h3.2l9.9-9.9-3.2-3.2L5 15.8Z"/><path d="M14.4 5.4l3.2 3.2"/></svg>
+            </div>
+            <div style="flex: 1;">
+              <div style="font: 700 19px/1.2 Poppins; color: #0F172A;">Edit vehicle details</div>
+              <div style="font: 500 13px/1.4 Poppins; color: #6C7280;">Correct a mis-entered plate or number</div>
+            </div>
+            <div style="width: 32px; height: 32px; border-radius: 999px; background: #F1F6FD; display: grid; place-items: center; color: #4A5565;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M6.8 6.8l10.4 10.4M17.2 6.8 6.8 17.2"/></svg></div>
+          </div>
+          <div style="height: 52px; border-radius: 14px; border: 1.5px solid #1478FF; background: #F7FAFE; display: flex; align-items: center; gap: 10px; padding: 0 12px;">
+            <div style="background: #E8F2FF; color: #0B5FD6; border-radius: 8px; padding: 4px 8px; font: 700 11px Poppins;">IND</div>
+            <div style="font: 600 16px Poppins; color: #0F172A;">KA123555</div>
+          </div>
+          <div style="height: 52px; border-radius: 14px; border: 1px solid #DCE5F2; display: flex; align-items: center; gap: 10px; padding: 0 12px; font: 500 15px Poppins; color: #0F172A;">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8A94A6" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M5 4.6h3.2l1.4 3.6-2 1.4a11 11 0 0 0 5.4 5.4l1.4-2 3.6 1.4v3.1a1.5 1.5 0 0 1-1.6 1.5A15.5 15.5 0 0 1 3.5 6.1 1.5 1.5 0 0 1 5 4.6Z"/></svg>
+            8050105778
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <div style="flex: 1; height: 48px; border-radius: 14px; border: 1.5px solid #DCE5F2; color: #4A5565; display: grid; place-items: center; font: 600 15px Poppins;">Cancel</div>
+            <div style="flex: 1; height: 48px; border-radius: 14px; background: #1478FF; color: #fff; display: grid; place-items: center; font: 600 15px Poppins;">Save</div>
+          </div>
+        </div>
+
+        <div style="background: #fff; border-radius: 24px; padding: 18px; box-shadow: 0 1px 2px rgba(16,42,80,0.06), 0 16px 36px rgba(16,42,80,0.11); display: flex; flex-direction: column; gap: 14px;">
+          <div style="display: flex; gap: 12px; align-items: flex-start;">
+            <div style="width: 44px; height: 44px; border-radius: 14px; background: #FDECEC; display: grid; place-items: center; flex: none;">
+              <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="#E23D3D" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M5.5 7.5h13M9.5 7.5V5.8h5v1.7M7.2 7.5l.9 12.2h7.8l.9-12.2"/></svg>
+            </div>
+            <div style="flex: 1;">
+              <div style="font: 700 19px/1.2 Poppins; color: #0F172A;">Void ticket</div>
+              <div style="font: 500 13px/1.4 Poppins; color: #6C7280;">Frees the slot and drops it from the queue</div>
+            </div>
+            <div style="width: 32px; height: 32px; border-radius: 999px; background: #F1F6FD; display: grid; place-items: center; color: #4A5565;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M6.8 6.8l10.4 10.4M17.2 6.8 6.8 17.2"/></svg></div>
+          </div>
+          <div style="height: 52px; border-radius: 14px; border: 1px solid #DCE5F2; display: flex; align-items: center; padding: 0 12px; font: 500 15px Poppins; color: #94A3B8;">Reason (optional)</div>
+          <div style="display: flex; gap: 10px;">
+            <div style="flex: 1; height: 48px; border-radius: 14px; border: 1.5px solid #DCE5F2; color: #4A5565; display: grid; place-items: center; font: 600 15px Poppins;">Cancel</div>
+            <div style="flex: 1; height: 48px; border-radius: 14px; background: #E23D3D; color: #fff; display: grid; place-items: center; font: 600 15px Poppins;">Void ticket</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<section style="padding: 48px; display: flex; flex-direction: column; gap: 32px;">
+  <div style="display: flex; flex-direction: column; gap: 10px; max-width: 1000px;">
+    <div style="font: 600 12px/1 Poppins; letter-spacing: 0.16em; color: #6C7280; text-transform: uppercase;">Turn 1 · Home screen directions</div>
+    <div style="font: 700 40px/1.12 Poppins; color: #0F172A;">InstaPark Valet, on brand</div>
+    <div style="font: 400 16px/1.6 Poppins; color: #4A5565; text-wrap: pretty;">Three light, sky-blue directions for the operator Home screen, built on the instaparkai.com palette — brand blue leads, orange is reserved for the one committing action on screen. All three keep every element the current app renders (greeting, site + valet badge, My Status, four KPIs, queue preview, quick actions, capacity) and target outdoor legibility: 14px minimum body text, 48px+ tap targets, ink-on-white contrast. Pick one (<a href="#1a">1a</a> / <a href="#1b">1b</a> / <a href="#1c">1c</a>) and I'll roll it across Queue, Vehicles, Profile, Login, the seven dialogs, then the web admin.</div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 32px; align-items: flex-start;">
+
+    <!-- ============ 1a ============ -->
+    <div id="1a" style="display: flex; flex-direction: column; gap: 12px; width: 390px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="background: #1478FF; color: #fff; border-radius: 8px; padding: 4px 10px; font: 700 13px/1.4 Poppins;">1a</div>
+        <div style="font: 600 15px/1.3 Poppins; color: #0F172A;">Sky Field</div>
+      </div>
+      <div style="font: 400 13px/1.5 Poppins; color: #6C7280;">The website's own language: sky gradient behind a floating white logo pill, white cards, blue-tinted icon tiles. Warmest and most brand-literal.</div>
+      <div style="width: 390px; height: 844px; border-radius: 26px; overflow: hidden; background: linear-gradient(180deg, #CFE4FF 0%, #E8F2FF 34%, #F4F8FE 100%); display: flex; flex-direction: column; box-shadow: 0 20px 44px rgba(15,23,42,0.16);">
+        <div style="flex: none; padding: 14px 16px 0; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
+          <div style="background: #fff; border-radius: 999px; padding: 7px 14px; box-shadow: 0 1px 2px rgba(16,42,80,0.06), 0 8px 20px rgba(16,42,80,0.10); display: flex; align-items: center;">
+            <img src="assets/logo_instaparkai.png" alt="InstaParkAi" style="height: 30px; display: block;">
+          </div>
+          <div style="position: relative; width: 44px; height: 44px; border-radius: 999px; background: #fff; display: grid; place-items: center; box-shadow: 0 1px 2px rgba(16,42,80,0.06), 0 8px 20px rgba(16,42,80,0.10);">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#1478FF" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M6.6 10.4a5.4 5.4 0 0 1 10.8 0c0 3.9 1.6 5.4 1.6 5.4H5s1.6-1.5 1.6-5.4Z"/><path d="M10.1 19a2 2 0 0 0 3.8 0"/></svg>
+            <div style="position: absolute; top: 2px; right: 2px; min-width: 18px; height: 18px; border-radius: 9px; background: #FF6B36; color: #fff; font: 700 11px/18px Poppins; text-align: center;">3</div>
+          </div>
+        </div>
+
+        <div style="flex: 1; overflow: hidden; display: flex; flex-direction: column; gap: 8px; padding: 10px 16px;">
+          <div>
+            <div style="font: 700 24px/1.2 Poppins; color: #0F172A;">Good evening,<br>Vikas</div>
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+              <div style="font: 500 14px/1.3 Poppins; color: #4A5565;">Hotel Parking Test</div>
+              <div style="display: flex; align-items: center; gap: 6px; background: #E4F7EC; border-radius: 999px; padding: 5px 10px;">
+                <div style="width: 7px; height: 7px; border-radius: 50%; background: #12A150;"></div>
+                <div style="font: 600 12px/1 Poppins; color: #0C7A3D;">Valet enabled</div>
+              </div>
+            </div>
+          </div>
+
+          <div style="flex: none; background: #fff; border-radius: 20px; padding: 12px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="font: 600 15px/1 Poppins; color: #0F172A;">My Status</div>
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <div style="width: 8px; height: 8px; border-radius: 50%; background: #12A150;"></div>
+                <div style="font: 500 13px/1 Poppins; color: #4A5565;">Clocked In</div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 6px; margin-top: 12px; background: #EEF4FC; border-radius: 14px; padding: 5px;">
+              <div style="flex: 1; height: 44px; border-radius: 10px; background: #1478FF; color: #fff; display: grid; place-items: center; font: 600 14px Poppins; box-shadow: 0 3px 8px rgba(20,120,255,0.28);">IN</div>
+              <div style="flex: 1; height: 44px; border-radius: 10px; color: #4A5565; display: grid; place-items: center; font: 500 14px Poppins;">BREAK</div>
+              <div style="flex: 1; height: 44px; border-radius: 10px; color: #4A5565; display: grid; place-items: center; font: 500 14px Poppins;">OUT</div>
+            </div>
+          </div>
+
+          <div style="flex: none; display: grid; grid-template-columns: 1fr 1fr; gap: 9px;">
+            <sc-for list="{{ kpisA }}" as="k" hint-placeholder-count="4">
+              <div style="background: #fff; border-radius: 18px; padding: 12px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07);">
+                <div style="width: 36px; height: 36px; border-radius: 11px; background: {{ k.tint }}; display: grid; place-items: center;">{{ k.icon }}</div>
+                <div style="font: 700 26px/1.1 Poppins; color: #0F172A; margin-top: 6px;">{{ k.value }}</div>
+                <div style="font: 500 13px/1.3 Poppins; color: #6C7280;">{{ k.label }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="flex: none; background: #fff; border-radius: 20px; padding: 12px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07); display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="font: 600 15px/1 Poppins; color: #0F172A;">Queue (1)</div>
+              <div style="font: 600 13px/1 Poppins; color: #1478FF;">View all →</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px; background: #F4F8FE; border-radius: 14px; padding: 10px;">
+              <img src="assets/img_vehicle_car.png" alt="" style="width: 44px; height: 44px; border-radius: 11px; object-fit: cover;">
+              <div style="flex: 1;">
+                <div style="font: 700 16px/1.2 Poppins; color: #0F172A;">KA04NB5432</div>
+                <div style="font: 500 12px/1.3 Poppins; color: #6C7280;">Parked · Slot L1-01</div>
+              </div>
+              <div style="color: #1478FF; font: 600 18px Poppins;">›</div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <div style="flex: 1.3; height: 48px; border-radius: 14px; background: #FF6B36; color: #fff; display: flex; align-items: center; justify-content: center; gap: 8px; font: 600 15px Poppins; box-shadow: 0 6px 14px rgba(255,107,54,0.22);">+ Check-in</div>
+              <div style="flex: 1; height: 48px; border-radius: 14px; background: #E8F2FF; color: #0B5FD6; display: flex; align-items: center; justify-content: center; gap: 8px; font: 600 15px Poppins;">Find</div>
+            </div>
+          </div>
+
+          <div style="flex: none; background: #fff; border-radius: 18px; padding: 10px 14px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.07);">
+            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+              <div style="font: 600 14px/1 Poppins; color: #0F172A;">Parking Capacity</div>
+              <div style="font: 500 13px/1 Poppins; color: #6C7280;"><span style="color: #1478FF; font-weight: 700;">18</span> / 80 · 22%</div>
+            </div>
+            <div style="height: 9px; border-radius: 5px; background: #EDF2F9; margin-top: 6px; overflow: hidden;">
+              <div style="width: 22%; height: 100%; border-radius: 5px; background: linear-gradient(90deg, #1478FF, #4B9BFF);"></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="flex: none; background: #fff; border-top: 1px solid #E6EDF7; padding: 8px 8px 12px; display: flex;">
+          <sc-for list="{{ tabsA }}" as="t" hint-placeholder-count="4">
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 0;">
+              <div style="padding: 4px 20px; border-radius: 14px; background: {{ t.bg }}; color: {{ t.color }}; display: grid; place-items: center;">{{ t.icon }}</div>
+              <div style="font: {{ t.weight }} 12px/1 Poppins; color: {{ t.color }};">{{ t.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 1b ============ -->
+    <div id="1b" style="display: flex; flex-direction: column; gap: 12px; width: 390px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="background: #1478FF; color: #fff; border-radius: 8px; padding: 4px 10px; font: 700 13px/1.4 Poppins;">1b</div>
+        <div style="font: 600 15px/1.3 Poppins; color: #0F172A;">Ops Bold</div>
+      </div>
+      <div style="font: 400 13px/1.5 Poppins; color: #6C7280;">A solid brand-blue header slab over a plain white workspace. Heaviest numbers, widest targets — the most sunlight-proof of the three.</div>
+      <div style="width: 390px; height: 844px; border-radius: 26px; overflow: hidden; background: #FFFFFF; display: flex; flex-direction: column; box-shadow: 0 20px 44px rgba(15,23,42,0.16);">
+        <div style="flex: none; background: linear-gradient(160deg, #1478FF 0%, #0B5FD6 100%); padding: 16px 16px 22px; color: #fff; border-radius: 0 0 24px 24px;">
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div style="background: #fff; border-radius: 999px; padding: 6px 12px; display: flex; align-items: center;">
+              <img src="assets/logo_instaparkai.png" alt="InstaParkAi" style="height: 26px; display: block;">
+            </div>
+            <div style="position: relative; width: 44px; height: 44px; border-radius: 999px; background: rgba(255,255,255,0.18); display: grid; place-items: center;">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#fff" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M6.6 10.4a5.4 5.4 0 0 1 10.8 0c0 3.9 1.6 5.4 1.6 5.4H5s1.6-1.5 1.6-5.4Z"/><path d="M10.1 19a2 2 0 0 0 3.8 0"/></svg>
+              <div style="position: absolute; top: 2px; right: 2px; min-width: 18px; height: 18px; border-radius: 9px; background: #FF6B36; color: #fff; font: 700 11px/18px Poppins; text-align: center;">3</div>
+            </div>
+          </div>
+          <div style="font: 700 27px/1.2 Poppins; margin-top: 16px;">Good evening, Vikas</div>
+          <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+            <div style="font: 500 14px/1 Poppins; color: rgba(255,255,255,0.85);">Hotel Parking Test</div>
+            <div style="display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.2); border-radius: 999px; padding: 5px 10px;">
+              <div style="width: 7px; height: 7px; border-radius: 50%; background: #6BF3A6;"></div>
+              <div style="font: 600 12px/1 Poppins; color: #fff;">Valet enabled</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 6px; margin-top: 16px; background: rgba(4,40,90,0.28); border-radius: 14px; padding: 5px;">
+            <div style="flex: 1; height: 46px; border-radius: 10px; background: #fff; color: #0B5FD6; display: grid; place-items: center; font: 700 14px Poppins;">IN</div>
+            <div style="flex: 1; height: 46px; border-radius: 10px; color: rgba(255,255,255,0.9); display: grid; place-items: center; font: 600 14px Poppins;">BREAK</div>
+            <div style="flex: 1; height: 46px; border-radius: 10px; color: rgba(255,255,255,0.9); display: grid; place-items: center; font: 600 14px Poppins;">OUT</div>
+          </div>
+        </div>
+
+        <div style="flex: 1; overflow: hidden; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px;">
+          <div style="flex: none; display: grid; grid-template-columns: 1fr 1fr; gap: 9px;">
+            <sc-for list="{{ kpisB }}" as="k" hint-placeholder-count="4">
+              <div style="border: 1px solid #E2EAF5; border-left: 4px solid {{ k.accent }}; border-radius: 16px; padding: 9px 14px;">
+                <div style="font: 800 30px/1 Poppins; color: #0F172A;">{{ k.value }}</div>
+                <div style="font: 600 13px/1.3 Poppins; color: #4A5565; margin-top: 4px;">{{ k.label }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="flex: none; border: 1px solid #E2EAF5; border-radius: 18px; overflow: hidden;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; background: #F5F8FD;">
+              <div style="font: 600 15px/1 Poppins; color: #0F172A;">Queue · 1 active</div>
+              <div style="font: 600 13px/1 Poppins; color: #1478FF;">View all</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px; padding: 12px 14px;">
+              <img src="assets/img_vehicle_car.png" alt="" style="width: 56px; height: 56px; border-radius: 12px; object-fit: cover;">
+              <div style="flex: 1;">
+                <div style="font: 700 17px/1.2 Poppins; color: #0F172A;">KA04NB5432</div>
+                <div style="display: flex; align-items: center; gap: 6px; margin-top: 3px;">
+                  <div style="width: 7px; height: 7px; border-radius: 50%; background: #1478FF;"></div>
+                  <div style="font: 500 12px/1 Poppins; color: #6C7280;">Parked · Slot L1-01</div>
+                </div>
+              </div>
+              <div style="color: #94A3B8; font: 600 18px Poppins;">›</div>
+            </div>
+          </div>
+
+          <div style="flex: none; display: flex; flex-direction: column; gap: 10px;">
+            <div style="height: 52px; border-radius: 16px; background: #FF6B36; color: #fff; display: flex; align-items: center; justify-content: center; gap: 10px; font: 600 17px Poppins; box-shadow: 0 8px 18px rgba(255,107,54,0.22);">
+              <span style="font-size: 22px; line-height: 1;">+</span> Check-in vehicle
+            </div>
+            <div style="height: 52px; border-radius: 16px; border: 2px solid #1478FF; color: #0B5FD6; display: flex; align-items: center; justify-content: center; gap: 10px; font: 600 17px Poppins;">Find a vehicle</div>
+          </div>
+
+          <div style="flex: none; border: 1px solid #E2EAF5; border-radius: 18px; padding: 12px 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+              <div style="font: 600 15px/1 Poppins; color: #0F172A;">Parking capacity</div>
+              <div style="font: 500 13px/1 Poppins; color: #6C7280;"><span style="font-weight: 700; color: #0F172A;">18</span> / 80</div>
+            </div>
+            <div style="height: 14px; border-radius: 7px; background: #EDF2F9; margin-top: 12px; overflow: hidden;">
+              <div style="width: 22%; height: 100%; border-radius: 7px; background: linear-gradient(90deg, #1478FF, #4B9BFF);"></div>
+            </div>
+            <div style="font: 500 12px/1 Poppins; color: #6C7280; margin-top: 8px;">22% occupied · 62 free</div>
+          </div>
+        </div>
+
+        <div style="flex: none; background: #FFFFFF; border-top: 1px solid #E6EDF7; padding: 8px 8px 12px; display: flex;">
+          <sc-for list="{{ tabsA }}" as="t" hint-placeholder-count="4">
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 0;">
+              <div style="padding: 4px 20px; border-radius: 14px; background: {{ t.bg }}; color: {{ t.color }}; display: grid; place-items: center;">{{ t.icon }}</div>
+              <div style="font: {{ t.weight }} 12px/1 Poppins; color: {{ t.color }};">{{ t.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 1c ============ -->
+    <div id="1c" style="display: flex; flex-direction: column; gap: 12px; width: 390px;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="background: #1478FF; color: #fff; border-radius: 8px; padding: 4px 10px; font: 700 13px/1.4 Poppins;">1c</div>
+        <div style="font: 600 15px/1.3 Poppins; color: #0F172A;">Next Up</div>
+      </div>
+      <div style="font: 400 13px/1.5 Poppins; color: #6C7280;">Task-first: the vehicle needing action owns the top of the screen, KPIs shrink to one strip. Fewest taps per handover, least dashboard.</div>
+      <div style="width: 390px; height: 844px; border-radius: 26px; overflow: hidden; background: #EFF5FE; display: flex; flex-direction: column; box-shadow: 0 20px 44px rgba(15,23,42,0.16);">
+        <div style="flex: none; padding: 14px 16px; background: #fff; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #E6EDF7;">
+          <img src="assets/logo_instaparkai.png" alt="InstaParkAi" style="height: 28px; display: block;">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 6px; background: #E4F7EC; border-radius: 999px; padding: 6px 10px;">
+              <div style="width: 7px; height: 7px; border-radius: 50%; background: #12A150;"></div>
+              <div style="font: 600 12px/1 Poppins; color: #0C7A3D;">IN</div>
+            </div>
+            <div style="position: relative; width: 40px; height: 40px; border-radius: 999px; background: #F1F6FD; display: grid; place-items: center;">
+              <svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="#1478FF" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><path d="M6.6 10.4a5.4 5.4 0 0 1 10.8 0c0 3.9 1.6 5.4 1.6 5.4H5s1.6-1.5 1.6-5.4Z"/><path d="M10.1 19a2 2 0 0 0 3.8 0"/></svg>
+              <div style="position: absolute; top: 0; right: 0; min-width: 17px; height: 17px; border-radius: 9px; background: #FF6B36; color: #fff; font: 700 10px/17px Poppins; text-align: center;">3</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="flex: 1; overflow: hidden; padding: 16px; display: flex; flex-direction: column; gap: 14px;">
+          <div>
+            <div style="font: 600 14px/1 Poppins; color: #6C7280;">Good evening, Vikas</div>
+            <div style="font: 700 22px/1.25 Poppins; color: #0F172A; margin-top: 4px;">1 vehicle needs you</div>
+          </div>
+
+          <div style="background: #fff; border-radius: 22px; padding: 16px; box-shadow: 0 1px 2px rgba(16,42,80,0.06), 0 14px 32px rgba(16,42,80,0.09);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center; gap: 7px; background: #E4F7EC; border-radius: 999px; padding: 6px 12px;">
+                <div style="width: 7px; height: 7px; border-radius: 50%; background: #12A150;"></div>
+                <div style="font: 700 12px/1 Poppins; color: #0C7A3D; letter-spacing: 0.06em;">ARRIVED</div>
+              </div>
+              <div style="font: 500 12px/1 Poppins; color: #94A3B8;">2d ago</div>
+            </div>
+            <div style="display: flex; gap: 14px; margin-top: 14px;">
+              <img src="assets/img_vehicle_bike.png" alt="" style="width: 88px; height: 88px; border-radius: 16px; object-fit: cover;">
+              <div>
+                <div style="font: 700 24px/1.15 Poppins; color: #0F172A;">KA123555</div>
+                <div style="font: 500 13px/1.5 Poppins; color: #6C7280; margin-top: 4px;">Bike · 8050105778<br>Slot 4 · 2 photos</div>
+              </div>
+            </div>
+            <div style="height: 56px; border-radius: 16px; background: #FF6B36; color: #fff; display: grid; place-items: center; font: 600 17px Poppins; margin-top: 14px; box-shadow: 0 8px 18px rgba(255,107,54,0.22);">Complete handover</div>
+          </div>
+
+          <div style="background: #fff; border-radius: 18px; padding: 4px; display: flex; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.06);">
+            <sc-for list="{{ stripC }}" as="s" hint-placeholder-count="4">
+              <div style="flex: 1; padding: 12px 0; text-align: center;">
+                <div style="font: 700 22px/1 Poppins; color: {{ s.color }};">{{ s.value }}</div>
+                <div style="font: 500 11px/1.3 Poppins; color: #6C7280; margin-top: 4px;">{{ s.label }}</div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="display: flex; gap: 12px;">
+            <div style="flex: 1; background: #1478FF; border-radius: 18px; padding: 16px; color: #fff; box-shadow: 0 10px 22px rgba(20,120,255,0.28);">
+              <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(255,255,255,0.2); display: grid; place-items: center; font: 500 22px/1 Poppins;">+</div>
+              <div style="font: 600 15px/1.3 Poppins; margin-top: 12px;">Check-in<br>vehicle</div>
+            </div>
+            <div style="flex: 1; background: #fff; border-radius: 18px; padding: 16px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.06);">
+              <div style="width: 40px; height: 40px; border-radius: 12px; background: #EAF2FE; display: grid; place-items: center;">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#1478FF" style="stroke-width: 1.8px; stroke-linecap: round; stroke-linejoin: round;"><circle cx="11" cy="11" r="6.4"/><path d="M15.8 15.8 20 20"/></svg>
+              </div>
+              <div style="font: 600 15px/1.3 Poppins; color: #0F172A; margin-top: 12px;">Find<br>vehicle</div>
+            </div>
+          </div>
+
+          <div style="background: #fff; border-radius: 18px; padding: 14px; box-shadow: 0 1px 2px rgba(16,42,80,0.05), 0 10px 26px rgba(16,42,80,0.06); display: flex; align-items: center; justify-content: space-between;">
+            <div>
+              <div style="font: 600 14px/1 Poppins; color: #0F172A;">Hotel Parking Test</div>
+              <div style="font: 500 13px/1.4 Poppins; color: #6C7280; margin-top: 3px;">18 of 80 slots occupied</div>
+            </div>
+            <div style="width: 54px; height: 54px; border-radius: 50%; background: conic-gradient(#1478FF 0deg 79deg, #E6EDF7 79deg 360deg); display: grid; place-items: center;">
+              <div style="width: 40px; height: 40px; border-radius: 50%; background: #fff; display: grid; place-items: center; font: 700 13px Poppins; color: #0F172A;">22%</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="flex: none; background: #fff; border-top: 1px solid #E6EDF7; padding: 8px 8px 12px; display: flex;">
+          <sc-for list="{{ tabsA }}" as="t" hint-placeholder-count="4">
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 0;">
+              <div style="padding: 4px 20px; border-radius: 14px; background: {{ t.bg }}; color: {{ t.color }}; display: grid; place-items: center;">{{ t.icon }}</div>
+              <div style="font: {{ t.weight }} 12px/1 Poppins; color: {{ t.color }};">{{ t.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="max-width: 1000px; background: #fff; border: 1px solid #E2EAF5; border-radius: 20px; padding: 22px; display: flex; flex-direction: column; gap: 10px;">
+    <div style="font: 600 16px/1 Poppins; color: #0F172A;">Shared token set (all three)</div>
+    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+      <sc-for list="{{ swatches }}" as="s" hint-placeholder-count="8">
+        <div style="width: 132px; border: 1px solid #EDF1F7; border-radius: 12px; overflow: hidden;">
+          <div style="height: 46px; background: {{ s.hex }};"></div>
+          <div style="padding: 8px 10px;">
+            <div style="font: 600 12px/1.3 Poppins; color: #0F172A;">{{ s.name }}</div>
+            <div style="font: 400 11px/1.3 ui-monospace, monospace; color: #6C7280;">{{ s.hex }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="font: 400 13px/1.6 Poppins; color: #4A5565;">Poppins 400/500/600/700 · radii 12 control / 18–22 card / 999 pill · cards are white with an 8–10px blue-tinted shadow, no borders in 1a/1c and hairline #E2EAF5 borders in 1b · orange appears at most once per screen. Full spec lands in <span style="font-family: ui-monospace, monospace; font-size: 12px;">design.md</span> once you pick.</div>
+  </div>
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const ICOS = {
+      car: [["p","M5.6 12.2 7.2 8A1.9 1.9 0 0 1 9 6.7h6a1.9 1.9 0 0 1 1.8 1.3l1.6 4.2"],["r",3.4,12.2,17.2,4.6,1.6],["c",7.6,18.4,1.6],["c",16.4,18.4,1.6]],
+      bike: [["c",6,16.4,3.2],["c",18,16.4,3.2],["p","M9 16.4 12.2 9h3.4l2.4 7.4M11.4 9h4"]],
+      suv: [["p","M5.4 11.6 7 7.4A1.9 1.9 0 0 1 8.8 6.1h6.4a1.9 1.9 0 0 1 1.8 1.3l1.6 4.2"],["r",3.4,11.6,17.2,5.4,1.8],["c",7.6,18.6,1.5],["c",16.4,18.6,1.5]],
+      van: [["r",3,7.8,10.6,8.2,1.6],["p","M13.6 10.6h3.6l2.8 3.2V16h-6.4Z"],["c",7,18.4,1.5],["c",17,18.4,1.5]],
+      home: [["p","M4.5 10.6 12 4.7l7.5 5.9v8.3a1 1 0 0 1-1 1h-3.8v-5.6H9.3v5.6H5.5a1 1 0 0 1-1-1Z"]],
+      list: [["p","M4.5 7h15M4.5 12h15M4.5 17h9.5"]],
+      user: [["c",12,8.4,3.6],["p","M5 20c1.4-3.4 3.9-5 7-5s5.6 1.6 7 5"]],
+      users: [["c",9.4,8.6,3.3],["p","M3.4 19.4c1.2-3 3.3-4.4 6-4.4s4.8 1.4 6 4.4"],["p","M16.2 6.3a3.3 3.3 0 0 1 0 6.2M17.2 15.2c2 .6 3.3 2 4 4.2"]],
+      grid: [["r",4,4,7,7,1.8],["r",13,4,7,7,1.8],["r",4,13,7,7,1.8],["r",13,13,7,7,1.8]],
+      report: [["p","M6.2 3.8h7L18 8.4v11.8H6.2Z"],["p","M13.2 3.8v4.6H18"],["p","M9.2 16.6v-2.4M12 16.6v-4.4M14.8 16.6v-1.4"]],
+      message: [["p","M4.2 6.6A2.1 2.1 0 0 1 6.3 4.5h11.4a2.1 2.1 0 0 1 2.1 2.1v7a2.1 2.1 0 0 1-2.1 2.1H9.2l-5 3.8Z"]],
+      gear: [["c",12,12,3.1],["p","M12 3.6v2.3M12 18.1v2.3M5.3 7.8l2 1.2M16.7 15l2 1.2M5.3 16.2l2-1.2M16.7 9l2-1.2"]],
+      timer: [["c",12,13.2,7.4],["p","M12 13.2V9.6M9.6 3.6h4.8"]],
+      check: [["c",12,12,8.4],["p","M8.4 12.3 11 14.9l4.7-4.9"]],
+      checkSquare: [["r",4.6,4.6,14.8,14.8,3.4],["p","M8.6 12.2 11.2 14.8 15.8 9.8"]],
+      park: [["r",4.6,4.6,14.8,14.8,4],["p","M10 16.4V8.2h3.2a2.6 2.6 0 0 1 0 5.2H10"]],
+      rupee: [["p","M7.6 5h8.8M7.6 9.4h8.8M14.2 5c0 2.9-2.1 4.4-5.4 4.4H7.6l7.2 9.6"]],
+      hash: [["p","M9.4 4.6 7.8 19.4M16.2 4.6 14.6 19.4M5.2 9.2h13.6M4.4 14.8H18"]],
+      arrowRight: [["p","M4.8 12h14.4M13 5.8 19.2 12 13 18.2"]],
+      spark: [["p","M12 4.4 13.5 9 18 10.5 13.5 12 12 16.6 10.5 12 6 10.5 10.5 9Z"],["p","M18.3 15.2l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7Z"]],
+      xCircle: [["c",12,12,8.4],["p","M9.2 9.2l5.6 5.6M14.8 9.2l-5.6 5.6"]],
+      dotsH: [["c",5.6,12,1.35],["c",12,12,1.35],["c",18.4,12,1.35]],
+      search: [["c",11,11,6.4],["p","M15.8 15.8 20 20"]],
+      edit: [["p","M5 19h3.2l9.9-9.9-3.2-3.2L5 15.8Z"],["p","M14.4 5.4l3.2 3.2"]],
+      trash: [["p","M5.5 7.5h13M9.5 7.5V5.8h5v1.7M7.2 7.5l.9 12.2h7.8l.9-12.2"]],
+      bell: [["p","M6.6 10.4a5.4 5.4 0 0 1 10.8 0c0 3.9 1.6 5.4 1.6 5.4H5s1.6-1.5 1.6-5.4Z"],["p","M10.1 19a2 2 0 0 0 3.8 0"]],
+      menu: [["p","M4.5 7.5h15M4.5 12h11M4.5 16.5h15"]],
+      scan: [["p","M4.5 8.5v-2a2 2 0 0 1 2-2h2M15.5 4.5h2a2 2 0 0 1 2 2v2M19.5 15.5v2a2 2 0 0 1-2 2h-2M8.5 19.5h-2a2 2 0 0 1-2-2v-2"]],
+      lock: [["r",5,10.5,14,9,2.6],["p","M8.5 10.5V8.2a3.5 3.5 0 0 1 7 0v2.3"]],
+      arrowRightSm: [["p","M5 12h13M12.5 6.5 19 12l-6.5 5.5"]],
+      chevron: [["p","M9.5 5.5 16 12l-6.5 6.5"]],
+      eye: [["p","M2.6 12S6.1 6.6 12 6.6 21.4 12 21.4 12 17.9 17.4 12 17.4 2.6 12 2.6 12Z"],["c",12,12,3]],
+      shield: [["p","M12 3.5 19 6v5.5c0 4.3-3 7.4-7 9-4-1.6-7-4.7-7-9V6Z"],["p","M9.3 12.2 11.4 14.3 15 10.6"]],
+      sun: [["c",12,12,3.8],["p","M12 3.4v2.2M12 18.4v2.2M3.4 12h2.2M18.4 12h2.2M6 6l1.6 1.6M16.4 16.4 18 18M18 6l-1.6 1.6M7.6 16.4 6 18"]],
+      moon: [["p","M20 14.2A8.2 8.2 0 0 1 9.8 4 8.4 8.4 0 1 0 20 14.2Z"]],
+      signOut: [["p","M9.5 4.5H6a1.5 1.5 0 0 0-1.5 1.5v12A1.5 1.5 0 0 0 6 19.5h3.5"],["p","M14 8.5 17.5 12 14 15.5M17.5 12h-8"]],
+      close: [["p","M6.8 6.8l10.4 10.4M17.2 6.8 6.8 17.2"]],
+      phone: [["p","M5 4.6h3.2l1.4 3.6-2 1.4a11 11 0 0 0 5.4 5.4l1.4-2 3.6 1.4v3.1a1.5 1.5 0 0 1-1.6 1.5A15.5 15.5 0 0 1 3.5 6.1 1.5 1.5 0 0 1 5 4.6Z"]],
+      camera: [["r",3,7.6,18,12.4,2.6],["c",12,13.8,3.4],["p","M8.8 7.6 10 5.2h4l1.2 2.4"]],
+      key: [["c",9,15,3.4],["p","M11.4 12.6 19.5 4.5M16.8 7.2l2.2 2.2"]],
+    };
+    const ico = (name, size) => {
+      const kids = (ICOS[name] || []).map((s, i) =>
+        s[0] === "p" ? React.createElement("path", { key: i, d: s[1] })
+        : s[0] === "c" ? React.createElement("circle", { key: i, cx: s[1], cy: s[2], r: s[3], fill: name === "dotsH" ? "currentColor" : "none", stroke: name === "dotsH" ? "none" : "currentColor" })
+        : React.createElement("rect", { key: i, x: s[1], y: s[2], width: s[3], height: s[4], rx: s[5] }));
+      return React.createElement("svg", { viewBox: "0 0 24 24", width: size || 20, height: size || 20, fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round" }, kids);
+    };
+
+    const carSvg = React.createElement("svg", { viewBox: "0 0 24 24", width: 22, height: 22, fill: "#1478FF" },
+      React.createElement("path", { d: "M18.9 6.5A1.5 1.5 0 0 0 17.5 5.5h-11A1.5 1.5 0 0 0 5.1 6.5L3 12v6h2.5a2 2 0 0 0 4 0h5a2 2 0 0 0 4 0H21v-6l-2.1-5.5ZM6.5 7h11l1.5 4H5L6.5 7Z" }));
+    const pSvg = React.createElement("div", { style: { font: "700 18px Poppins", color: "#FF6B36" } }, "P");
+    const checkSvg = React.createElement("svg", { viewBox: "0 0 24 24", width: 22, height: 22, fill: "#12A150" },
+      React.createElement("path", { d: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm-1.2 14.4-4-4L8.2 11l2.6 2.6L16 8.4l1.4 1.4Z" }));
+    const timerSvg = React.createElement("svg", { viewBox: "0 0 24 24", width: 22, height: 22, fill: "#0B5FD6" },
+      React.createElement("path", { d: "M15 1H9v2h6Zm-2 12h-2V7h2ZM12 4a9 9 0 1 0 0 18 9 9 0 0 0 0-18Z" }));
+
+    const tabsA = [
+      { label: "Home", icon: ico("home", 21), active: true },
+      { label: "Queue", icon: ico("list", 21), active: false },
+      { label: "Vehicles", icon: ico("car", 21), active: false },
+      { label: "Profile", icon: ico("user", 21), active: false },
+    ].map((t) => ({
+      ...t,
+      bg: t.active ? "#E8F2FF" : "transparent",
+      color: t.active ? "#0B5FD6" : "#8A94A6",
+      weight: t.active ? 600 : 500,
+    }));
+
+    const tabsFor = (active) => tabsA.map((t) => ({
+      ...t,
+      bg: t.label === active ? "#E8F2FF" : "transparent",
+      color: t.label === active ? "#0B5FD6" : "#8A94A6",
+      weight: t.label === active ? 600 : 500,
+    }));
+
+    const DOCK_ICON = { Home: "home", Queue: "list", Vehicles: "car", Profile: "user" };
+    const dockFor = (active) => ["Home", "Queue", "Vehicles", "Profile"].map((l) => ({
+      label: l,
+      icon: ico(DOCK_ICON[l], 22),
+      bg: l === active ? "#2563EB" : "transparent",
+      iconColor: l === active ? "#FFFFFF" : "#94A3B8",
+      labelColor: l === active ? "#2563EB" : "#94A3B8",
+      weight: l === active ? 600 : 500,
+    }));
+
+    const thumb = (img, size, radius) => React.createElement("div", { style: { width: size, height: size, borderRadius: radius, flex: "none", backgroundColor: "#EEF2F9", backgroundImage: "url('" + img + "')", backgroundSize: "cover", backgroundPosition: "center" } });
+    const withThumb = (rows, size, radius) => rows.map((r) => ({ ...r, thumb: thumb(r.img, size, radius) }));
+    // thumbnails are built here so no unresolved {{ }} URL is ever fetched
+
+    return {
+      iconUser: ico("user", 20),
+      iconLock: ico("lock", 20),
+      iconEye: ico("eye", 20),
+      iconArrow: ico("arrowRightSm", 20),
+      iconShieldSm: ico("shield", 15),
+      iconMenu: ico("menu", 22),
+      iconBell: ico("bell", 22),
+      iconChevron: ico("chevron", 20),
+      iconDots: ico("dotsH", 20),
+      iconSearch: ico("search", 20),
+      iconCheckSq: ico("checkSquare", 21),
+      iconRupee: ico("rupee", 21),
+      iconEdit: ico("edit", 21),
+      iconSun: ico("sun", 18),
+      iconMoon: ico("moon", 18),
+      iconSignOut: ico("signOut", 20),
+      iconCar: ico("car", 24),
+      iconClose: ico("close", 16),
+      iconScan: ico("scan", 20),
+      iconPhone: ico("phone", 19),
+      iconCamera: ico("camera", 20),
+      iconKey: ico("key", 24),
+      dockHome: dockFor("Home"),
+      dockQueue: dockFor("Queue"),
+      dockVehicles: dockFor("Vehicles"),
+      dockProfile: dockFor("Profile"),
+      premiumKpis: [
+        { value: "1", label: "Active vehicles", tint: "#EFF5FF", color: "#2563EB", icon: ico("car", 22) },
+        { value: "0", label: "Arrived", tint: "#FFF1EB", color: "#FF6A3D", icon: ico("park", 22) },
+        { value: "0", label: "Completed today", tint: "#EBFAF0", color: "#16A34A", icon: ico("check", 22) },
+        { value: "—", label: "Avg turnaround", tint: "#F1F5FF", color: "#1D4FD8", icon: ico("timer", 22) },
+      ],
+      premiumQueue: withThumb([
+        { plate: "KA123555", model: "Royal Enfield Classic 350", meta: "Slot 4", photos: "2 photos", img: "assets/img_vehicle_bike.png", status: "ARRIVED", accent: "#16A34A", chipBg: "#EBFAF0", chipText: "#15803D", time: "2m ago", cta: "Complete handover", ctaStyle: "background: linear-gradient(135deg, #FF7A4D 0%, #FF6A3D 100%); color: #fff; box-shadow: 0 8px 20px rgba(255,106,61,0.28);" },
+        { plate: "KA04NB5432", model: "Maruti XUV 700", meta: "Slot L1-01", photos: "", img: "assets/img_vehicle_car.png", status: "PARKED", accent: "#2563EB", chipBg: "#EFF5FF", chipText: "#1D4FD8", time: "just now", cta: "Guest requested", ctaStyle: "background: #EFF5FF; color: #1D4FD8;" },
+      ], 76, 20),
+      premiumVehicles: withThumb([
+        { plate: "TESTPHASEA1", line1: "Car · 9998887770", line2: "Slot L1-01", line3: "", img: "assets/img_vehicle_sedan.png", status: "Voided", accent: "#EF4444", chipBg: "#FEF0F0" },
+        { plate: "KA123555", line1: "Bike · 8050105778", line2: "Slot 4", line3: "In: Test Operator Final", img: "assets/img_vehicle_bike.png", status: "Arrived", accent: "#16A34A", chipBg: "#EBFAF0" },
+        { plate: "KA51MN6460", line1: "Car · 8969977921", line2: "Slot A-101 · ₹800 pending", line3: "In: Vikas · Out: Test Operator Final", img: "assets/img_vehicle_sedan.png", status: "Completed", accent: "#16A34A", chipBg: "#EBFAF0" },
+        { plate: "MH14ZZ1111", line1: "Car · 9812345678", line2: "Slot —", line3: "", img: "assets/img_vehicle_car.png", status: "Voided", accent: "#EF4444", chipBg: "#FEF0F0" },
+      ], 72, 18),
+      profileRows: [
+        { label: "My shift status", value: "Clocked In", valueColor: "#16A34A", showDot: "inline-block" },
+        { label: "Notifications", value: "On · push + in-app", valueColor: "#64748B", showDot: "none" },
+        { label: "App version", value: "0.4.1 (build 5)", valueColor: "#64748B", showDot: "none" },
+      ],
+      moreSheets: [
+        { title: "Mark as parked", sub: "Choose the slot this vehicle is in", tint: "#EFF5FF", color: "#2563EB", icon: ico("park", 22) },
+        { title: "Dispatch operator", sub: "Send this pickup to an available operator", tint: "#FFF1EB", color: "#FF6A3D", icon: ico("users", 22) },
+        { title: "Edit vehicle details", sub: "Correct a mis-entered plate or number", tint: "#F1F5FF", color: "#1D4FD8", icon: ico("edit", 22) },
+        { title: "Void ticket", sub: "Frees the slot and drops it from the queue", tint: "#FEF0F0", color: "#EF4444", icon: ico("trash", 22) },
+      ],
+      tabsA,
+      tabsQueue: tabsFor("Queue"),
+      tabsVehicles: tabsFor("Vehicles"),
+      tabsProfile: tabsFor("Profile"),
+      queueChips: [
+        { label: "All", active: true },
+        { label: "Checked in", active: false },
+        { label: "Parked", active: false },
+        { label: "Requested", active: false },
+      ].map((c) => ({
+        ...c,
+        bg: c.active ? "#1478FF" : "#FFFFFF",
+        color: c.active ? "#FFFFFF" : "#4A5565",
+        border: c.active ? "#1478FF" : "#DCE5F2",
+      })),
+      summaryR: [
+        { value: "2", label: "Active", color: "#1478FF", bg: "#EAF2FE" },
+        { value: "0", label: "Checked in", color: "#0B5FD6", bg: "#EAF2FE" },
+        { value: "1", label: "Parked", color: "#12A150", bg: "#E4F7EC" },
+        { value: "0", label: "Requested", color: "#E8890C", bg: "#FDF3E3" },
+      ],
+      vehiclesR: withThumb([
+        { plate: "TESTPHASEA1", status: "Voided", type: "Car", mobile: "9998887770", meta: "Slot L1-01", extra: "", img: "assets/img_vehicle_sedan.png", accent: "#E23D3D", pillBg: "#FDECEC" },
+        { plate: "KA123555", status: "Arrived", type: "Bike", mobile: "8050105778", meta: "Slot 4", extra: "In: Test Operator Final", img: "assets/img_vehicle_bike.png", accent: "#12A150", pillBg: "#E4F7EC" },
+        { plate: "KA51MN6460", status: "Completed", type: "Car", mobile: "8969977921", meta: "Slot A-101 · ₹800 pending", extra: "In: Vikas · Out: Test Operator Final", img: "assets/img_vehicle_sedan.png", accent: "#12A150", pillBg: "#E4F7EC" },
+        { plate: "MH14ZZ1111", status: "Voided", type: "Car", mobile: "9812345678", meta: "Slot —", extra: "", img: "assets/img_vehicle_car.png", accent: "#E23D3D", pillBg: "#FDECEC" },
+      ], 64, 13),
+      typeTiles: [
+        { label: "4-Wheeler", glyph: ico("car", 22), bg: "#E8F2FF", border: "#1478FF", fg: "#0B5FD6", weight: 600, bgP: "#EFF5FF", borderP: "#2563EB", fgP: "#1D4FD8", shadowP: "0 0 0 4px rgba(37,99,235,0.10)" },
+        { label: "Bike", glyph: ico("bike", 22), bg: "#F7FAFE", border: "#DCE5F2", fg: "#6C7280", weight: 500, bgP: "#F8FAFD", borderP: "#E7EDF6", fgP: "#64748B", shadowP: "none" },
+        { label: "Car", glyph: ico("suv", 22), bg: "#F7FAFE", border: "#DCE5F2", fg: "#6C7280", weight: 500, bgP: "#F8FAFD", borderP: "#E7EDF6", fgP: "#64748B", shadowP: "none" },
+        { label: "SUV", glyph: ico("van", 22), bg: "#F7FAFE", border: "#DCE5F2", fg: "#6C7280", weight: 500, bgP: "#F8FAFD", borderP: "#E7EDF6", fgP: "#64748B", shadowP: "none" },
+      ],
+      photoTiles: ["Front", "Back", "Left", "Right"],
+      kpisA: [
+        { value: "1", label: "Active Vehicles", tint: "#E8F2FF", icon: ico("car", 21) },
+        { value: "0", label: "Arrived", tint: "#FFEDE4", icon: ico("park", 21) },
+        { value: "0", label: "Completed Today", tint: "#E4F7EC", icon: ico("check", 21) },
+        { value: "—", label: "Avg Turnaround", tint: "#EAF2FE", icon: ico("timer", 21) },
+      ],
+      kpisB: [
+        { value: "1", label: "Active vehicles", accent: "#1478FF" },
+        { value: "0", label: "Arrived", accent: "#FF6B36" },
+        { value: "0", label: "Completed today", accent: "#12A150" },
+        { value: "—", label: "Avg turnaround", accent: "#0B5FD6" },
+      ],
+      stripC: [
+        { value: "2", label: "Active", color: "#1478FF" },
+        { value: "0", label: "Checked in", color: "#0B5FD6" },
+        { value: "1", label: "Parked", color: "#12A150" },
+        { value: "0", label: "Requested", color: "#E8890C" },
+      ],
+      swatches: [
+        { name: "Brand blue", hex: "#1478FF" },
+        { name: "Blue deep", hex: "#0B5FD6" },
+        { name: "Sky tint", hex: "#E8F2FF" },
+        { name: "Sky field", hex: "#CFE4FF" },
+        { name: "CTA orange", hex: "#FF6B36" },
+        { name: "Ink", hex: "#0F172A" },
+        { name: "Ink muted", hex: "#6C7280" },
+        { name: "Hairline", hex: "#E2EAF5" },
+        { name: "Success", hex: "#12A150" },
+        { name: "Warning", hex: "#E8890C" },
+        { name: "Danger", hex: "#E23D3D" },
+        { name: "Surface", hex: "#FFFFFF" },
+      ],
+    };
+  }
+}
+
+</script>
+</body>
+</html>

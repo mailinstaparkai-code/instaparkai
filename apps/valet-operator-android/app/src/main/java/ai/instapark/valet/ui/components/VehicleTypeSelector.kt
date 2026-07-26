@@ -14,10 +14,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.LocalShipping
-import androidx.compose.material.icons.filled.MoreHoriz
-import androidx.compose.material.icons.filled.TwoWheeler
+import androidx.compose.material.icons.outlined.DirectionsCar
+import androidx.compose.material.icons.outlined.LocalShipping
+import androidx.compose.material.icons.outlined.MoreHoriz
+import androidx.compose.material.icons.outlined.TwoWheeler
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -33,10 +33,10 @@ import androidx.compose.ui.unit.dp
 private fun iconFor(vehicleTypeValue: String): ImageVector {
     val t = vehicleTypeValue.lowercase()
     return when {
-        "bike" in t || "motor" in t || "scoot" in t || "2" in t -> Icons.Filled.TwoWheeler
-        "truck" in t || "van" in t -> Icons.Filled.LocalShipping
-        "car" in t || "sedan" in t || "4" in t -> Icons.Filled.DirectionsCar
-        else -> Icons.Filled.MoreHoriz
+        "bike" in t || "motor" in t || "scoot" in t || "2" in t -> Icons.Outlined.TwoWheeler
+        "truck" in t || "van" in t -> Icons.Outlined.LocalShipping
+        "car" in t || "sedan" in t || "4" in t -> Icons.Outlined.DirectionsCar
+        else -> Icons.Outlined.MoreHoriz
     }
 }
 
@@ -60,12 +60,12 @@ fun VehicleTypeSelector(
                 row.forEach { option ->
                     val active = option.value == selected
                     val bg by animateColorAsState(
-                        targetValue = if (active) colors.purple.copy(alpha = 0.35f) else colors.backgroundDeep,
+                        targetValue = if (active) colors.tintBlue else colors.fieldFill,
                         animationSpec = tween(200),
                         label = "vehicleTypeBg",
                     )
                     val border by animateColorAsState(
-                        targetValue = if (active) colors.purple else colors.cardBorder,
+                        targetValue = if (active) colors.primary else colors.fieldBorder,
                         animationSpec = tween(200),
                         label = "vehicleTypeBorder",
                     )
@@ -82,14 +82,14 @@ fun VehicleTypeSelector(
                         Icon(
                             iconFor(option.value),
                             contentDescription = null,
-                            tint = if (active) colors.purple else colors.textSecondary,
+                            tint = if (active) colors.primary else colors.inkSecondary,
                             modifier = Modifier.padding(bottom = 6.dp),
                         )
                         Text(
                             option.label,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
-                            color = if (active) MaterialTheme.colorScheme.onBackground else colors.textSecondary,
+                            color = if (active) colors.primary else colors.inkSecondary,
                         )
                     }
                 }

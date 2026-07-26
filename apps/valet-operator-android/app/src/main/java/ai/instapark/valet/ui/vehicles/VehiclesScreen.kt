@@ -28,8 +28,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CurrencyRupee
-import androidx.compose.material.icons.filled.FactCheck
+import androidx.compose.material.icons.outlined.CurrencyRupee
+import androidx.compose.material.icons.automirrored.outlined.FactCheck
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
@@ -79,22 +79,22 @@ private fun VehiclesContent(response: VehiclesResponse, viewModel: VehiclesViewM
             Text(
                 "${response.totalCount} record(s)",
                 style = MaterialTheme.typography.bodyMedium,
-                color = colors.textSecondary,
+                color = colors.inkSecondary,
             )
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatCard(
-                    icon = Icons.Filled.FactCheck,
+                    icon = Icons.AutoMirrored.Outlined.FactCheck,
                     value = response.stats.completedCount.toString(),
                     label = "Completed (last 500)",
-                    accent = colors.purple,
+                    accent = colors.primary,
                     modifier = Modifier.weight(1f),
                 )
                 StatCard(
-                    icon = Icons.Filled.CurrencyRupee,
+                    icon = Icons.Outlined.CurrencyRupee,
                     value = "₹${response.stats.totalRevenue}",
                     label = "Revenue",
-                    accent = colors.green,
+                    accent = colors.success,
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -157,24 +157,20 @@ private fun StatCard(
     modifier: Modifier = Modifier,
 ) {
     val colors = ValetTheme.colors
-    GlassCard(modifier = modifier, accent = accent, cornerRadius = 18.dp) {
+    GlassCard(modifier = modifier, cornerRadius = 18.dp) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 modifier = Modifier
                     .size(44.dp)
                     .clip(CircleShape)
-                    .background(
-                        Brush.linearGradient(
-                            listOf(accent.copy(alpha = 0.35f), accent.copy(alpha = 0.12f))
-                        )
-                    ),
+                    .background(accent.copy(alpha = 0.14f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(icon, contentDescription = null, tint = accent, modifier = Modifier.size(22.dp))
             }
             Column(modifier = Modifier.padding(start = 12.dp)) {
-                Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text(label, style = MaterialTheme.typography.labelSmall, color = colors.textSecondary)
+                Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = colors.ink)
+                Text(label, style = MaterialTheme.typography.labelSmall, color = colors.inkSecondary)
             }
         }
     }
@@ -194,7 +190,7 @@ private fun vehicleImageRes(vehicleType: String): Int {
 private fun VehicleTicketCard(ticket: Ticket, modifier: Modifier = Modifier) {
     val colors = ValetTheme.colors
     val accent = statusAccent(ticket.status)
-    GlassCard(modifier = modifier.fillMaxWidth(), accent = accent) {
+    GlassCard(modifier = modifier.fillMaxWidth()) {
         Row {
             Image(
                 painter = painterResource(vehicleImageRes(ticket.vehicleType)),
@@ -216,33 +212,33 @@ private fun VehicleTicketCard(ticket: Ticket, modifier: Modifier = Modifier) {
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                     )
-                    StatusPill(label = statusLabel(ticket.status), accent = accent)
+                    StatusPill(status = ticket.status, label = statusLabel(ticket.status))
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         ticket.vehicleType.replaceFirstChar { it.uppercase() },
                         style = MaterialTheme.typography.bodySmall,
-                        color = colors.textSecondary,
+                        color = colors.inkSecondary,
                     )
                     Text(" • ", color = accent)
                     Text(
                         ticket.mobileNumber,
                         style = MaterialTheme.typography.bodySmall,
-                        color = colors.textSecondary,
+                        color = colors.inkSecondary,
                     )
                 }
                 Spacer(Modifier.height(4.dp))
                 Text(
                     "Slot: ${ticket.slotNumber ?: "—"}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = colors.textSecondary,
+                    color = colors.inkSecondary,
                 )
                 if (ticket.fareAmount != null) {
                     Text(
                         "₹${ticket.fareAmount} ${if (ticket.paymentCollected) "paid" else "pending"}",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Medium,
-                        color = if (ticket.paymentCollected) colors.green else colors.warning,
+                        color = if (ticket.paymentCollected) colors.success else colors.warning,
                     )
                 }
                 val inOp = ticket.checkedInOperator?.let { it.fullName ?: it.username }
@@ -252,12 +248,12 @@ private fun VehicleTicketCard(ticket: Ticket, modifier: Modifier = Modifier) {
                         Text(
                             "In: ",
                             style = MaterialTheme.typography.bodySmall,
-                            color = colors.textSecondary,
+                            color = colors.inkSecondary,
                         )
                         Text(
                             listOfNotNull(inOp, outOp?.let { "Out: $it" }).joinToString(" · "),
                             style = MaterialTheme.typography.bodySmall,
-                            color = colors.purple,
+                            color = colors.primary,
                         )
                     }
                 }

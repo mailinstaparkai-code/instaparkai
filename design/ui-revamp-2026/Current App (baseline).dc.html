@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #eceef2; font-family: Roboto, system-ui, sans-serif; }
+  a { color: #287BFF; text-decoration: none; }
+  a:hover { color: #4b93ff; }
+  * { box-sizing: border-box; }
+</style>
+</helmet>
+<section style="padding: 48px; display: flex; flex-direction: column; gap: 28px;">
+  <div style="display: flex; flex-direction: column; gap: 8px; max-width: 900px;">
+    <div style="font: 700 13px/1 Roboto; letter-spacing: 0.14em; color: #64748B; text-transform: uppercase;">Baseline · recreated from valet-operator-android v0.4.1</div>
+    <div style="font: 900 40px/1.1 Roboto; color: #0F172A;">Current InstaPark Valet app — as it ships today</div>
+    <div style="font: 400 16px/1.55 Roboto; color: #475569; text-wrap: pretty;">Rebuilt from the Compose source (<span style="font-family: ui-monospace, monospace; font-size: 14px;">ui/theme/Color.kt</span>, <span style="font-family: ui-monospace, monospace; font-size: 14px;">DashboardScreen.kt</span>, <span style="font-family: ui-monospace, monospace; font-size: 14px;">QueueScreen.kt</span>, <span style="font-family: ui-monospace, monospace; font-size: 14px;">VehiclesScreen.kt</span>, <span style="font-family: ui-monospace, monospace; font-size: 14px;">ProfileScreen.kt</span>, <span style="font-family: ui-monospace, monospace; font-size: 14px;">LoginScreen.kt</span>, <span style="font-family: ui-monospace, monospace; font-size: 14px;">PremiumDialog.kt</span>) so the revamp can be compared 1:1. Dark-first, orange-led, purple dialog chrome.</div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start;">
+
+    <!-- LOGIN -->
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="font: 700 13px/1 Roboto; color: #334155;">Login</div>
+      <div style="width: 390px; height: 844px; background: #0B0F17; border-radius: 26px; overflow: hidden; color: #F8FAFC; display: flex; flex-direction: column; padding: 24px; justify-content: center; box-shadow: 0 18px 40px rgba(15,23,42,0.18);">
+        <div style="font: 700 30px/1.2 Roboto;">InstaPark Valet</div>
+        <div style="font: 400 15px/1.4 Roboto; color: #A1A7B3; margin-top: 8px;">Sign in to continue.</div>
+        <div style="height: 24px;"></div>
+        <div style="border: 1px solid #1C2333; border-radius: 4px; height: 56px; display: flex; align-items: center; padding: 0 16px; font: 400 15px Roboto; color: #A1A7B3;">Username</div>
+        <div style="height: 12px;"></div>
+        <div style="border: 1px solid #1C2333; border-radius: 4px; height: 56px; display: flex; align-items: center; padding: 0 16px; font: 400 15px Roboto; color: #A1A7B3;">Password</div>
+        <div style="height: 20px;"></div>
+        <div style="height: 48px; border-radius: 24px; background: #FF5A1F; color: #F8FAFC; display: flex; align-items: center; justify-content: center; font: 500 15px Roboto; letter-spacing: 0.02em;">Sign in</div>
+      </div>
+    </div>
+
+    <!-- HOME -->
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="font: 700 13px/1 Roboto; color: #334155;">Home / Dashboard</div>
+      <div style="width: 390px; height: 844px; background: #0B0F17; border-radius: 26px; overflow: hidden; color: #F8FAFC; display: flex; flex-direction: column; box-shadow: 0 18px 40px rgba(15,23,42,0.18);">
+        <div style="height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px 0 16px; flex: none;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <img src="assets/img_p_mark.png" alt="" style="width: 26px; height: 26px; object-fit: contain;">
+            <div style="font: 500 17px/1 Roboto;"><span style="font-weight: 700;">Insta</span><span style="font-weight: 700; color: #FF5A1F;">Park</span><span style="color: #A1A7B3;"> Valet</span></div>
+          </div>
+          <div style="position: relative; width: 40px; height: 40px; display: grid; place-items: center;">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="#A1A7B3"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22Zm7-6-1.6-2.1V10a5.4 5.4 0 0 0-4-5.2V4a1.4 1.4 0 0 0-2.8 0v.8A5.4 5.4 0 0 0 6.6 10v3.9L5 16v1h14Z"/></svg>
+            <div style="position: absolute; top: 4px; right: 4px; min-width: 16px; height: 16px; border-radius: 8px; background: #EF4444; color: #fff; font: 700 10px/16px Roboto; text-align: center;">3</div>
+          </div>
+        </div>
+        <div style="flex: 1; overflow: hidden; display: flex; flex-direction: column;">
+          <div style="position: relative; height: 190px; flex: none;">
+            <img src="assets/img_hero_valet.webp" alt="" style="position: absolute; inset: 0; width: 100%; height: 190px; object-fit: cover; object-position: top right;">
+            <div style="position: absolute; inset: 0; background: linear-gradient(90deg, #0B0F17 0%, rgba(11,15,23,0.55) 45%, transparent 100%);"></div>
+            <div style="position: absolute; inset: 0; background: linear-gradient(180deg, transparent 55%, #0B0F17 100%);"></div>
+            <div style="position: absolute; inset: 0; padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+              <div style="font: 700 24px/1.2 Roboto;">Good evening,<br><span style="color: #287BFF;">Vikas</span> 👋</div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="font: 400 14px Roboto; color: #A1A7B3;">Hotel Parking Test</div>
+                <div style="display: flex; align-items: center; gap: 6px; background: rgba(35,194,107,0.15); border-radius: 50px; padding: 4px 10px;">
+                  <div style="width: 6px; height: 6px; border-radius: 50%; background: #19E07B;"></div>
+                  <div style="font: 400 11px Roboto; color: #19E07B;">Valet enabled</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="padding: 0 16px; display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; gap: 10px;">
+              <sc-for list="{{ baselineStats }}" as="s" hint-placeholder-count="2">
+                <div style="flex: 1; border-radius: 16px; background: #0F141E; border: 1px solid #1C2333; padding: 16px;">
+                  <div style="width: 40px; height: 40px; border-radius: 12px; background: rgba(40,123,255,0.22); display: grid; place-items: center; font: 700 15px Roboto; color: #287BFF;">{{ s.glyph }}</div>
+                  <div style="font: 700 28px/1.2 Roboto; margin-top: 10px;">{{ s.value }}</div>
+                  <div style="font: 400 13px Roboto; color: #A1A7B3;">{{ s.label }}</div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <div style="flex: 1; height: 210px; border-radius: 20px; background: #0F141E; border: 1px solid #1C2333; padding: 16px; display: flex; flex-direction: column;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div style="font: 500 15px Roboto;">Queue (1)</div>
+                  <div style="font: 500 12px Roboto; color: #287BFF;">View all</div>
+                </div>
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center;">
+                  <svg viewBox="0 0 24 24" width="44" height="44" fill="rgba(161,167,179,0.45)"><path d="M18.9 6.5A1.5 1.5 0 0 0 17.5 5.5h-11A1.5 1.5 0 0 0 5.1 6.5L3 12v6h2.5a2 2 0 0 0 4 0h5a2 2 0 0 0 4 0H21v-6l-2.1-5.5ZM6.5 7h11l1.5 4H5L6.5 7Z"/></svg>
+                  <div style="font: 400 13px Roboto;">1 active vehicle(s)</div>
+                  <div style="font: 400 11px Roboto; color: #A1A7B3;">Open the Queue tab to act</div>
+                </div>
+              </div>
+              <div style="flex: 1; height: 210px; border-radius: 20px; background: #0F141E; border: 1px solid #1C2333; padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+                <div style="font: 500 15px Roboto;">Quick Actions</div>
+                <div style="display: flex; align-items: center; gap: 10px; background: #070A10; border-radius: 12px; padding: 12px;">
+                  <div style="width: 28px; height: 28px; border-radius: 50%; background: rgba(255,90,31,0.2); color: #FF5A1F; display: grid; place-items: center; font: 700 16px Roboto;">+</div>
+                  <div style="flex: 1; font: 500 13px/1.25 Roboto;">Check-in Vehicle</div>
+                  <div style="color: #A1A7B3; font: 400 16px Roboto;">›</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px; background: #070A10; border-radius: 12px; padding: 12px;">
+                  <div style="width: 28px; height: 28px; border-radius: 50%; background: rgba(40,123,255,0.2); color: #287BFF; display: grid; place-items: center; font: 700 13px Roboto;">⌕</div>
+                  <div style="flex: 1; font: 500 13px/1.25 Roboto;">Find Vehicle</div>
+                  <div style="color: #A1A7B3; font: 400 16px Roboto;">›</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="height: 72px; flex: none; background: #070A10; display: flex; align-items: center; padding: 0 8px;">
+          <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+              <div style="padding: 4px 18px; border-radius: 16px; background: {{ t.homeBg }};">{{ t.icon }}</div>
+              <div style="font: 500 12px Roboto; color: {{ t.homeColor }};">{{ t.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUEUE -->
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="font: 700 13px/1 Roboto; color: #334155;">Live Queue</div>
+      <div style="width: 390px; height: 844px; background: #0B0F17; border-radius: 26px; overflow: hidden; color: #F8FAFC; display: flex; flex-direction: column; box-shadow: 0 18px 40px rgba(15,23,42,0.18);">
+        <div style="height: 56px; display: flex; align-items: center; gap: 6px; padding: 0 16px; flex: none;">
+          <img src="assets/img_p_mark.png" alt="" style="width: 26px; height: 26px; object-fit: contain;">
+          <div style="font: 500 17px/1 Roboto;"><span style="font-weight: 700;">Insta</span><span style="font-weight: 700; color: #FF5A1F;">Park</span><span style="color: #A1A7B3;"> Valet</span></div>
+        </div>
+        <div style="padding: 16px; display: flex; flex-direction: column; gap: 12px; flex: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font: 700 24px/1.2 Roboto;">Live Queue</div>
+              <div style="display: flex; align-items: center; gap: 6px; margin-top: 2px;">
+                <div style="width: 7px; height: 7px; border-radius: 50%; background: #19E07B;"></div>
+                <div style="font: 400 14px Roboto; color: #A1A7B3;">2 active vehicle(s)</div>
+              </div>
+            </div>
+            <div style="background: #FF5A1F; color: #fff; border-radius: 50px; padding: 10px 18px; font: 500 14px Roboto;">+ Check-in</div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <div style="background: #1C2333; border-radius: 8px; padding: 7px 14px; font: 400 13px Roboto;">All</div>
+            <div style="border: 1px solid #1C2333; border-radius: 8px; padding: 7px 14px; font: 400 13px Roboto; color: #F8FAFC;">Checked in</div>
+            <div style="border: 1px solid #1C2333; border-radius: 8px; padding: 7px 14px; font: 400 13px Roboto;">Parked</div>
+            <div style="border: 1px solid #1C2333; border-radius: 8px; padding: 7px 14px; font: 400 13px Roboto;">Requested</div>
+          </div>
+        </div>
+        <div style="flex: 1; overflow: hidden; padding: 8px 16px; display: flex; flex-direction: column; gap: 12px;">
+          <div style="border-radius: 20px; background: #0F141E; border: 1px solid #1C2333; padding: 16px; display: flex; flex-direction: column; gap: 8px; background-image: radial-gradient(circle at 20% 0%, rgba(35,194,107,0.14), transparent 70%);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center; gap: 6px; background: rgba(35,194,107,0.15); border-radius: 50px; padding: 4px 10px;">
+                <div style="width: 6px; height: 6px; border-radius: 50%; background: #23C26B;"></div>
+                <div style="font: 500 11px Roboto; color: #23C26B;">ARRIVED</div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="font: 400 11px Roboto; color: #A1A7B3;">2d ago</div>
+                <div style="color: #A1A7B3; font: 700 16px Roboto; letter-spacing: 2px;">⋮</div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 14px;">
+              <img src="assets/img_vehicle_bike.png" alt="Bike" style="width: 88px; height: 88px; border-radius: 14px; object-fit: cover; border: 1px solid rgba(35,194,107,0.4);">
+              <div>
+                <div style="font: 700 22px/1.2 Roboto;">KA123555</div>
+                <div style="font: 400 13px Roboto; color: #A1A7B3;">Bike <span style="color: #23C26B;">•</span> 8050105778</div>
+                <div style="font: 400 13px Roboto; color: #A1A7B3; margin-top: 6px;">Slot: 4</div>
+                <div style="font: 500 13px Roboto; color: #23C26B;">2 photo(s)</div>
+              </div>
+            </div>
+            <div style="height: 44px; border-radius: 14px; background: #FF5A1F; color: #fff; display: grid; place-items: center; font: 500 15px Roboto; margin-top: 4px;">Complete handover</div>
+          </div>
+          <div style="border-radius: 20px; background: #0F141E; border: 1px solid #1C2333; padding: 16px; display: flex; flex-direction: column; gap: 8px; background-image: radial-gradient(circle at 20% 0%, rgba(59,130,246,0.14), transparent 70%);">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center; gap: 6px; background: rgba(59,130,246,0.15); border-radius: 50px; padding: 4px 10px;">
+                <div style="width: 6px; height: 6px; border-radius: 50%; background: #3B82F6;"></div>
+                <div style="font: 500 11px Roboto; color: #3B82F6;">PARKED</div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <div style="font: 400 11px Roboto; color: #A1A7B3;">just now</div>
+                <div style="color: #A1A7B3; font: 700 16px Roboto; letter-spacing: 2px;">⋮</div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 14px;">
+              <img src="assets/img_vehicle_car.png" alt="Car" style="width: 88px; height: 88px; border-radius: 14px; object-fit: cover; border: 1px solid rgba(59,130,246,0.4);">
+              <div>
+                <div style="font: 700 22px/1.2 Roboto;">KA04NB5432</div>
+                <div style="font: 400 13px Roboto; color: #A1A7B3;">Xuv <span style="color: #3B82F6;">•</span> 9353240270</div>
+                <div style="font: 400 13px Roboto; color: #A1A7B3; margin-top: 6px;">Slot: L1-01</div>
+              </div>
+            </div>
+          </div>
+          <div style="border-radius: 20px; background: #0F141E; border: 1px solid #1C2333; padding: 16px;">
+            <div style="font: 500 15px Roboto;">Today's Summary</div>
+            <div style="display: flex; gap: 8px; margin-top: 10px;">
+              <sc-for list="{{ summaryCells }}" as="c" hint-placeholder-count="4">
+                <div style="flex: 1; border-radius: 12px; background: {{ c.bg }}; padding: 10px 0; text-align: center;">
+                  <div style="font: 700 15px Roboto; color: {{ c.color }};">{{ c.value }}</div>
+                  <div style="font: 400 11px Roboto; color: #A1A7B3;">{{ c.label }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <div style="height: 72px; flex: none; background: #070A10; display: flex; align-items: center; padding: 0 8px;">
+          <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+              <div style="padding: 4px 18px; border-radius: 16px; background: {{ t.queueBg }};">{{ t.icon }}</div>
+              <div style="font: 500 12px Roboto; color: {{ t.queueColor }};">{{ t.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHECK-IN DIALOG -->
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="font: 700 13px/1 Roboto; color: #334155;">Check-in dialog (PremiumDialog)</div>
+      <div style="width: 390px; height: 844px; background: #0B0F17; border-radius: 26px; overflow: hidden; position: relative; color: #F8FAFC; box-shadow: 0 18px 40px rgba(15,23,42,0.18);">
+        <div style="position: absolute; inset: 0; background: rgba(4,6,10,0.75);"></div>
+        <div style="position: absolute; inset: 20px; display: grid; place-items: center;">
+          <div style="width: 100%; border-radius: 24px; background: #0F141E; border: 1px solid #1C2333; padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; gap: 14px; align-items: flex-start;">
+              <div style="width: 48px; height: 48px; border-radius: 50%; background: rgba(139,92,246,0.2); display: grid; place-items: center;">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="#8B5CF6"><path d="M18.9 6.5A1.5 1.5 0 0 0 17.5 5.5h-11A1.5 1.5 0 0 0 5.1 6.5L3 12v6h2.5a2 2 0 0 0 4 0h5a2 2 0 0 0 4 0H21v-6l-2.1-5.5ZM6.5 7h11l1.5 4H5L6.5 7Z"/></svg>
+              </div>
+              <div style="flex: 1;">
+                <div style="font: 700 22px/1.2 Roboto;">Check-in Vehicle</div>
+                <div style="font: 400 13px Roboto; color: #A1A7B3; margin-top: 2px;">Enter vehicle details to check-in</div>
+              </div>
+              <div style="width: 32px; height: 32px; border-radius: 50%; background: #070A10; display: grid; place-items: center; font: 400 15px Roboto; color: #F8FAFC;">✕</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <div style="font: 500 12px Roboto; color: #A1A7B3;">Vehicle number</div>
+                <div style="border: 2px solid #FF5A1F; border-radius: 12px; height: 52px; display: flex; align-items: center; gap: 10px; padding: 0 12px;">
+                  <div style="background: rgba(139,92,246,0.3); border-radius: 8px; padding: 4px 8px; font: 700 11px Roboto;">IND</div>
+                  <div style="font: 400 15px Roboto;">KA01AB1234</div>
+                </div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                <div style="font: 500 12px Roboto; color: #A1A7B3;">Vehicle type</div>
+                <div style="display: flex; gap: 8px;">
+                  <sc-for list="{{ vehicleTypes }}" as="v" hint-placeholder-count="4">
+                    <div style="flex: 1; border-radius: 14px; background: {{ v.bg }}; border: 1px solid {{ v.border }}; padding: 12px 0; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                      <div style="font: 400 15px Roboto; color: {{ v.fg }};">{{ v.glyph }}</div>
+                      <div style="font: 500 11px Roboto; color: {{ v.fg }};">{{ v.label }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 4px;">
+                <div style="font: 500 12px Roboto; color: #A1A7B3;">Mobile number</div>
+                <div style="border: 1px solid #1C2333; border-radius: 12px; height: 52px; display: flex; align-items: center; gap: 10px; padding: 0 12px; font: 400 15px Roboto; color: #A1A7B3;">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="#A1A7B3"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.25 11.4 11.4 0 0 0 3.6.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11.4 11.4 0 0 0 .57 3.6 1 1 0 0 1-.25 1Z"/></svg>
+                  Enter mobile number
+                </div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div>
+                  <div style="font: 500 12px Roboto; color: #A1A7B3;">Check-in photos (optional)</div>
+                  <div style="font: 400 11px Roboto; color: #A1A7B3;">Add clear photos of the vehicle</div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                  <sc-for list="{{ photoSlots }}" as="p" hint-placeholder-count="4">
+                    <div style="flex: 1; border: 1px dashed #1C2333; border-radius: 14px; padding: 14px 0; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="#A1A7B3"><path d="M9 3 7.2 5H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.2L15 3H9Zm3 5.5A4.5 4.5 0 1 1 7.5 13 4.5 4.5 0 0 1 12 8.5Z"/></svg>
+                      <div style="font: 400 11px Roboto; color: #A1A7B3;">{{ p }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="width: 25%; border: 1px dashed #1C2333; border-radius: 14px; padding: 14px 0; display: flex; flex-direction: column; align-items: center; gap: 6px;">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="#A1A7B3"><path d="M9 3 7.2 5H4a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-3.2L15 3H9Zm3 5.5A4.5 4.5 0 1 1 7.5 13 4.5 4.5 0 0 1 12 8.5Z"/></svg>
+                  <div style="font: 400 11px Roboto; color: #A1A7B3;">Odometer</div>
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <div style="flex: 1; height: 44px; border-radius: 14px; border: 1px solid #8B5CF6; color: #8B5CF6; display: grid; place-items: center; font: 500 14px Roboto;">Cancel</div>
+              <div style="flex: 1.4; height: 44px; border-radius: 14px; background: #FF5A1F; color: #fff; display: grid; place-items: center; font: 500 14px Roboto;">Check in</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VEHICLES -->
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="font: 700 13px/1 Roboto; color: #334155;">Vehicles</div>
+      <div style="width: 390px; height: 844px; background: #0B0F17; border-radius: 26px; overflow: hidden; color: #F8FAFC; display: flex; flex-direction: column; box-shadow: 0 18px 40px rgba(15,23,42,0.18);">
+        <div style="height: 56px; display: flex; align-items: center; gap: 6px; padding: 0 16px; flex: none;">
+          <img src="assets/img_p_mark.png" alt="" style="width: 26px; height: 26px; object-fit: contain;">
+          <div style="font: 500 17px/1 Roboto;"><span style="font-weight: 700;">Insta</span><span style="font-weight: 700; color: #FF5A1F;">Park</span><span style="color: #A1A7B3;"> Valet</span></div>
+        </div>
+        <div style="padding: 16px; display: flex; flex-direction: column; gap: 12px; flex: none;">
+          <div>
+            <div style="font: 700 24px/1.2 Roboto;">Vehicles</div>
+            <div style="font: 400 14px Roboto; color: #A1A7B3;">14 record(s)</div>
+          </div>
+          <div style="display: flex; gap: 12px;">
+            <div style="flex: 1; border-radius: 18px; background: #0F141E; border: 1px solid #1C2333; padding: 16px; display: flex; align-items: center; gap: 12px; background-image: radial-gradient(circle at 20% 0%, rgba(139,92,246,0.14), transparent 70%);">
+              <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(139,92,246,0.3); display: grid; place-items: center;">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="#8B5CF6"><path d="M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Zm-8.5 14L6 12.5 7.4 11l3.1 3.1L16.6 8l1.4 1.5Z"/></svg>
+              </div>
+              <div>
+                <div style="font: 700 20px/1.15 Roboto;">11</div>
+                <div style="font: 400 11px Roboto; color: #A1A7B3;">Completed (last 500)</div>
+              </div>
+            </div>
+            <div style="flex: 1; border-radius: 18px; background: #0F141E; border: 1px solid #1C2333; padding: 16px; display: flex; align-items: center; gap: 12px; background-image: radial-gradient(circle at 20% 0%, rgba(35,194,107,0.14), transparent 70%);">
+              <div style="width: 44px; height: 44px; border-radius: 50%; background: rgba(35,194,107,0.3); display: grid; place-items: center; font: 700 20px Roboto; color: #23C26B;">₹</div>
+              <div>
+                <div style="font: 700 20px/1.15 Roboto;">₹2070</div>
+                <div style="font: 400 11px Roboto; color: #A1A7B3;">Revenue</div>
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <div style="background: #1C2333; border-radius: 8px; padding: 7px 14px; font: 400 13px Roboto;">All</div>
+            <div style="border: 1px solid #1C2333; border-radius: 8px; padding: 7px 14px; font: 400 13px Roboto;">Checked in</div>
+            <div style="border: 1px solid #1C2333; border-radius: 8px; padding: 7px 14px; font: 400 13px Roboto;">Parked</div>
+            <div style="border: 1px solid #1C2333; border-radius: 8px; padding: 7px 14px; font: 400 13px Roboto;">Requested</div>
+          </div>
+        </div>
+        <div style="flex: 1; overflow: hidden; padding: 8px 16px; display: flex; flex-direction: column; gap: 12px;">
+          <sc-for list="{{ vehicleRows }}" as="v" hint-placeholder-count="4">
+            <div style="border-radius: 20px; background: #0F141E; border: 1px solid #1C2333; padding: 16px; display: flex; gap: 14px; background-image: radial-gradient(circle at 20% 0%, {{ v.glow }}, transparent 70%);">
+              <img src="{{ v.img }}" alt="" style="width: 74px; height: 74px; border-radius: 14px; object-fit: cover; border: 1px solid {{ v.borderColor }};">
+              <div style="flex: 1;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                  <div style="font: 700 19px/1.2 Roboto;">{{ v.plate }}</div>
+                  <div style="display: flex; align-items: center; gap: 6px; background: {{ v.pillBg }}; border-radius: 50px; padding: 4px 10px; flex: none;">
+                    <div style="width: 6px; height: 6px; border-radius: 50%; background: {{ v.accent }};"></div>
+                    <div style="font: 500 11px Roboto; color: {{ v.accent }};">{{ v.status }}</div>
+                  </div>
+                </div>
+                <div style="font: 400 13px Roboto; color: #A1A7B3;">{{ v.type }} <span style="color: {{ v.accent }};">•</span> {{ v.mobile }}</div>
+                <div style="font: 400 13px Roboto; color: #A1A7B3;">Slot: {{ v.slot }}</div>
+                <div style="font: 500 13px Roboto; color: #FF5A1F;">{{ v.pending }}</div>
+                <div style="font: 400 13px Roboto; color: #A1A7B3;">{{ v.operators }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="height: 72px; flex: none; background: #070A10; display: flex; align-items: center; padding: 0 8px;">
+          <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+              <div style="padding: 4px 18px; border-radius: 16px; background: {{ t.vehiclesBg }};">{{ t.icon }}</div>
+              <div style="font: 500 12px Roboto; color: {{ t.vehiclesColor }};">{{ t.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div style="display: flex; flex-direction: column; gap: 10px;">
+      <div style="font: 700 13px/1 Roboto; color: #334155;">Profile</div>
+      <div style="width: 390px; height: 844px; background: #0B0F17; border-radius: 26px; overflow: hidden; color: #F8FAFC; display: flex; flex-direction: column; box-shadow: 0 18px 40px rgba(15,23,42,0.18);">
+        <div style="height: 56px; display: flex; align-items: center; gap: 6px; padding: 0 16px; flex: none;">
+          <img src="assets/img_p_mark.png" alt="" style="width: 26px; height: 26px; object-fit: contain;">
+          <div style="font: 500 17px/1 Roboto;"><span style="font-weight: 700;">Insta</span><span style="font-weight: 700; color: #FF5A1F;">Park</span><span style="color: #A1A7B3;"> Valet</span></div>
+        </div>
+        <div style="flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="font: 700 24px Roboto;">Profile</div>
+            <div style="display: flex; align-items: center; gap: 4px; border: 1px solid #1C2333; border-radius: 50px; padding: 4px;">
+              <div style="width: 30px; height: 30px; border-radius: 50%; background: #1C2333; display: grid; place-items: center; font: 400 14px Roboto;">🌙</div>
+              <div style="width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font: 400 14px Roboto; color: #A1A7B3;">☀</div>
+            </div>
+          </div>
+          <div style="border-radius: 12px; background: #0F141E; padding: 16px; display: flex; align-items: center; gap: 12px;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: #FF5A1F; color: #fff; display: grid; place-items: center; font: 700 18px Roboto;">V</div>
+            <div>
+              <div style="font: 500 15px Roboto;">Vikas</div>
+              <div style="font: 400 13px Roboto; color: #A1A7B3;">Valet Operator</div>
+            </div>
+          </div>
+          <div style="height: 40px; border-radius: 20px; background: #0E131D; color: #A1A7B3; display: grid; place-items: center; font: 500 14px Roboto;">Sign out</div>
+        </div>
+        <div style="height: 72px; flex: none; background: #070A10; display: flex; align-items: center; padding: 0 8px;">
+          <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+            <div style="flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+              <div style="padding: 4px 18px; border-radius: 16px; background: {{ t.profileBg }};">{{ t.icon }}</div>
+              <div style="font: 500 12px Roboto; color: {{ t.profileColor }};">{{ t.label }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const ORANGE = "#FF5A1F", MUTED = "#A1A7B3";
+    const tab = (label, glyph) => ({ label, icon: glyph });
+    const icons = {
+      Home: "⌂", Queue: "☰", Vehicles: "⛟", Profile: "☻",
+    };
+    const tabs = ["Home", "Queue", "Vehicles", "Profile"].map((label) => {
+      const o = { label, icon: icons[label] };
+      ["home", "queue", "vehicles", "profile"].forEach((screen) => {
+        const active = label.toLowerCase() === screen;
+        o[screen + "Bg"] = active ? "rgba(255,90,31,0.18)" : "transparent";
+        o[screen + "Color"] = active ? ORANGE : MUTED;
+      });
+      return o;
+    });
+    return {
+      tabs,
+      baselineStats: [
+        { glyph: "🚗", value: "1", label: "Active Vehicles" },
+        { glyph: "P", value: "0", label: "Arrived" },
+      ],
+      summaryCells: [
+        { label: "Active", value: "2", color: "#8B5CF6", bg: "rgba(139,92,246,0.10)" },
+        { label: "Checked In", value: "0", color: "#287BFF", bg: "rgba(40,123,255,0.10)" },
+        { label: "Parked", value: "1", color: "#23C26B", bg: "rgba(35,194,107,0.10)" },
+        { label: "Requested", value: "0", color: "#F59E0B", bg: "rgba(245,158,11,0.10)" },
+      ],
+      vehicleTypes: [
+        { label: "4-Wheeler", glyph: "🚗", bg: "rgba(139,92,246,0.35)", border: "#8B5CF6", fg: "#8B5CF6" },
+        { label: "bike", glyph: "🏍", bg: "#070A10", border: "#1C2333", fg: MUTED },
+        { label: "car", glyph: "🚙", bg: "#070A10", border: "#1C2333", fg: MUTED },
+        { label: "suv", glyph: "•••", bg: "#070A10", border: "#1C2333", fg: MUTED },
+      ],
+      photoSlots: ["Front", "Back", "Left", "Right"],
+      vehicleRows: [
+        { plate: "TESTPHASEA1", status: "Voided", type: "Car", mobile: "9998887770", slot: "L1-01", pending: "", operators: "", img: "assets/img_vehicle_sedan.png", accent: "#EF4444", pillBg: "rgba(239,68,68,0.15)", borderColor: "rgba(239,68,68,0.4)", glow: "rgba(239,68,68,0.14)" },
+        { plate: "KA123555", status: "Arrived", type: "Bike", mobile: "8050105778", slot: "4", pending: "", operators: "In: Test Operator Final", img: "assets/img_vehicle_bike.png", accent: "#23C26B", pillBg: "rgba(35,194,107,0.15)", borderColor: "rgba(35,194,107,0.4)", glow: "rgba(35,194,107,0.14)" },
+        { plate: "KA51MN6460", status: "Completed", type: "Car", mobile: "8969977921", slot: "A-101", pending: "₹800 pending", operators: "In: Vikas · Out: Test Operator Final", img: "assets/img_vehicle_sedan.png", accent: "#23C26B", pillBg: "rgba(35,194,107,0.15)", borderColor: "rgba(35,194,107,0.4)", glow: "rgba(35,194,107,0.14)" },
+        { plate: "MH14ZZ1111", status: "Voided", type: "Car", mobile: "9812345678", slot: "—", pending: "", operators: "", img: "assets/img_vehicle_car.png", accent: "#EF4444", pillBg: "rgba(239,68,68,0.15)", borderColor: "rgba(239,68,68,0.4)", glow: "rgba(239,68,68,0.14)" },
+      ],
+    };
+  }
+}
+
+</script>
+</body>
+</html>

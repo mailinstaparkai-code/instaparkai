@@ -11,8 +11,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.outlined.DarkMode
+import androidx.compose.material.icons.outlined.LightMode
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -32,21 +32,21 @@ fun ThemeTogglePill(
     val colors = ValetTheme.colors
     Row(
         modifier = modifier
-            .clip(RoundedCornerShape(50))
-            .background(colors.cardBackground),
+            .clip(RoundedCornerShape(14.dp))
+            .background(colors.hairlineSoft),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        listOf(true to Icons.Filled.DarkMode, false to Icons.Filled.LightMode).forEach { (dark, icon) ->
+        listOf(false to Icons.Outlined.LightMode, true to Icons.Outlined.DarkMode).forEach { (dark, icon) ->
             val active = darkTheme == dark
             val bg by animateColorAsState(
-                targetValue = if (active) colors.purple.copy(alpha = 0.35f) else Color.Transparent,
+                targetValue = if (active) colors.primary else Color.Transparent,
                 animationSpec = tween(250),
                 label = "themePill",
             )
             Box(
                 modifier = Modifier
                     .padding(4.dp)
-                    .clip(RoundedCornerShape(50))
+                    .clip(RoundedCornerShape(11.dp))
                     .background(bg)
                     .clickable(enabled = !active) { onToggle(dark) }
                     .padding(horizontal = 14.dp, vertical = 8.dp),
@@ -55,7 +55,7 @@ fun ThemeTogglePill(
                 Icon(
                     icon,
                     contentDescription = if (dark) "Dark theme" else "Light theme",
-                    tint = if (active) colors.textSecondary.copy(alpha = 1f) else colors.textSecondary.copy(alpha = 0.5f),
+                    tint = if (active) Color.White else colors.inkSecondary,
                     modifier = Modifier.size(18.dp),
                 )
             }

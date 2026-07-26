@@ -15,45 +15,67 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
-/** Ticket-status colors shared by Queue and Vehicles cards (mirrors the web's STATUS_COLOR). */
+/** design.md §2 -- the ticket-status ramp, shared by Queue and Vehicles cards (mirrors web's STATUS_COLOR). */
 @Composable
 fun statusAccent(status: String): Color {
     val colors = ValetTheme.colors
     return when (status) {
-        "checked_in" -> colors.blue
-        "parked" -> colors.info
-        "requested" -> colors.warning
-        "in_transit" -> colors.orange
-        "arrived" -> colors.green
-        "completed" -> colors.green
-        "voided" -> colors.danger
-        else -> colors.textSecondary
+        "checked_in" -> colors.statusCheckedIn
+        "parked" -> colors.statusParked
+        "requested" -> colors.statusRequested
+        "in_transit" -> colors.statusInTransit
+        "arrived", "completed" -> colors.statusDone
+        "voided" -> colors.statusVoided
+        else -> colors.inkSecondary
     }
 }
 
-/** Rounded dot+text status chip with a tinted background, per the reference cards. */
 @Composable
-fun StatusPill(label: String, accent: Color, modifier: Modifier = Modifier) {
+private fun statusAccentBg(status: String): Color {
+    val colors = ValetTheme.colors
+    return when (status) {
+        "checked_in" -> colors.statusCheckedInBg
+        "parked" -> colors.statusParkedBg
+        "requested" -> colors.statusRequestedBg
+        "in_transit" -> colors.statusInTransitBg
+        "arrived", "completed" -> colors.statusDoneBg
+        "voided" -> colors.statusVoidedBg
+        else -> colors.hairlineSoft
+    }
+}
+
+/**
+ * design.md §5 "StatusPill" -- dot + 11/700 uppercase label, tinted pill background
+ * from the status ramp (not an alpha wash of the accent).
+ */
+@Composable
+fun StatusPill(status: String, label: String, modifier: Modifier = Modifier) {
+    val accent = statusAccent(status)
+    val bg = statusAccentBg(status)
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(50))
-            .background(accent.copy(alpha = 0.15f))
-            .padding(horizontal = 10.dp, vertical = 4.dp),
+            .background(bg)
+            .padding(horizontal = 11.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         androidx.compose.foundation.layout.Box(
             modifier = Modifier
-                .size(6.dp)
+                .size(7.dp)
                 .clip(CircleShape)
                 .background(accent)
         )
         Text(
-            label,
+            label.uppercase(),
             style = MaterialTheme.typography.labelSmall,
-            fontWeight = FontWeight.Medium,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.06.sp,
             color = accent,
+            textAlign = TextAlign.Center,
             modifier = Modifier.padding(start = 6.dp),
         )
     }

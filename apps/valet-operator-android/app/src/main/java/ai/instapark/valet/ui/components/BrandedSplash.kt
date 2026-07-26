@@ -1,9 +1,9 @@
 package ai.instapark.valet.ui.components
 
 import ai.instapark.valet.R
-import ai.instapark.valet.ui.theme.BrandOrange
 import ai.instapark.valet.ui.theme.DarkBackground
-import ai.instapark.valet.ui.theme.DarkTextSecondary
+import ai.instapark.valet.ui.theme.DarkCtaOrange
+import ai.instapark.valet.ui.theme.DarkInkMuted
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -91,7 +91,7 @@ fun BrandedSplash() {
             Text(
                 "Smarter Parking. Seamless Experience.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = DarkTextSecondary,
+                color = DarkInkMuted,
                 modifier = Modifier.padding(top = 16.dp),
             )
         }
@@ -114,11 +114,11 @@ fun BrandedSplash() {
                         .width(48.dp)
                         .height(4.dp)
                         .clip(RoundedCornerShape(50))
-                        .background(BrandOrange),
+                        .background(DarkCtaOrange),
                 )
             }
             Spacer(modifier = Modifier.height(12.dp))
-            Text("Loading…", style = MaterialTheme.typography.bodySmall, color = DarkTextSecondary)
+            Text("Loading…", style = MaterialTheme.typography.bodySmall, color = DarkInkMuted)
         }
     }
 }
