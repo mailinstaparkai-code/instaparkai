@@ -38,7 +38,7 @@ export default async function MobileDashboardPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 p-4">
           <h1 className="text-xl font-semibold">
-            Good morning, {session.fullName || session.username} 👋
+            Good morning, {session.fullName || session.username}
           </h1>
           <p className="text-sm text-muted-foreground">
             {summary.siteName ?? "Your site"}

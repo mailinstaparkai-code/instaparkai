@@ -78,7 +78,7 @@ export default async function ParkingAdminDashboardPage() {
       <div className="metric-card relative flex items-center justify-between overflow-hidden p-6">
         <div className="relative z-10">
           <h1 className="text-2xl font-bold tracking-tight">
-            Good morning, {session.fullName || session.username} 👋
+            Good morning, {session.fullName || session.username}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {site?.name ?? "Your site"}
