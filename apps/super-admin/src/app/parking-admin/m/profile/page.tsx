@@ -21,7 +21,7 @@ export default async function MobileProfilePage() {
       <h1 className="text-xl font-semibold">Profile</h1>
 
       <div className="glass-card flex items-center gap-3 p-4">
-        <span className="flex size-12 items-center justify-center rounded-full bg-brand-orange text-lg font-medium text-white">
+        <span className="flex size-12 items-center justify-center rounded-full bg-gradient-to-br from-[#3B82F6] to-brand-blue text-lg font-medium text-white">
           {(session.fullName || session.username).slice(0, 1).toUpperCase()}
         </span>
         <div>

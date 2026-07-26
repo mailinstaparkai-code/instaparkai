@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, ListOrdered, Car, User } from "lucide-react";
@@ -25,12 +26,10 @@ export function MobileAppShell({
   return (
     <div className="pa-scope flex min-h-dvh flex-col bg-background text-foreground">
       <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-border bg-background/80 px-4 py-3 backdrop-blur-xl">
-        <span className="text-base font-semibold">
-          Insta<span className="text-brand-orange">Park</span> AI
-        </span>
+        <Image src="/img/logo-instaparkai.png" alt="InstaParkAi" width={140} height={47} className="h-7 w-auto" />
         <div className="flex items-center gap-1">
           <NotificationsBell />
-          <span className="flex size-8 items-center justify-center rounded-full bg-brand-orange text-sm font-medium text-white">
+          <span className="flex size-8 items-center justify-center rounded-full bg-gradient-to-br from-[#3B82F6] to-brand-blue text-sm font-medium text-white">
             {userLabel.slice(0, 1).toUpperCase()}
           </span>
         </div>
@@ -53,7 +52,7 @@ export function MobileAppShell({
                 key={tab.href}
                 href={tab.href}
                 className={`flex min-h-11 flex-col items-center justify-center gap-1 py-2 text-xs ${
-                  active ? "text-brand-orange" : "text-muted-foreground"
+                  active ? "text-brand-blue-deep" : "text-muted-foreground"
                 }`}
               >
                 <Icon className="size-5" />

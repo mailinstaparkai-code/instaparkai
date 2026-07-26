@@ -93,7 +93,7 @@ export default async function MobileQueuePage({
           <p className="text-sm text-muted-foreground">{tickets.length} active vehicle(s)</p>
         </div>
         <FormDialog
-          trigger={<Button size="sm">+ Check-in</Button>}
+          trigger={<Button size="sm" className="bg-brand-orange hover:bg-brand-orange-strong">+ Check-in</Button>}
           title="Check-in Vehicle"
           subtitle="Enter vehicle details to check-in"
           icon={<Car className="size-5" />}

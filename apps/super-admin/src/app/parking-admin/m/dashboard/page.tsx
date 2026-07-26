@@ -15,13 +15,14 @@ export default async function MobileDashboardPage() {
   const summary = await getDashboardSummary(supabase, session);
 
   const kpis = [
-    { label: "Active vehicles", value: summary.kpis.activeVehicles, icon: Car },
-    { label: "Arrived", value: summary.kpis.arrived, icon: ListOrdered },
-    { label: "Completed today", value: summary.kpis.completedToday, icon: CircleCheckBig },
+    { label: "Active vehicles", value: summary.kpis.activeVehicles, icon: Car, accent: "text-brand-blue" },
+    { label: "Arrived", value: summary.kpis.arrived, icon: ListOrdered, accent: "text-brand-orange" },
+    { label: "Completed today", value: summary.kpis.completedToday, icon: CircleCheckBig, accent: "text-status-success" },
     {
       label: "Avg turnaround",
       value: summary.kpis.avgTurnaroundMinutes !== null ? `${summary.kpis.avgTurnaroundMinutes}m` : "—",
       icon: Clock,
+      accent: "text-brand-blue",
     },
   ];
 
@@ -58,7 +59,7 @@ export default async function MobileDashboardPage() {
       <div className="grid grid-cols-2 gap-4">
         {kpis.map((kpi) => (
           <div key={kpi.label} className="glass-card p-4">
-            <kpi.icon className="size-5 text-brand-orange" />
+            <kpi.icon className={`size-5 ${kpi.accent}`} />
             <p className="mt-3 font-numeric text-2xl">{kpi.value}</p>
             <p className="text-xs text-muted-foreground">{kpi.label}</p>
           </div>
@@ -67,7 +68,7 @@ export default async function MobileDashboardPage() {
 
       <Link
         href="/parking-admin/m/queue"
-        className="glass-card block p-4 text-center text-sm font-medium text-brand-orange"
+        className="glass-card block p-4 text-center text-sm font-medium text-brand-blue-deep"
       >
         Go to Live Queue →
       </Link>
