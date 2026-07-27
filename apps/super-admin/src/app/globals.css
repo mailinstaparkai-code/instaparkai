@@ -197,68 +197,74 @@
   }
 }
 
-/* Parking Admin / valet sky-blue scope — design.md §7/§7b (2026 revamp), superseding
-   the earlier dark-SaaS spec below. Applied as a wrapper class on the parking-admin
-   and mweb layouts only, so the Super Admin portal keeps its own (untouched) design
-   system. Light is the new default; dark uses design.md §2's dark ramp. Purple
-   (--status-disabled) is retired in both — design.md: "Purple is retired... becomes
-   blue" — so it resolves to brand-blue here instead of the base violet. */
+/* Parking Admin / valet scope — HANDOFF 28-Jul §10 deltas over design.md §9 "Premium
+   pass" (2026 revamp), superseding the earlier §7/§7b sky-blue spec below. Applied as
+   a wrapper class on the parking-admin and mweb layouts only, so the Super Admin
+   portal keeps its own (untouched) design system. Light is the default; dark uses
+   design.md §2's dark ramp. Purple (--status-disabled) is retired in both — design.md:
+   "Purple is retired... becomes blue" — so it resolves to brand-blue here instead of
+   the base violet. Font: no override here (falls through to --font-sans, which is
+   already Inter app-wide) -- §9 moved this surface from Poppins to Inter, matching the
+   Android app's `Type.kt`. */
 .pa-scope {
-  font-family: var(--font-poppins), var(--font-sans);
-
-  --background: #eff5fe;
+  --background: #eff4ff;
   --foreground: #0f172a;
   --card: #ffffff;
   --card-foreground: #0f172a;
   --popover: #ffffff;
   --popover-foreground: #0f172a;
-  --primary: #1478ff;
+  --primary: #2563eb;
   --primary-foreground: #ffffff;
-  --secondary: #f7fafe;
+  --secondary: #f8fafd;
   --secondary-foreground: #0f172a;
-  --muted: #f7fafe;
-  --muted-foreground: #6c7280;
-  --accent: #e8f2ff;
-  --accent-foreground: #0b5fd6;
-  --destructive: #e23d3d;
-  --border: #dce5f2;
-  --input: #dce5f2;
-  --ring: #1478ff;
-  --status-disabled: #1478ff;
-  --chart-1: #1478ff;
+  --muted: #f8fafd;
+  --muted-foreground: #64748b;
+  --accent: #eff5ff;
+  --accent-foreground: #2563eb;
+  --destructive: #ef4444;
+  --border: #e7edf6;
+  --input: #e7edf6;
+  --ring: #2563eb;
+  --status-disabled: #2563eb;
+  --chart-1: #2563eb;
   --chart-2: #c9defb;
-  --chart-3: #12a150;
-  --chart-4: #e8890c;
-  --chart-5: #e23d3d;
+  --chart-3: #16a34a;
+  --chart-4: #f59e0b;
+  --chart-5: #ef4444;
   --sidebar: #ffffff;
   --sidebar-foreground: #0f172a;
-  --sidebar-primary: #1478ff;
+  --sidebar-primary: #2563eb;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #e8f2ff;
-  --sidebar-accent-foreground: #0b5fd6;
-  --sidebar-border: #dce5f2;
-  --sidebar-ring: #1478ff;
+  --sidebar-accent: #eff5ff;
+  --sidebar-accent-foreground: #2563eb;
+  --sidebar-border: #e7edf6;
+  --sidebar-ring: #2563eb;
 
-  --brand-orange: #ff6b36;
-  --brand-blue: #1478ff;
-  --brand-blue-deep: #0b5fd6;
-  --blue-tint: #e8f2ff;
-  --blue-tint-soft: #f7fafe;
-  --hairline: #dce5f2;
-  --hairline-soft: #e6edf7;
+  --brand-orange: #ff6a3d;
+  --brand-orange-soft: #ff7a4d;
+  --brand-blue: #2563eb;
+  --brand-blue-light: #3b82f6;
+  --brand-blue-deep: #1d4fd8;
+  --blue-tint: #eff5ff;
+  --blue-tint-soft: #f8fafd;
+  --tint-orange: #fff1eb;
+  --tint-green: #ebfaf0;
+  --tint-red: #fef0f0;
+  --hairline: #e7edf6;
+  --hairline-soft: #f4f7fc;
   --ink: #0f172a;
-  --ink-body: #4a5565;
-  --ink-muted: #6c7280;
+  --ink-body: #475569;
+  --ink-muted: #64748b;
   --ink-faint: #94a3b8;
-  --ok: #12a150;
-  --ok-text: #0c7a3d;
-  --warn: #e8890c;
-  --danger: #e23d3d;
-  --radius-control: 14px;
-  --radius-card: 20px;
-  --radius-sheet: 24px;
-  --shadow-card: 0 8px 20px rgba(20, 80, 160, 0.08);
-  --shadow-sheet: 0 24px 50px rgba(11, 50, 110, 0.28);
+  --ok: #16a34a;
+  --ok-text: #15803d;
+  --warn: #f59e0b;
+  --danger: #ef4444;
+  --radius-control: 16px;
+  --radius-card: 22px;
+  --radius-sheet: 26px;
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04), 0 16px 40px rgba(15, 23, 42, 0.07);
+  --shadow-sheet: 0 24px 60px rgba(15, 23, 42, 0.18);
 }
 
 .dark .pa-scope {
@@ -276,7 +282,7 @@
   --muted-foreground: #9ba9bf;
   --accent: rgba(75, 155, 255, 0.16);
   --accent-foreground: #4b9bff;
-  --destructive: #e23d3d;
+  --destructive: #ef4444;
   --border: #22314c;
   --input: #22314c;
   --ring: #4b9bff;
@@ -285,9 +291,9 @@
   --border-glass: rgba(255, 255, 255, 0.08);
   --chart-1: #4b9bff;
   --chart-2: rgba(75, 155, 255, 0.35);
-  --chart-3: #12a150;
-  --chart-4: #e8890c;
-  --chart-5: #e23d3d;
+  --chart-3: #16a34a;
+  --chart-4: #f59e0b;
+  --chart-5: #ef4444;
   --sidebar: #121c2d;
   --sidebar-foreground: #f3f7fd;
   --sidebar-primary: #4b9bff;
@@ -298,20 +304,40 @@
   --sidebar-ring: #4b9bff;
 
   --brand-orange: #ff7a47;
+  --brand-orange-soft: #ff7a47;
   --brand-blue: #4b9bff;
+  --brand-blue-light: #4b9bff;
   --brand-blue-deep: #4b9bff;
   --blue-tint: rgba(75, 155, 255, 0.16);
   --blue-tint-soft: #16223a;
+  --tint-orange: rgba(255, 122, 71, 0.16);
+  --tint-green: rgba(22, 163, 74, 0.16);
+  --tint-red: rgba(239, 68, 68, 0.16);
   --hairline: #22314c;
   --hairline-soft: #22314c;
   --ink: #f3f7fd;
   --ink-body: #f3f7fd;
   --ink-muted: #9ba9bf;
   --ink-faint: #9ba9bf;
-  --ok: #12a150;
+  --ok: #16a34a;
   --ok-text: #4ade80;
-  --warn: #e8890c;
-  --danger: #e23d3d;
+  --warn: #f59e0b;
+  --danger: #ef4444;
+}
+
+/* HANDOFF 28-Jul §10 -- layered radial-gradient app canvas (light only; dark keeps its
+   flat near-black --background). Apply on top of .pa-scope's own background. */
+.pa-canvas {
+  background-color: #f3f7ff;
+  background-image:
+    radial-gradient(1100px 620px at 8% -6%, #dce9ff 0%, rgba(220, 233, 255, 0) 62%),
+    radial-gradient(760px 520px at 104% 12%, #ffe3d6 0%, rgba(255, 227, 214, 0) 60%),
+    radial-gradient(900px 700px at 50% 108%, #e4e9ff 0%, rgba(228, 233, 255, 0) 65%),
+    linear-gradient(180deg, #fcfdff 0%, #f3f7ff 100%);
+}
+.dark .pa-canvas {
+  background-color: var(--background);
+  background-image: none;
 }
 
 @layer components {

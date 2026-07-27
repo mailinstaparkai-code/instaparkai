@@ -1,14 +1,15 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
-import { Menu, X, Search, Sparkles, Bell, Sun, Moon, LogOut, Smartphone } from "lucide-react";
+import { Menu, X, Sparkles, Bell, Sun, Moon, LogOut, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { superAdminNav, parkingAdminNav, valetOperatorNav } from "./nav-config";
 import { NotificationsBell } from "./notifications-bell";
+import { CommandPalette } from "@/app/parking-admin/components/command-palette";
 
 export function AppShell({
   nav,
@@ -146,13 +147,7 @@ export function AppShell({
             <Menu className="size-5" />
           </button>
 
-          {nav === "super-admin" ? (
-            <div className="flex-1" />
-          ) : (
-            <Suspense fallback={<SearchFormFallback />}>
-              <SearchForm />
-            </Suspense>
-          )}
+          {nav === "super-admin" ? <div className="flex-1" /> : <CommandPalette />}
 
           <span
             className={`hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium sm:flex ${
@@ -250,72 +245,3 @@ function ThemeToggle() {
   );
 }
 
-// Isolated in its own component (rather than inline in AppShell) so the
-// useSearchParams() call it needs can sit behind a <Suspense> boundary --
-// required by Next.js for any component that reads search params, even
-// though this app's routes are already forced fully dynamic by
-// getValetSession()'s cookies() call, so the fallback below is never
-// actually shown in practice.
-function SearchForm() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const initialSearchQuery = searchParams.get("q") ?? "";
-
-  useEffect(() => {
-    function onKeyDown(event: KeyboardEvent) {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        searchInputRef.current?.focus();
-      }
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
-
-  function handleSearchSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const trimmed = (searchInputRef.current?.value ?? "").trim();
-    router.push(trimmed ? `/parking-admin/vehicles?q=${encodeURIComponent(trimmed)}` : "/parking-admin/vehicles");
-  }
-
-  return (
-    <form
-      onSubmit={handleSearchSubmit}
-      className="flex flex-1 items-center gap-2 rounded-lg border border-input bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground focus-within:text-foreground"
-    >
-      <Search className="size-4 shrink-0" />
-      <input
-        key={initialSearchQuery}
-        ref={searchInputRef}
-        type="text"
-        defaultValue={initialSearchQuery}
-        placeholder="Search vehicles…"
-        className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-      />
-      <kbd className="hidden rounded border border-border bg-background px-1.5 py-0.5 text-xs sm:inline">
-        ⌘K
-      </kbd>
-    </form>
-  );
-}
-
-// Identical markup to SearchForm's initial render, minus the parts that
-// depend on useSearchParams() -- only rendered for the brief instant (if
-// ever) before SearchForm resolves.
-function SearchFormFallback() {
-  return (
-    <div className="flex flex-1 items-center gap-2 rounded-lg border border-input bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground focus-within:text-foreground">
-      <Search className="size-4 shrink-0" />
-      <input
-        type="text"
-        placeholder="Search vehicles…"
-        disabled
-        className="flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted-foreground"
-      />
-      <kbd className="hidden rounded border border-border bg-background px-1.5 py-0.5 text-xs sm:inline">
-        ⌘K
-      </kbd>
-    </div>
-  );
-}
