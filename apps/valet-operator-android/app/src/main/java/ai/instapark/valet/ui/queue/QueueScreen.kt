@@ -19,6 +19,7 @@ import ai.instapark.valet.ui.components.TappableRowPicker
 import ai.instapark.valet.ui.components.VehicleTypeSelector
 import ai.instapark.valet.ui.components.statusAccent
 import ai.instapark.valet.ui.theme.ValetTheme
+import ai.instapark.valet.ui.theme.valetAppCanvas
 import coil.compose.AsyncImage
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -150,7 +151,7 @@ private fun QueueContent(response: QueueResponse, viewModel: QueueViewModel) {
     val role by container.tokenStore.roleFlow.collectAsState(initial = null)
     val isAdmin = role == "parking_admin"
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().valetAppCanvas(colors.isDark)) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                 Column {

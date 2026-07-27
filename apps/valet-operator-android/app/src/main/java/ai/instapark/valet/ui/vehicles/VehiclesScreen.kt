@@ -8,6 +8,7 @@ import ai.instapark.valet.ui.components.GlassCard
 import ai.instapark.valet.ui.components.StatusPill
 import ai.instapark.valet.ui.components.statusAccent
 import ai.instapark.valet.ui.theme.ValetTheme
+import ai.instapark.valet.ui.theme.valetAppCanvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -73,7 +74,7 @@ fun VehiclesScreen() {
 @Composable
 private fun VehiclesContent(response: VehiclesResponse, viewModel: VehiclesViewModel) {
     val colors = ValetTheme.colors
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize().valetAppCanvas(colors.isDark)) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text("Vehicles", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
             Text(

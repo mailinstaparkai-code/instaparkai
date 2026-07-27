@@ -7,6 +7,9 @@ import ai.instapark.valet.ui.components.ThemeTogglePill
 import ai.instapark.valet.ui.theme.PrimaryBlue
 import ai.instapark.valet.ui.theme.PrimaryBlueLight
 import ai.instapark.valet.ui.theme.ValetTheme
+import ai.instapark.valet.ui.theme.valetAppCanvas
+import ai.instapark.valet.R
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,6 +22,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -36,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -59,27 +64,35 @@ fun ProfileScreen(onSignedOut: () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .valetAppCanvas(colors.isDark)
             .verticalScroll(rememberScrollState()),
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(150.dp)
+                    .height(190.dp)
                     .background(
                         Brush.linearGradient(listOf(PrimaryBlueLight, PrimaryBlue)),
                         shape = RoundedCornerShape(bottomStart = 34.dp, bottomEnd = 34.dp),
                     ),
             ) {
-                Text(
-                    "Profile",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    modifier = Modifier.padding(20.dp),
-                )
+                Box(
+                    modifier = Modifier
+                        .statusBarsPadding()
+                        .padding(20.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Color.White.copy(alpha = 0.96f))
+                        .padding(horizontal = 13.dp, vertical = 8.dp),
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.img_logo_lockup_light),
+                        contentDescription = "InstaParkAi",
+                        modifier = Modifier.height(24.dp),
+                    )
+                }
             }
-            Column(modifier = Modifier.padding(top = 110.dp, start = 20.dp, end = 20.dp)) {
+            Column(modifier = Modifier.padding(top = 150.dp, start = 20.dp, end = 20.dp)) {
                 GlassIdentityCard(
                     initial = (viewModel.fullName ?: viewModel.username ?: "?").take(1).uppercase(),
                     name = viewModel.fullName ?: viewModel.username ?: "",

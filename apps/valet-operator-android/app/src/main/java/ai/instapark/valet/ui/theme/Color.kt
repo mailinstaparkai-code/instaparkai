@@ -28,6 +28,10 @@ val ChipHairline = Color(0x0F0F172A) // rgba(15,23,42,0.06)
 val GroupedHairline = Color(0xFFF4F7FC)
 
 val PhotoDashedBorder = Color(0xFFC9D9EF)
+// HANDOFF §10 -- "Search field and the Find button both carry a visible border...
+// borderless versions read as disabled."
+val SearchFieldBorder = Color(0xFFE2E9F4)
+val FindButtonBorder = Color(0xFFC9DEFB)
 val TintBlue = Color(0xFFEFF5FF)
 val TintOrange = Color(0xFFFFF1EB)
 val TintGreen = Color(0xFFEBFAF0)
