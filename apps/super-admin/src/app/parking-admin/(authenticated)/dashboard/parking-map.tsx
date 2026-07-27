@@ -9,10 +9,18 @@ type Zone = { id: string; name: string; slots: Slot[] };
 type ParkedTicket = { id: string; slot_id: string | null; vehicle_number: string };
 
 const STATUS_COLOR: Record<string, string> = {
-  available: "border-status-success/40 bg-status-success/15 text-status-success slot-glow",
-  occupied: "border-brand-orange/40 bg-brand-orange/15 text-brand-orange slot-glow",
-  reserved: "border-status-info/40 bg-status-info/15 text-status-info slot-glow",
+  available: "border-status-success/40 bg-status-success/15 text-status-success",
+  occupied: "border-brand-orange/40 bg-brand-orange/15 text-brand-orange",
+  reserved: "border-status-info/40 bg-status-info/15 text-status-info",
   out_of_service: "border-border bg-muted text-muted-foreground",
+};
+
+// Icon-badge colors for filled (occupied/reserved) tiles -- a small colored tile behind the
+// car icon, matching the app's existing icon-tile convention (e.g. StatDashlet), rather than
+// a full-tile color wash + glow (which read as blur on this light canvas, not a "lit up" pill).
+const STATUS_ICON_BG: Record<string, string> = {
+  occupied: "bg-brand-orange/15 text-brand-orange",
+  reserved: "bg-status-info/15 text-status-info",
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -114,20 +122,27 @@ export function ParkingMap({
                 const ticket = ticketBySlotId.get(slot.id);
                 const colorClass = STATUS_COLOR[slot.status] ?? STATUS_COLOR.available;
                 const filled = slot.status === "occupied" || slot.status === "reserved";
+                const iconBg = STATUS_ICON_BG[slot.status];
                 return (
                   <div
                     key={slot.id}
-                    className={`flex min-w-16 flex-col items-center justify-center gap-0.5 rounded-lg border px-2 py-1.5 ${
-                      filled ? colorClass : `border-dashed ${colorClass}`
+                    className={`flex min-w-16 flex-col items-center justify-center gap-1 rounded-lg border bg-card px-2 py-2 ${
+                      filled ? colorClass.split(" ")[0] : `border-dashed ${colorClass.split(" ")[0]}`
                     }`}
                     title={STATUS_LABEL[slot.status] ?? slot.status}
                   >
-                    {filled && <Car className="size-3.5" />}
-                    <span className="text-xs font-medium">{slot.slot_number}</span>
+                    {filled && iconBg && (
+                      <span className={`flex size-6 items-center justify-center rounded-md ${iconBg}`}>
+                        <Car className="size-3.5" />
+                      </span>
+                    )}
+                    <span className="text-xs font-semibold">{slot.slot_number}</span>
                     {ticket ? (
-                      <TicketTimelineDialog ticketId={ticket.id} vehicleNumber={ticket.vehicle_number} />
+                      <span className="text-[10px] leading-none">
+                        <TicketTimelineDialog ticketId={ticket.id} vehicleNumber={ticket.vehicle_number} />
+                      </span>
                     ) : (
-                      <span className="text-[10px]">{STATUS_LABEL[slot.status] ?? slot.status}</span>
+                      <span className="text-[10px] text-muted-foreground">{STATUS_LABEL[slot.status] ?? slot.status}</span>
                     )}
                   </div>
                 );
