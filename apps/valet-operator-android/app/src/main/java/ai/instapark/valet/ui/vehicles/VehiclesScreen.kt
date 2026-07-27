@@ -6,9 +6,11 @@ import ai.instapark.valet.data.remote.dto.VehiclesResponse
 import ai.instapark.valet.ui.appContainer
 import ai.instapark.valet.ui.components.GlassCard
 import ai.instapark.valet.ui.components.StatusPill
+import ai.instapark.valet.ui.components.ValetFilterChip
 import ai.instapark.valet.ui.components.statusAccent
 import ai.instapark.valet.ui.theme.ValetTheme
 import ai.instapark.valet.ui.theme.valetAppCanvas
+import ai.instapark.valet.ui.util.vehicleImageRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -33,7 +35,6 @@ import androidx.compose.material.icons.outlined.CurrencyRupee
 import androidx.compose.material.icons.automirrored.outlined.FactCheck
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -102,17 +103,17 @@ private fun VehiclesContent(response: VehiclesResponse, viewModel: VehiclesViewM
             Spacer(Modifier.height(12.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 item {
-                    FilterChip(
+                    ValetFilterChip(
                         selected = viewModel.statusFilter == null,
+                        label = "All",
                         onClick = { viewModel.applyStatusFilter(null) },
-                        label = { Text("All") },
                     )
                 }
                 items(response.filters.statusOptions) { option ->
-                    FilterChip(
+                    ValetFilterChip(
                         selected = viewModel.statusFilter == option.value,
+                        label = option.label,
                         onClick = { viewModel.applyStatusFilter(option.value) },
-                        label = { Text(option.label) },
                     )
                 }
             }
@@ -174,16 +175,6 @@ private fun StatCard(
                 Text(label, style = MaterialTheme.typography.labelSmall, color = colors.inkSecondary)
             }
         }
-    }
-}
-
-private fun vehicleImageRes(vehicleType: String): Int {
-    val t = vehicleType.lowercase()
-    return when {
-        "bike" in t || "motor" in t -> R.drawable.img_vehicle_bike
-        "scoot" in t -> R.drawable.img_vehicle_scooter
-        "sedan" in t || "4" in t -> R.drawable.img_vehicle_sedan
-        else -> R.drawable.img_vehicle_car
     }
 }
 

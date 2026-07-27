@@ -3,7 +3,9 @@ package ai.instapark.valet.ui.search
 import ai.instapark.valet.ui.appContainer
 import ai.instapark.valet.ui.components.GlassCard
 import ai.instapark.valet.ui.theme.ValetTheme
+import ai.instapark.valet.ui.util.vehicleImageRes
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -39,7 +41,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -73,7 +77,10 @@ fun SearchOverlay(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0F172A).copy(alpha = 0.42f))
+            // High-opacity, theme-independent (a dark tint at low alpha barely dims an
+            // already-dark background in dark theme, which was letting the Home screen's own
+            // search field render through crisply behind this overlay's search field).
+            .background(Color.Black.copy(alpha = 0.75f))
             .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { onDismiss() },
     ) {
         Column(
@@ -232,12 +239,12 @@ private fun ResultRow(result: SearchResult, onClick: () -> Unit) {
             .padding(horizontal = 18.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
+        Image(
+            painter = painterResource(vehicleImageRes(result.vehicleType)),
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
             modifier = Modifier.size(40.dp).clip(RoundedCornerShape(14.dp)).background(colors.hairlineSoft),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(result.vehicleType.take(1).uppercase(), color = colors.inkSecondary, fontWeight = FontWeight.Bold)
-        }
+        )
         Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
             Text(result.plate, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Text(

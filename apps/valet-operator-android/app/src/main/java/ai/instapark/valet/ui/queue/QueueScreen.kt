@@ -11,6 +11,7 @@ import ai.instapark.valet.ui.appContainer
 import ai.instapark.valet.ui.components.DialogPrimaryButton
 import ai.instapark.valet.ui.components.DialogSecondaryButton
 import ai.instapark.valet.ui.components.GlassCard
+import ai.instapark.valet.ui.components.ValetFilterChip
 import ai.instapark.valet.ui.components.OtpBoxInput
 import ai.instapark.valet.ui.components.PhotoCaptureField
 import ai.instapark.valet.ui.components.PremiumDialog
@@ -20,6 +21,7 @@ import ai.instapark.valet.ui.components.VehicleTypeSelector
 import ai.instapark.valet.ui.components.statusAccent
 import ai.instapark.valet.ui.theme.ValetTheme
 import ai.instapark.valet.ui.theme.valetAppCanvas
+import ai.instapark.valet.ui.util.vehicleImageRes
 import coil.compose.AsyncImage
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -70,8 +72,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
@@ -111,36 +111,6 @@ fun QueueScreen() {
         }
         is QueueUiState.Success -> QueueContent(state.response, viewModel)
     }
-}
-
-/** A pill that visibly reads as a tab: filled + elevated when selected, outlined when not. */
-@Composable
-private fun QueueFilterChip(selected: Boolean, label: String, onClick: () -> Unit) {
-    val colors = ValetTheme.colors
-    FilterChip(
-        selected = selected,
-        onClick = onClick,
-        label = { Text(label, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium) },
-        shape = RoundedCornerShape(50),
-        colors = FilterChipDefaults.filterChipColors(
-            containerColor = colors.surface,
-            labelColor = colors.inkSecondary,
-            selectedContainerColor = colors.primary,
-            selectedLabelColor = Color.White,
-        ),
-        border = FilterChipDefaults.filterChipBorder(
-            enabled = true,
-            selected = selected,
-            borderColor = colors.fieldBorder,
-            selectedBorderColor = colors.primary,
-            borderWidth = 1.dp,
-            selectedBorderWidth = 0.dp,
-        ),
-        elevation = FilterChipDefaults.filterChipElevation(
-            elevation = 0.dp,
-            pressedElevation = 2.dp,
-        ),
-    )
 }
 
 @Composable
@@ -197,7 +167,7 @@ private fun QueueContent(response: QueueResponse, viewModel: QueueViewModel) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Column(Modifier.weight(1f)) {
+                    Column(Modifier.weight(1f).padding(end = 12.dp)) {
                         Text("Auto-allocate operators", fontWeight = FontWeight.Medium)
                         Text(
                             "Round-robin dispatch to the next available operator.",
@@ -223,14 +193,14 @@ private fun QueueContent(response: QueueResponse, viewModel: QueueViewModel) {
             Spacer(Modifier.height(12.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 item {
-                    QueueFilterChip(
+                    ValetFilterChip(
                         selected = viewModel.statusFilter == null,
                         label = "All",
                         onClick = { viewModel.applyStatusFilter(null) },
                     )
                 }
                 items(response.filters.statusOptions) { option ->
-                    QueueFilterChip(
+                    ValetFilterChip(
                         selected = viewModel.statusFilter == option.value,
                         label = option.label,
                         onClick = { viewModel.applyStatusFilter(option.value) },
@@ -280,16 +250,6 @@ private fun QueueContent(response: QueueResponse, viewModel: QueueViewModel) {
                 }
             },
         )
-    }
-}
-
-private fun vehicleImageRes(vehicleType: String): Int {
-    val t = vehicleType.lowercase()
-    return when {
-        "bike" in t || "motor" in t -> R.drawable.img_vehicle_bike
-        "scoot" in t -> R.drawable.img_vehicle_scooter
-        "sedan" in t || "4" in t -> R.drawable.img_vehicle_sedan
-        else -> R.drawable.img_vehicle_car
     }
 }
 

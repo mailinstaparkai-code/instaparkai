@@ -11,6 +11,7 @@ import ai.instapark.valet.ui.components.StatDashlet
 import ai.instapark.valet.ui.search.SearchOverlay
 import ai.instapark.valet.ui.theme.ValetTheme
 import ai.instapark.valet.ui.theme.ValetTokens
+import ai.instapark.valet.ui.util.vehicleImageRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -401,12 +402,7 @@ private fun NextUpCard(
                 )
             } else {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    val thumbRes = when (nextTicket.vehicleType.lowercase()) {
-                        "bike" -> R.drawable.img_vehicle_bike
-                        "scooter" -> R.drawable.img_vehicle_scooter
-                        "suv", "xuv" -> R.drawable.img_vehicle_sedan
-                        else -> R.drawable.img_vehicle_car
-                    }
+                    val thumbRes = vehicleImageRes(nextTicket.vehicleType)
                     Box(
                         modifier = Modifier
                             .size(60.dp)
