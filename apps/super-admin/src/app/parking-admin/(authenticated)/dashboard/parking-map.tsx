@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Car } from "lucide-react";
 import { TicketTimelineDialog } from "../queue/ticket-timeline-dialog";
 
 type Slot = { id: string; slot_number: string; status: string };
@@ -35,43 +36,69 @@ export function ParkingMap({
   );
 
   const visibleZones = activeZone === "all" ? zones : zones.filter((z) => z.id === activeZone);
-  const totalSlots = zones.reduce((sum, z) => sum + z.slots.length, 0);
+  const allSlots = zones.flatMap((z) => z.slots);
+  const totalSlots = allSlots.length;
 
   if (!totalSlots) {
     return null;
   }
 
+  const occupiedCount = allSlots.filter((s) => s.status === "occupied").length;
+  const statusCounts = allSlots.reduce<Record<string, number>>((acc, s) => {
+    acc[s.status] = (acc[s.status] ?? 0) + 1;
+    return acc;
+  }, {});
+
   return (
     <div className="metric-card flex flex-col gap-4 p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-medium">Parking map</p>
-          <p className="text-xs text-muted-foreground">Live slot-wise availability</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-medium">Parking map</p>
+            <span className="flex size-2 rounded-full bg-status-success animate-pulse" />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {occupiedCount} of {totalSlots} in use · updated just now
+          </p>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            {Object.entries(STATUS_LABEL).map(([status, label]) => (
-              <span key={status} className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center gap-2">
+          {Object.entries(STATUS_LABEL)
+            .filter(([status]) => statusCounts[status])
+            .map(([status, label]) => (
+              <span
+                key={status}
+                className="flex items-center gap-1.5 rounded-full bg-card border border-border px-2.5 py-1 text-xs text-muted-foreground shadow-sm"
+              >
                 <span
-                  className={`size-2.5 rounded-full border ${STATUS_COLOR[status].split(" ")[0]} ${STATUS_COLOR[status].split(" ")[1]}`}
+                  className={`size-2 rounded-full border ${STATUS_COLOR[status].split(" ")[0]} ${STATUS_COLOR[status].split(" ")[1]}`}
                 />
-                {label}
+                {label} {statusCounts[status]}
               </span>
             ))}
-          </div>
           {zones.length > 1 && (
-            <select
-              value={activeZone}
-              onChange={(e) => setActiveZone(e.target.value)}
-              className="h-8 rounded-md border border-input bg-background px-2 text-xs"
-            >
-              <option value="all">All zones</option>
+            <div className="flex items-center gap-1 rounded-full bg-muted p-1">
+              <button
+                type="button"
+                onClick={() => setActiveZone("all")}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  activeZone === "all" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                }`}
+              >
+                All
+              </button>
               {zones.map((z) => (
-                <option key={z.id} value={z.id}>
+                <button
+                  key={z.id}
+                  type="button"
+                  onClick={() => setActiveZone(z.id)}
+                  className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                    activeZone === z.id ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                  }`}
+                >
                   {z.name}
-                </option>
+                </button>
               ))}
-            </select>
+            </div>
           )}
         </div>
       </div>
@@ -79,17 +106,23 @@ export function ParkingMap({
       <div className="flex flex-col gap-4">
         {visibleZones.map((zone) => (
           <div key={zone.id} className="flex flex-col gap-2">
-            <p className="text-xs font-medium text-muted-foreground">{zone.name}</p>
+            <p className="text-xs font-medium text-muted-foreground">
+              {zone.name} · {zone.slots.filter((s) => s.status === "occupied").length}/{zone.slots.length}
+            </p>
             <div className="flex flex-wrap gap-2">
               {zone.slots.map((slot) => {
                 const ticket = ticketBySlotId.get(slot.id);
                 const colorClass = STATUS_COLOR[slot.status] ?? STATUS_COLOR.available;
+                const filled = slot.status === "occupied" || slot.status === "reserved";
                 return (
                   <div
                     key={slot.id}
-                    className={`flex min-w-16 flex-col items-center justify-center gap-0.5 rounded-lg border px-2 py-1.5 ${colorClass}`}
+                    className={`flex min-w-16 flex-col items-center justify-center gap-0.5 rounded-lg border px-2 py-1.5 ${
+                      filled ? colorClass : `border-dashed ${colorClass}`
+                    }`}
                     title={STATUS_LABEL[slot.status] ?? slot.status}
                   >
+                    {filled && <Car className="size-3.5" />}
                     <span className="text-xs font-medium">{slot.slot_number}</span>
                     {ticket ? (
                       <TicketTimelineDialog ticketId={ticket.id} vehicleNumber={ticket.vehicle_number} />

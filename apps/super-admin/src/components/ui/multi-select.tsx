@@ -56,7 +56,7 @@ export function MultiSelect({
       <button
         type="button"
         onClick={handleToggleOpen}
-        className="flex h-8 items-center gap-1.5 rounded-md border border-input bg-background px-2.5 text-xs"
+        className="flex h-8 items-center gap-1.5 rounded-md border border-input bg-card px-2.5 text-xs shadow-sm"
       >
         <span className="text-muted-foreground">{label}:</span>
         <span className="font-medium">{summary}</span>
