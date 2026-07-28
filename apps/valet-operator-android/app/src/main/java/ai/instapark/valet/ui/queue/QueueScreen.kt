@@ -66,6 +66,7 @@ import androidx.compose.material.icons.outlined.LocalParking
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.PhotoLibrary
+import androidx.compose.material.icons.outlined.QrCode
 import androidx.compose.material.icons.outlined.VpnKey
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -242,10 +243,11 @@ private fun QueueContent(response: QueueResponse, viewModel: QueueViewModel) {
     if (showCheckIn) {
         CheckInDialog(
             vehicleTypeOptions = response.filters.vehicleTypeOptions,
+            qrCodeModeEnabled = response.guestRequestMode == "qr",
             pending = viewModel.mutationPending,
             onDismiss = { showCheckIn = false },
-            onSubmit = { vehicleNumber, vehicleType, mobileNumber, photos, onError ->
-                viewModel.checkIn(vehicleNumber, vehicleType, mobileNumber, photos) { error ->
+            onSubmit = { vehicleNumber, vehicleType, mobileNumber, qrCode, photos, onError ->
+                viewModel.checkIn(vehicleNumber, vehicleType, mobileNumber, qrCode, photos) { error ->
                     if (error == null) showCheckIn = false else onError(error)
                 }
             },
@@ -389,6 +391,13 @@ private fun TicketCard(
                         style = MaterialTheme.typography.bodySmall,
                         color = colors.inkSecondary,
                     )
+                    if (ticket.qrCode != null) {
+                        Text(
+                            "QR: ${ticket.qrCode}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.inkSecondary,
+                        )
+                    }
                     if (ticket.photoCount > 0) {
                         Text(
                             "${ticket.photoCount} photo(s)",
@@ -577,13 +586,15 @@ private fun PhotosDialog(ticketId: String, viewModel: QueueViewModel, onDismiss:
 @Composable
 private fun CheckInDialog(
     vehicleTypeOptions: List<ai.instapark.valet.data.remote.dto.FilterOption>,
+    qrCodeModeEnabled: Boolean,
     pending: Boolean,
     onDismiss: () -> Unit,
-    onSubmit: (String, String, String, CheckInPhotos, (String) -> Unit) -> Unit,
+    onSubmit: (String, String, String, String?, CheckInPhotos, (String) -> Unit) -> Unit,
 ) {
     var vehicleNumber by remember { mutableStateOf("") }
     var vehicleType by remember { mutableStateOf(vehicleTypeOptions.firstOrNull()?.value ?: "car") }
     var mobileNumber by remember { mutableStateOf("") }
+    var qrCode by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
     var frontPhoto by remember { mutableStateOf<java.io.File?>(null) }
     var backPhoto by remember { mutableStateOf<java.io.File?>(null) }
@@ -602,10 +613,12 @@ private fun CheckInDialog(
             DialogPrimaryButton(
                 text = if (pending) "Checking in…" else "Check in",
                 icon = Icons.Outlined.CheckCircle,
-                enabled = !pending && vehicleNumber.isNotBlank() && mobileNumber.isNotBlank(),
+                enabled = !pending && vehicleNumber.isNotBlank() && mobileNumber.isNotBlank() &&
+                    (!qrCodeModeEnabled || qrCode.isNotBlank()),
                 onClick = {
                     val photos = CheckInPhotos(frontPhoto, backPhoto, leftPhoto, rightPhoto, odometerPhoto)
-                    onSubmit(vehicleNumber, vehicleType, mobileNumber, photos) { message -> error = message }
+                    val code = qrCode.trim().takeIf { it.isNotBlank() }
+                    onSubmit(vehicleNumber, vehicleType, mobileNumber, code, photos) { message -> error = message }
                 },
                 modifier = Modifier.weight(1.4f),
             )
@@ -642,6 +655,20 @@ private fun CheckInDialog(
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
         )
+        if (qrCodeModeEnabled) {
+            Spacer(Modifier.height(14.dp))
+            Text("QR code", style = MaterialTheme.typography.labelMedium, color = colors.inkSecondary)
+            Spacer(Modifier.height(4.dp))
+            OutlinedTextField(
+                value = qrCode,
+                onValueChange = { qrCode = it.uppercase() },
+                placeholder = { Text("e.g. IPK-0001") },
+                singleLine = true,
+                leadingIcon = { Icon(Icons.Outlined.QrCode, contentDescription = null, tint = colors.inkSecondary) },
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
         Spacer(Modifier.height(14.dp))
         Text("Check-in photos (optional)", style = MaterialTheme.typography.labelMedium, color = colors.inkSecondary)
         Text(

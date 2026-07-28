@@ -225,6 +225,13 @@ private fun VehicleTicketCard(ticket: Ticket, modifier: Modifier = Modifier) {
                     style = MaterialTheme.typography.bodySmall,
                     color = colors.inkSecondary,
                 )
+                if (ticket.qrCode != null) {
+                    Text(
+                        "QR: ${ticket.qrCode}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colors.inkSecondary,
+                    )
+                }
                 if (ticket.fareAmount != null) {
                     Text(
                         "₹${ticket.fareAmount} ${if (ticket.paymentCollected) "paid" else "pending"}",

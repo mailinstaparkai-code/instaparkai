@@ -27,6 +27,7 @@ data class MeResponse(
     val assignedSiteId: String,
     val siteName: String?,
     val valetParkingEnabled: Boolean,
+    val qrCodeModeEnabled: Boolean,
 )
 
 data class DashboardKpis(
@@ -49,6 +50,7 @@ data class MyDailyStatus(
 data class DashboardResponse(
     val siteName: String?,
     val valetParkingEnabled: Boolean,
+    val qrCodeModeEnabled: Boolean,
     val kpis: DashboardKpis,
     val capacity: DashboardCapacity?,
     val myDailyStatus: MyDailyStatus?,
@@ -81,6 +83,7 @@ data class Ticket(
     val paymentCollected: Boolean,
     val photoCount: Int,
     val slotNumber: String?,
+    val qrCode: String?,
     val checkedInOperator: TicketOperator?,
     val deliveredOperator: TicketOperator?,
 )
@@ -126,6 +129,7 @@ data class QueueTicket(
     val fareAmount: Int?,
     val photoCount: Int,
     val slotNumber: String?,
+    val qrCode: String?,
 )
 
 data class SlotOption(
@@ -150,6 +154,7 @@ data class QueueResponse(
     val filters: QueueFilters,
     val autoAllocateEnabled: Boolean,
     val canToggleAutoAllocate: Boolean,
+    val guestRequestMode: String,
     val canRequest: Boolean,
     val canDispatch: Boolean,
     val myAccountId: String?,

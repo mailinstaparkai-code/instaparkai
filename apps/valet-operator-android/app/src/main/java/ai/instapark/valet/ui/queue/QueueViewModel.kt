@@ -71,9 +71,10 @@ class QueueViewModel(private val repository: QueueRepository) : ViewModel() {
         vehicleNumber: String,
         vehicleType: String,
         mobileNumber: String,
+        qrCode: String?,
         photos: CheckInPhotos,
         onDone: (String?) -> Unit,
-    ) = perform({ repository.checkIn(vehicleNumber, vehicleType, mobileNumber, photos) }, onDone)
+    ) = perform({ repository.checkIn(vehicleNumber, vehicleType, mobileNumber, qrCode, photos) }, onDone)
 
     fun markParked(id: String, slotId: String, onDone: (String?) -> Unit) =
         perform({ repository.markParked(id, slotId) }, onDone)

@@ -49,12 +49,14 @@ class QueueRepository(
         vehicleNumber: String,
         vehicleType: String,
         mobileNumber: String,
+        qrCode: String? = null,
         photos: CheckInPhotos = CheckInPhotos(),
     ): Result<QueueTicket> = wrap {
         api.checkIn(
             vehicleNumber = vehicleNumber.textBody(),
             vehicleType = vehicleType.textBody(),
             mobileNumber = mobileNumber.textBody(),
+            qrCode = qrCode?.textBody(),
             photoFront = filePart("photo_front", photos.front),
             photoBack = filePart("photo_back", photos.back),
             photoLeft = filePart("photo_left", photos.left),

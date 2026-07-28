@@ -68,6 +68,7 @@ interface ParkingAdminApi {
         @Part("vehicle_number") vehicleNumber: RequestBody,
         @Part("vehicle_type") vehicleType: RequestBody,
         @Part("mobile_number") mobileNumber: RequestBody,
+        @Part("qr_code") qrCode: RequestBody? = null,
         @Part photoFront: MultipartBody.Part? = null,
         @Part photoBack: MultipartBody.Part? = null,
         @Part photoLeft: MultipartBody.Part? = null,
