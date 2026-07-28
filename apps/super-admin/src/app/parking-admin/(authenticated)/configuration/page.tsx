@@ -2,14 +2,17 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getValetSession } from "@/lib/valet-auth/session";
+import { listQrCodes } from "@/lib/parking-admin/qr-codes";
 import { ZonesSlotsTab } from "./components/zones-slots-tab";
 import { VehicleTypesTab } from "./components/vehicle-types-tab";
 import { TariffTab } from "./components/tariff-tab";
+import { GuestRequestsTab } from "./components/guest-requests-tab";
 
 const TABS = [
   { key: "zones", label: "Zones & Slots" },
   { key: "vehicle-types", label: "Vehicle Types" },
   { key: "tariffs", label: "Payments" },
+  { key: "requests", label: "Vehicle Requests" },
 ] as const;
 type Tab = (typeof TABS)[number]["key"];
 
@@ -31,23 +34,30 @@ export default async function ConfigurationPage({
 
   const supabase = createServiceClient();
 
-  const [{ data: zones }, { data: vehicleTypes }, { data: tariffRules }] = await Promise.all([
-    supabase
-      .from("zones")
-      .select("id, name, slots(id, slot_number, is_ev, is_disabled_slot, status)")
-      .eq("parking_space_id", session.assignedSiteId)
-      .order("name"),
-    supabase
-      .from("vehicle_types")
-      .select("id, name")
-      .eq("parking_space_id", session.assignedSiteId)
-      .order("name"),
-    supabase
-      .from("tariff_rules")
-      .select("id, vehicle_category, pricing_type, rate, surge_multiplier, slab_tiers")
-      .eq("parking_space_id", session.assignedSiteId)
-      .order("vehicle_category"),
-  ]);
+  const [{ data: zones }, { data: vehicleTypes }, { data: tariffRules }, { data: site }, qrCodes] =
+    await Promise.all([
+      supabase
+        .from("zones")
+        .select("id, name, slots(id, slot_number, is_ev, is_disabled_slot, status)")
+        .eq("parking_space_id", session.assignedSiteId)
+        .order("name"),
+      supabase
+        .from("vehicle_types")
+        .select("id, name")
+        .eq("parking_space_id", session.assignedSiteId)
+        .order("name"),
+      supabase
+        .from("tariff_rules")
+        .select("id, vehicle_category, pricing_type, rate, surge_multiplier, slab_tiers")
+        .eq("parking_space_id", session.assignedSiteId)
+        .order("vehicle_category"),
+      supabase
+        .from("parking_spaces")
+        .select("guest_request_mode")
+        .eq("id", session.assignedSiteId)
+        .single(),
+      listQrCodes(supabase, session),
+    ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -78,6 +88,12 @@ export default async function ConfigurationPage({
       {tab === "vehicle-types" && <VehicleTypesTab vehicleTypes={vehicleTypes ?? []} />}
       {tab === "tariffs" && (
         <TariffTab tariffRules={tariffRules ?? []} vehicleTypes={vehicleTypes ?? []} />
+      )}
+      {tab === "requests" && (
+        <GuestRequestsTab
+          guestRequestMode={(site?.guest_request_mode as "link" | "qr" | undefined) ?? "link"}
+          qrCodes={qrCodes}
+        />
       )}
     </div>
   );

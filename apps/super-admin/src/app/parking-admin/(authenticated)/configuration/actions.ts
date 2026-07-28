@@ -3,6 +3,7 @@
 import { revalidatePath, updateTag } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getValetSession } from "@/lib/valet-auth/session";
+import * as qrCodesLib from "@/lib/parking-admin/qr-codes";
 
 const PATH = "/parking-admin/configuration";
 
@@ -194,4 +195,29 @@ export async function deleteTariffRule(formData: FormData) {
 
   revalidatePath(PATH);
   updateTag(`tariff-rules:${session.assignedSiteId}`);
+}
+
+// -- Guest request mode / QR codes --------------------------------------
+
+export async function updateGuestRequestMode(formData: FormData) {
+  const mode = formData.get("mode")?.toString() === "qr" ? "qr" : "link";
+
+  const session = await assertParkingAdmin();
+  const supabase = createServiceClient();
+
+  await qrCodesLib.setGuestRequestMode(supabase, session, mode);
+
+  revalidatePath(PATH);
+}
+
+export async function generateQrCodes(formData: FormData) {
+  const count = Number(formData.get("count"));
+  if (!count) return;
+
+  const session = await assertParkingAdmin();
+  const supabase = createServiceClient();
+
+  await qrCodesLib.generateQrCodes(supabase, session, count);
+
+  revalidatePath(PATH);
 }
