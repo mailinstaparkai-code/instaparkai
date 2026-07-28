@@ -79,6 +79,7 @@ export default async function MobileQueuePage({
     statusOptions: statusFilterOptions,
     tariffRules,
     autoAllocateEnabled,
+    guestRequestMode,
     canRequest,
     canDispatch,
     myAccountId,
@@ -121,6 +122,11 @@ export default async function MobileQueuePage({
               <Input name="mobile_number" required placeholder="Enter mobile number" className="pl-8" />
             </div>
           </Field>
+          {guestRequestMode === "qr" && (
+            <Field label="QR code">
+              <Input name="qr_code" required placeholder="e.g. IPK-0001" className="uppercase" />
+            </Field>
+          )}
           <div>
             <p className="text-sm font-medium">Check-in photos (optional)</p>
             <p className="text-xs text-muted-foreground">Add clear photos of the vehicle</p>
@@ -170,7 +176,7 @@ export default async function MobileQueuePage({
                     className="shrink-0 rounded-md object-cover"
                   />
                   <div>
-                    <TicketTimelineDialog ticketId={t.id} vehicleNumber={t.vehicle_number} />
+                    <TicketTimelineDialog ticketId={t.id} vehicleNumber={t.vehicle_number} qrCode={t.qr_codes?.code} />
                     <p className="text-xs capitalize text-muted-foreground">
                       {t.vehicle_type} · {t.mobile_number}
                     </p>
@@ -199,6 +205,9 @@ export default async function MobileQueuePage({
 
               <div className="flex items-center gap-4">
                 <CopyLinkButton token={t.ticket_token} />
+                {t.qr_codes?.code && (
+                  <span className="text-xs text-muted-foreground">{t.qr_codes.code}</span>
+                )}
                 <PhotosButton
                   ticketId={t.id}
                   count={t.check_in_photos.length + t.handover_photos.length}
