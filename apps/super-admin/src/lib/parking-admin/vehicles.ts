@@ -39,6 +39,7 @@ export type VehicleTicketRow = {
   slots: { slot_number: string } | null;
   checked_in_operator: { username: string; full_name: string | null } | null;
   delivered_operator: { username: string; full_name: string | null } | null;
+  qr_codes: { code: string } | null;
 };
 
 export type VehicleFilterOptions = {
@@ -78,7 +79,7 @@ export async function listVehicles(
 
   const TICKET_SELECT =
     "id, ticket_token, vehicle_number, vehicle_type, mobile_number, status, checked_in_at, completed_at, fare_amount, payment_collected, check_in_photos, handover_photos, " +
-    "slots(slot_number), " +
+    "slots(slot_number), qr_codes(code), " +
     "checked_in_operator:valet_accounts!valet_tickets_checked_in_by_fkey(username, full_name), " +
     "delivered_operator:valet_accounts!valet_tickets_delivered_by_fkey(username, full_name)";
 

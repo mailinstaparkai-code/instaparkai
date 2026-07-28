@@ -12,12 +12,13 @@ export async function POST(req: Request) {
     const vehicleNumber = formData.get("vehicle_number")?.toString() ?? "";
     const vehicleType = formData.get("vehicle_type")?.toString() ?? "car";
     const mobileNumber = formData.get("mobile_number")?.toString() ?? "";
+    const qrCode = formData.get("qr_code")?.toString();
 
     const supabase = createServiceClient();
     const ticket = await checkInVehicle(
       supabase,
       session,
-      { vehicleNumber, vehicleType, mobileNumber },
+      { vehicleNumber, vehicleType, mobileNumber, qrCode },
       formData
     );
 

@@ -90,6 +90,8 @@ export type QueueTicket = {
   check_in_photos: unknown[];
   handover_photos: unknown[];
   slots: { slot_number: string } | null;
+  qr_code_id: string | null;
+  qr_codes: { code: string } | null;
 };
 
 export function assertValetStaffRole(session: ValetSession | null): asserts session is ValetSession {
@@ -123,7 +125,7 @@ const getSiteRow = cache(async function getSiteRow(
 ) {
   const { data } = await supabase
     .from("parking_spaces")
-    .select("name, auto_allocate_operator")
+    .select("name, auto_allocate_operator, guest_request_mode")
     .eq("id", siteId)
     .single();
   return data;
@@ -140,6 +142,14 @@ export async function isAutoAllocateEnabled(
 ) {
   const site = await getSiteRow(supabase, siteId);
   return site?.auto_allocate_operator ?? false;
+}
+
+export async function isQrModeEnabled(
+  supabase: ReturnType<typeof createServiceClient>,
+  siteId: string
+) {
+  const site = await getSiteRow(supabase, siteId);
+  return site?.guest_request_mode === "qr";
 }
 
 // Shared by the manual dispatch picker and auto-allocation -- moves a "requested"
@@ -223,6 +233,7 @@ export type QueueData = {
   tariffRules: TariffRule[];
   autoAllocateEnabled: boolean;
   canToggleAutoAllocate: boolean;
+  guestRequestMode: "link" | "qr";
   // "Guest requested" and manual dispatch are Parking Admin only; mark-as-parked is
   // the checked-in operator or an admin (evaluated per-ticket, see QueueTicket).
   canRequest: boolean;
@@ -247,7 +258,7 @@ export async function getQueueData(
   let ticketsQuery = supabase
     .from("valet_tickets")
     .select(
-      "id, ticket_token, vehicle_number, vehicle_type, mobile_number, status, checked_in_at, checked_in_by, fare_amount, check_in_photos, handover_photos, slots(slot_number)"
+      "id, ticket_token, vehicle_number, vehicle_type, mobile_number, status, checked_in_at, checked_in_by, fare_amount, check_in_photos, handover_photos, slots(slot_number), qr_code_id, qr_codes(code)"
     )
     .eq("parking_space_id", session.assignedSiteId)
     .in("status", ACTIVE_STATUSES as unknown as string[]);
@@ -271,7 +282,7 @@ export async function getQueueData(
     getCachedTariffRules(session.assignedSiteId),
     supabase
       .from("parking_spaces")
-      .select("auto_allocate_operator")
+      .select("auto_allocate_operator, guest_request_mode")
       .eq("id", session.assignedSiteId)
       .single(),
     getAvailableOperators(supabase, session.assignedSiteId, { respectDailyStatus: false }),
@@ -329,6 +340,7 @@ export async function getQueueData(
     tariffRules: tariffRules ?? [],
     autoAllocateEnabled: site?.auto_allocate_operator ?? false,
     canToggleAutoAllocate: session.role === "parking_admin",
+    guestRequestMode: (site?.guest_request_mode as "link" | "qr" | undefined) ?? "link",
     canRequest: session.role === "parking_admin",
     canDispatch: session.role === "parking_admin",
     myAccountId: session.accountId,
@@ -349,10 +361,39 @@ export async function setAutoAllocate(
   if (error) throw new Error(error.message);
 }
 
+// Only ever called from checkInVehicle below -- lives here (not qr-codes.ts) purely
+// to avoid a circular import, since qr-codes.ts already imports ACTIVE_STATUSES and
+// assertParkingAdminRole from this file.
+async function resolveQrCodeForCheckIn(
+  supabase: ReturnType<typeof createServiceClient>,
+  siteId: string,
+  code: string
+): Promise<string> {
+  const { data: qrCode } = await supabase
+    .from("qr_codes")
+    .select("id")
+    .eq("site_id", siteId)
+    .eq("code", code)
+    .maybeSingle();
+  if (!qrCode) throw new AppError("invalid_request", "Unknown QR code for this site.", 400);
+
+  const { data: activeTicket } = await supabase
+    .from("valet_tickets")
+    .select("id")
+    .eq("qr_code_id", qrCode.id)
+    .in("status", ACTIVE_STATUSES as unknown as string[])
+    .maybeSingle();
+  if (activeTicket) {
+    throw new AppError("invalid_state", "This QR code is already assigned to an active vehicle.", 409);
+  }
+
+  return qrCode.id;
+}
+
 export async function checkInVehicle(
   supabase: ReturnType<typeof createServiceClient>,
   session: ValetSession,
-  fields: { vehicleNumber: string; vehicleType: string; mobileNumber: string },
+  fields: { vehicleNumber: string; vehicleType: string; mobileNumber: string; qrCode?: string },
   formData: FormData
 ): Promise<QueueTicket> {
   const vehicle_number = fields.vehicleNumber.trim().toUpperCase();
@@ -360,6 +401,15 @@ export async function checkInVehicle(
   const mobile_number = fields.mobileNumber.trim();
   if (!vehicle_number || !mobile_number) {
     throw new AppError("invalid_request", "Vehicle number and mobile number are required.", 400);
+  }
+
+  let qrCodeId: string | null = null;
+  if (await isQrModeEnabled(supabase, session.assignedSiteId)) {
+    const qrCode = fields.qrCode?.trim().toUpperCase();
+    if (!qrCode) {
+      throw new AppError("invalid_request", "QR code is required for this site.", 400);
+    }
+    qrCodeId = await resolveQrCodeForCheckIn(supabase, session.assignedSiteId, qrCode);
   }
 
   const ticketId = randomUUID();
@@ -385,6 +435,7 @@ export async function checkInVehicle(
     status: "checked_in",
     checked_in_by: session.accountId,
     check_in_photos: photos,
+    qr_code_id: qrCodeId,
   });
   if (error) throw new Error(error.message);
 
@@ -431,6 +482,8 @@ export async function checkInVehicle(
     check_in_photos: photos,
     handover_photos: [],
     slots: null,
+    qr_code_id: qrCodeId,
+    qr_codes: null,
   };
 }
 

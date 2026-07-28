@@ -21,6 +21,7 @@ export function mapQueueTicket(t: QueueTicket) {
     fareAmount: t.fare_amount,
     photoCount: t.check_in_photos.length + t.handover_photos.length,
     slotNumber: t.slots?.slot_number ?? null,
+    qrCode: t.qr_codes?.code ?? null,
   };
 }
 
@@ -44,6 +45,7 @@ export async function GET(req: Request) {
       },
       autoAllocateEnabled: result.autoAllocateEnabled,
       canToggleAutoAllocate: result.canToggleAutoAllocate,
+      guestRequestMode: result.guestRequestMode,
       canRequest: result.canRequest,
       canDispatch: result.canDispatch,
       myAccountId: result.myAccountId,

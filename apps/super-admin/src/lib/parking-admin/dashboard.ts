@@ -6,6 +6,7 @@ import { getMyDailyStatus, type MyDailyStatus } from "./operator-status";
 export type DashboardSummary = {
   siteName: string | null;
   valetParkingEnabled: boolean;
+  qrCodeModeEnabled: boolean;
   kpis: {
     activeVehicles: number;
     arrived: number;
@@ -28,7 +29,11 @@ export async function getDashboardSummary(
   startOfToday.setHours(0, 0, 0, 0);
 
   const [{ data: site }, { data: tickets }, { data: zones }, myDailyStatus] = await Promise.all([
-    supabase.from("parking_spaces").select("name, valet_parking_enabled").eq("id", siteId).single(),
+    supabase
+      .from("parking_spaces")
+      .select("name, valet_parking_enabled, guest_request_mode")
+      .eq("id", siteId)
+      .single(),
     supabase
       .from("valet_tickets")
       .select("status, checked_in_at, completed_at")
@@ -59,6 +64,7 @@ export async function getDashboardSummary(
   return {
     siteName: site?.name ?? null,
     valetParkingEnabled: site?.valet_parking_enabled ?? false,
+    qrCodeModeEnabled: site?.guest_request_mode === "qr",
     kpis: {
       activeVehicles: activeCount,
       arrived: arrivedCount,

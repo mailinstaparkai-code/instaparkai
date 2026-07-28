@@ -15,9 +15,11 @@ import { getTicketTimeline } from "./actions";
 export function TicketTimelineDialog({
   ticketId,
   vehicleNumber,
+  qrCode,
 }: {
   ticketId: string;
   vehicleNumber: string;
+  qrCode?: string | null;
 }) {
   const [transactions, setTransactions] = useState<Transaction[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -41,6 +43,7 @@ export function TicketTimelineDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{vehicleNumber} — journey</DialogTitle>
+          {qrCode && <p className="text-xs text-muted-foreground">QR code: {qrCode}</p>}
         </DialogHeader>
         {loading && <p className="text-sm text-muted-foreground">Loading…</p>}
         <div className="flex flex-col gap-3">

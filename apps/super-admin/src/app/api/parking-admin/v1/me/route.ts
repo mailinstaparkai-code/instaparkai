@@ -10,7 +10,7 @@ export async function GET(req: Request) {
     const supabase = createServiceClient();
     const { data: site } = await supabase
       .from("parking_spaces")
-      .select("name, valet_parking_enabled")
+      .select("name, valet_parking_enabled, guest_request_mode")
       .eq("id", session.assignedSiteId)
       .maybeSingle();
 
@@ -22,6 +22,7 @@ export async function GET(req: Request) {
       assignedSiteId: session.assignedSiteId,
       siteName: site?.name ?? null,
       valetParkingEnabled: site?.valet_parking_enabled ?? false,
+      qrCodeModeEnabled: site?.guest_request_mode === "qr",
     });
   } catch (err) {
     return errorResponse(err);

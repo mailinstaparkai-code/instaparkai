@@ -78,6 +78,7 @@ type Ticket = {
   slots: { slot_number: string } | null;
   checked_in_operator: { username: string; full_name: string | null } | null;
   delivered_operator: { username: string; full_name: string | null } | null;
+  qr_codes: { code: string } | null;
 };
 
 function formatDuration(minutes: number): string {
@@ -126,7 +127,7 @@ export default async function VehicleLogPage({
 
   const TICKET_SELECT =
     "id, ticket_token, vehicle_number, vehicle_type, mobile_number, status, checked_in_at, completed_at, fare_amount, payment_collected, check_in_photos, handover_photos, " +
-    "slots(slot_number), " +
+    "slots(slot_number), qr_codes(code), " +
     "checked_in_operator:valet_accounts!valet_tickets_checked_in_by_fkey(username, full_name), " +
     "delivered_operator:valet_accounts!valet_tickets_delivered_by_fkey(username, full_name)";
 
@@ -248,6 +249,7 @@ export default async function VehicleLogPage({
               <th className="p-3 font-medium">Fare</th>
               <th className="p-3 font-medium">Operators</th>
               <th className="p-3 font-medium">Link</th>
+              <th className="p-3 font-medium">QR code</th>
               <th className="p-3 font-medium">Photos</th>
             </tr>
           </thead>
@@ -271,7 +273,7 @@ export default async function VehicleLogPage({
                         className="shrink-0 rounded-md object-cover"
                       />
                       <div>
-                        <TicketTimelineDialog ticketId={t.id} vehicleNumber={t.vehicle_number} />
+                        <TicketTimelineDialog ticketId={t.id} vehicleNumber={t.vehicle_number} qrCode={t.qr_codes?.code} />
                         <p className="text-xs capitalize text-muted-foreground">{t.vehicle_type}</p>
                       </div>
                     </div>
@@ -319,6 +321,7 @@ export default async function VehicleLogPage({
                   <td className="p-3">
                     <CopyLinkButton token={t.ticket_token} />
                   </td>
+                  <td className="p-3 text-xs text-muted-foreground">{t.qr_codes?.code ?? "—"}</td>
                   <td className="p-3">
                     <PhotosButton
                       ticketId={t.id}
@@ -330,7 +333,7 @@ export default async function VehicleLogPage({
             })}
             {!tickets?.length && (
               <tr>
-                <td colSpan={10} className="p-6 text-center text-sm text-muted-foreground">
+                <td colSpan={11} className="p-6 text-center text-sm text-muted-foreground">
                   No matching records.
                 </td>
               </tr>

@@ -146,6 +146,7 @@ export default async function LiveQueuePage({
     statusOptions: statusFilterOptions,
     tariffRules,
     autoAllocateEnabled,
+    guestRequestMode,
     canRequest,
     canDispatch,
     myAccountId,
@@ -196,6 +197,11 @@ export default async function LiveQueuePage({
               <Input name="mobile_number" required placeholder="Enter mobile number" className="pl-8" />
             </div>
           </Field>
+          {guestRequestMode === "qr" && (
+            <Field label="QR code">
+              <Input name="qr_code" required placeholder="e.g. IPK-0001" className="uppercase" />
+            </Field>
+          )}
           <div>
             <p className="text-sm font-medium">Check-in photos (optional)</p>
             <p className="text-xs text-muted-foreground">Add clear photos of the vehicle</p>
@@ -277,7 +283,7 @@ export default async function LiveQueuePage({
                         className="shrink-0 rounded-md object-cover"
                       />
                       <div>
-                        <TicketTimelineDialog ticketId={t.id} vehicleNumber={t.vehicle_number} />
+                        <TicketTimelineDialog ticketId={t.id} vehicleNumber={t.vehicle_number} qrCode={t.qr_codes?.code} />
                         <p className="text-xs capitalize text-muted-foreground">{t.vehicle_type}</p>
                       </div>
                     </div>
@@ -295,7 +301,12 @@ export default async function LiveQueuePage({
                     {formatISTTime(t.checked_in_at)}
                   </td>
                   <td className="p-3">
-                    <CopyLinkButton token={t.ticket_token} />
+                    <div className="flex items-center gap-2">
+                      <CopyLinkButton token={t.ticket_token} />
+                      {t.qr_codes?.code && (
+                        <span className="text-xs text-muted-foreground">{t.qr_codes.code}</span>
+                      )}
+                    </div>
                   </td>
                   <td className="p-3">
                     <PhotosButton
@@ -348,7 +359,7 @@ export default async function LiveQueuePage({
                     className="shrink-0 rounded-md object-cover"
                   />
                   <div className="min-w-0">
-                    <TicketTimelineDialog ticketId={t.id} vehicleNumber={t.vehicle_number} />
+                    <TicketTimelineDialog ticketId={t.id} vehicleNumber={t.vehicle_number} qrCode={t.qr_codes?.code} />
                     <p className="text-xs capitalize text-muted-foreground">
                       {t.vehicle_type} · {t.mobile_number}
                     </p>
@@ -367,6 +378,9 @@ export default async function LiveQueuePage({
 
               <div className="flex items-center gap-4">
                 <CopyLinkButton token={t.ticket_token} />
+                {t.qr_codes?.code && (
+                  <span className="text-xs text-muted-foreground">{t.qr_codes.code}</span>
+                )}
                 <PhotosButton
                   ticketId={t.id}
                   count={t.check_in_photos.length + t.handover_photos.length}

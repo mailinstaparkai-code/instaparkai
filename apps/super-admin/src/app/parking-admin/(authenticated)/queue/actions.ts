@@ -37,6 +37,7 @@ export async function checkInVehicle(formData: FormData) {
   const vehicle_number = formData.get("vehicle_number")?.toString().trim();
   const vehicle_type = formData.get("vehicle_type")?.toString() || "car";
   const mobile_number = formData.get("mobile_number")?.toString().trim();
+  const qr_code = formData.get("qr_code")?.toString().trim();
   if (!vehicle_number || !mobile_number) return;
 
   const session = await assertValetStaff();
@@ -45,7 +46,7 @@ export async function checkInVehicle(formData: FormData) {
   await queueLib.checkInVehicle(
     supabase,
     session,
-    { vehicleNumber: vehicle_number, vehicleType: vehicle_type, mobileNumber: mobile_number },
+    { vehicleNumber: vehicle_number, vehicleType: vehicle_type, mobileNumber: mobile_number, qrCode: qr_code },
     formData
   );
 
