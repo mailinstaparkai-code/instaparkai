@@ -497,10 +497,11 @@ private fun TicketCard(
     }
     if (showHandover) {
         HandoverDialog(
+            qrMode = ticket.qrCode != null,
             pending = viewModel.mutationPending,
             onDismiss = { showHandover = false },
-            onConfirm = { otp, fare, paid, photo, onError ->
-                viewModel.completeHandover(ticket.id, otp, fare, paid, photo) { error ->
+            onConfirm = { code, fare, paid, photo, onError ->
+                viewModel.completeHandover(ticket.id, code, ticket.qrCode != null, fare, paid, photo) { error ->
                     if (error == null) showHandover = false else onError(error)
                 }
             },
@@ -790,11 +791,12 @@ private fun DispatchDialog(
 
 @Composable
 private fun HandoverDialog(
+    qrMode: Boolean,
     pending: Boolean,
     onDismiss: () -> Unit,
     onConfirm: (String, String?, Boolean, java.io.File?, (String) -> Unit) -> Unit,
 ) {
-    var otp by remember { mutableStateOf("") }
+    var code by remember { mutableStateOf("") }
     var fare by remember { mutableStateOf("") }
     var paid by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf<String?>(null) }
@@ -804,7 +806,7 @@ private fun HandoverDialog(
     PremiumDialog(
         icon = Icons.Outlined.VpnKey,
         title = "Complete Handover",
-        subtitle = "Confirm OTP and collect payment to release the vehicle",
+        subtitle = if (qrMode) "Confirm the QR code and collect payment to release the vehicle" else "Confirm OTP and collect payment to release the vehicle",
         accent = colors.success,
         onDismissRequest = onDismiss,
         footer = {
@@ -812,19 +814,35 @@ private fun HandoverDialog(
             DialogPrimaryButton(
                 text = if (pending) "Completing…" else "Complete handover",
                 icon = Icons.Outlined.CheckCircle,
-                enabled = !pending && otp.isNotBlank(),
-                onClick = { onConfirm(otp, fare.ifBlank { null }, paid, handoverPhoto) { message -> error = message } },
+                enabled = !pending && code.isNotBlank(),
+                onClick = { onConfirm(code, fare.ifBlank { null }, paid, handoverPhoto) { message -> error = message } },
                 modifier = Modifier.weight(1.6f),
             )
         },
     ) {
         Text(
-            "Ask the guest for the OTP sent to their phone and enter it below to confirm the handover.",
+            if (qrMode) {
+                "Ask for the QR code on the guest's card and enter it below to confirm the handover."
+            } else {
+                "Ask the guest for the OTP sent to their phone and enter it below to confirm the handover."
+            },
             style = MaterialTheme.typography.bodySmall,
             color = colors.inkSecondary,
         )
         Spacer(Modifier.height(10.dp))
-        OtpBoxInput(value = otp, onValueChange = { otp = it })
+        if (qrMode) {
+            OutlinedTextField(
+                value = code,
+                onValueChange = { code = it.uppercase() },
+                label = { Text("QR code") },
+                placeholder = { Text("e.g. IPK-0001") },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        } else {
+            OtpBoxInput(value = code, onValueChange = { code = it })
+        }
         HorizontalDivider(modifier = Modifier.padding(vertical = 14.dp), color = colors.hairlineSoft)
         OutlinedTextField(
             value = fare,

@@ -90,13 +90,14 @@ class QueueViewModel(private val repository: QueueRepository) : ViewModel() {
 
     fun completeHandover(
         id: String,
-        otp: String,
+        code: String,
+        isQrMode: Boolean,
         fareAmount: String?,
         paymentCollected: Boolean,
         handoverPhoto: File?,
         onDone: (String?) -> Unit,
     ) = perform(
-        { repository.completeHandover(id, otp, fareAmount, paymentCollected, handoverPhoto) },
+        { repository.completeHandover(id, code, isQrMode, fareAmount, paymentCollected, handoverPhoto) },
         onDone
     )
 

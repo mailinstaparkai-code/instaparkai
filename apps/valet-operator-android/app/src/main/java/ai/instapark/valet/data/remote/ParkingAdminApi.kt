@@ -92,7 +92,8 @@ interface ParkingAdminApi {
     @POST("queue/{id}/complete-handover")
     suspend fun completeHandover(
         @Path("id") id: String,
-        @Part("otp") otp: RequestBody,
+        @Part("otp") otp: RequestBody?,
+        @Part("qr_code") qrCode: RequestBody?,
         @Part("fare_amount") fareAmount: RequestBody?,
         @Part("payment_collected") paymentCollected: RequestBody,
         @Part photoHandover: MultipartBody.Part? = null,

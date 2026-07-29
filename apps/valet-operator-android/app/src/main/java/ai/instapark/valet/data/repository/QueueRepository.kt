@@ -79,14 +79,16 @@ class QueueRepository(
 
     suspend fun completeHandover(
         id: String,
-        otp: String,
+        code: String,
+        isQrMode: Boolean,
         fareAmount: String?,
         paymentCollected: Boolean,
         handoverPhoto: File? = null,
     ): Result<Unit> = wrap {
         api.completeHandover(
             id = id,
-            otp = otp.textBody(),
+            otp = if (!isQrMode) code.textBody() else null,
+            qrCode = if (isQrMode) code.textBody() else null,
             fareAmount = fareAmount?.textBody(),
             paymentCollected = paymentCollected.toString().textBody(),
             photoHandover = filePart("photo_handover", handoverPhoto),
