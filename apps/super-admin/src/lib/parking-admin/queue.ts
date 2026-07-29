@@ -208,6 +208,21 @@ async function dispatchToOperator(
   ]);
 }
 
+type LoadedTicket = {
+  id: string;
+  status: string;
+  otp: string | null;
+  slot_id: string | null;
+  parking_space_id: string;
+  vehicle_number: string;
+  vehicle_type: string;
+  mobile_number: string;
+  ticket_token: string;
+  checked_in_by: string | null;
+  qr_code_id: string | null;
+  qr_codes: { code: string } | null;
+};
+
 export async function loadTicket(
   supabase: ReturnType<typeof createServiceClient>,
   id: string,
@@ -216,10 +231,11 @@ export async function loadTicket(
   const { data } = await supabase
     .from("valet_tickets")
     .select(
-      "id, status, otp, slot_id, parking_space_id, vehicle_number, vehicle_type, mobile_number, ticket_token, checked_in_by"
+      "id, status, otp, slot_id, parking_space_id, vehicle_number, vehicle_type, mobile_number, ticket_token, checked_in_by, qr_code_id, qr_codes(code)"
     )
     .eq("id", id)
     .eq("parking_space_id", siteId)
+    .returns<LoadedTicket[]>()
     .single();
   return data;
 }
@@ -545,7 +561,7 @@ export async function requestVehicle(
     .update({
       status: "requested",
       requested_at: new Date().toISOString(),
-      otp: generateOtp(),
+      otp: ticket.qr_code_id ? null : generateOtp(),
       requested_by: session.accountId,
     })
     .eq("id", id);
@@ -735,19 +751,27 @@ export async function completeHandover(
   supabase: ReturnType<typeof createServiceClient>,
   session: ValetSession,
   id: string,
-  fields: { otp: string; fareAmount: string | null; paymentCollected: boolean },
+  fields: { otp?: string; qrCode?: string; fareAmount: string | null; paymentCollected: boolean },
   formData: FormData
 ): Promise<void> {
-  const otpEntered = fields.otp.trim();
   const fareRaw = fields.fareAmount?.trim() || undefined;
-  if (!otpEntered) throw new AppError("invalid_request", "OTP is required.", 400);
 
   const ticket = await loadTicket(supabase, id, session.assignedSiteId);
   if (!ticket) throw new AppError("not_found", "Ticket not found.", 404);
   if (ticket.status !== "arrived") {
     throw new AppError("invalid_state", "Ticket is not awaiting handover.", 409);
   }
-  if (ticket.otp !== otpEntered) throw new AppError("invalid_otp", "Incorrect OTP.", 400);
+  if (ticket.qr_code_id) {
+    const qrEntered = fields.qrCode?.trim().toUpperCase();
+    if (!qrEntered) throw new AppError("invalid_request", "QR code is required.", 400);
+    if (ticket.qr_codes?.code !== qrEntered) {
+      throw new AppError("invalid_qr_code", "QR code does not match this ticket.", 400);
+    }
+  } else {
+    const otpEntered = fields.otp?.trim();
+    if (!otpEntered) throw new AppError("invalid_request", "OTP is required.", 400);
+    if (ticket.otp !== otpEntered) throw new AppError("invalid_otp", "Incorrect OTP.", 400);
+  }
 
   const handoverPhotos = await uploadTicketPhotos(
     supabase,

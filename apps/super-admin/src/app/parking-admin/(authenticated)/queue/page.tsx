@@ -108,7 +108,12 @@ function TicketRowActions({
         </form>
       )}
       {ticket.status === "arrived" && (
-        <HandoverButton ticketId={ticket.id} suggestedFare={suggestedFare} action={completeHandover} />
+        <HandoverButton
+          ticketId={ticket.id}
+          suggestedFare={suggestedFare}
+          qrMode={!!ticket.qr_code_id}
+          action={completeHandover}
+        />
       )}
       <TicketActionsMenu
         ticketId={ticket.id}

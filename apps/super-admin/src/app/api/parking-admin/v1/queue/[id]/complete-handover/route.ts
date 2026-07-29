@@ -9,12 +9,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const session = await requireApiSession(req);
     const { id } = await params;
     const formData = await req.formData();
-    const otp = formData.get("otp")?.toString() ?? "";
+    const otp = formData.get("otp")?.toString() || undefined;
+    const qrCode = formData.get("qr_code")?.toString() || undefined;
     const fareAmount = formData.get("fare_amount")?.toString() || null;
     const paymentCollected = formData.get("payment_collected")?.toString() === "true";
 
     const supabase = createServiceClient();
-    await completeHandover(supabase, session, id, { otp, fareAmount, paymentCollected }, formData);
+    await completeHandover(supabase, session, id, { otp, qrCode, fareAmount, paymentCollected }, formData);
 
     return NextResponse.json({ ok: true });
   } catch (err) {

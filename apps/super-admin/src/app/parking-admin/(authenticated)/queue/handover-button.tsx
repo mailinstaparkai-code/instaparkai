@@ -19,10 +19,12 @@ import { DialogPrimaryButton, DialogSecondaryButton } from "../../components/dia
 export function HandoverButton({
   ticketId,
   suggestedFare,
+  qrMode,
   action,
 }: {
   ticketId: string;
   suggestedFare: number | null;
+  qrMode: boolean;
   action: (formData: FormData) => Promise<void> | void;
 }) {
   const [open, setOpen] = useState(false);
@@ -56,13 +58,21 @@ export function HandoverButton({
           accentClassName="bg-status-success/20 text-status-success"
         />
         <p className="text-sm text-muted-foreground">
-          Ask the guest for the OTP sent to their phone and enter it below to confirm the handover.
+          {qrMode
+            ? "Ask for the QR code on the guest's card and enter it below to confirm the handover."
+            : "Ask the guest for the OTP sent to their phone and enter it below to confirm the handover."}
         </p>
         <form id="handover-form" onSubmit={handleSubmit} className="flex flex-col gap-3">
           <input type="hidden" name="id" value={ticketId} />
-          <Field label="Enter OTP to confirm">
-            <Input name="otp" required maxLength={4} placeholder="0000" />
-          </Field>
+          {qrMode ? (
+            <Field label="Enter QR code to confirm">
+              <Input name="qr_code" required placeholder="e.g. IPK-0001" className="uppercase" />
+            </Field>
+          ) : (
+            <Field label="Enter OTP to confirm">
+              <Input name="otp" required maxLength={4} placeholder="0000" />
+            </Field>
+          )}
           <Field label="Fare amount (₹)">
             <Input
               name="fare_amount"

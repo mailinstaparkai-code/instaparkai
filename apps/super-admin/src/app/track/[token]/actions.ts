@@ -29,7 +29,7 @@ export async function requestVehicleByGuest(token: string) {
 
   const { data: ticket } = await supabase
     .from("valet_tickets")
-    .select("id, status")
+    .select("id, status, qr_code_id")
     .eq("ticket_token", token)
     .single();
 
@@ -37,7 +37,11 @@ export async function requestVehicleByGuest(token: string) {
 
   await supabase
     .from("valet_tickets")
-    .update({ status: "requested", requested_at: new Date().toISOString(), otp: generateOtp() })
+    .update({
+      status: "requested",
+      requested_at: new Date().toISOString(),
+      otp: ticket.qr_code_id ? null : generateOtp(),
+    })
     .eq("id", ticket.id);
 
   revalidatePath(`/track/${token}`);

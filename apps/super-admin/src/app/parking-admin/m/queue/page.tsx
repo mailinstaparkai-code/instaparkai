@@ -251,6 +251,7 @@ export default async function MobileQueuePage({
                   <HandoverButton
                     ticketId={t.id}
                     suggestedFare={suggestedFare}
+                    qrMode={!!t.qr_code_id}
                     action={completeHandover}
                   />
                 )}

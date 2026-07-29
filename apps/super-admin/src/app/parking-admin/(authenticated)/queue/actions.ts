@@ -156,9 +156,10 @@ export async function voidTicket(formData: FormData) {
 export async function completeHandover(formData: FormData) {
   const id = formData.get("id")?.toString();
   const otpEntered = formData.get("otp")?.toString().trim();
+  const qrCodeEntered = formData.get("qr_code")?.toString().trim();
   const fareRaw = formData.get("fare_amount")?.toString().trim();
   const payment_collected = formData.get("payment_collected") === "on";
-  if (!id || !otpEntered) return;
+  if (!id) return;
 
   const session = await assertValetStaff();
   const supabase = createServiceClient();
@@ -167,7 +168,7 @@ export async function completeHandover(formData: FormData) {
     supabase,
     session,
     id,
-    { otp: otpEntered, fareAmount: fareRaw || null, paymentCollected: payment_collected },
+    { otp: otpEntered, qrCode: qrCodeEntered, fareAmount: fareRaw || null, paymentCollected: payment_collected },
     formData
   );
 

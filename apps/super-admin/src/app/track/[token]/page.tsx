@@ -24,12 +24,13 @@ export default async function GuestTrackingPage({
   const { data: ticket } = await supabase
     .from("valet_tickets")
     .select(
-      "status, otp, vehicle_number, vehicle_type, fare_amount, payment_collected, parking_spaces(name)"
+      "status, otp, qr_code_id, vehicle_number, vehicle_type, fare_amount, payment_collected, parking_spaces(name)"
     )
     .eq("ticket_token", token)
     .single<{
       status: Status;
       otp: string | null;
+      qr_code_id: string | null;
       vehicle_number: string;
       vehicle_type: string;
       fare_amount: number | null;
@@ -116,6 +117,15 @@ export default async function GuestTrackingPage({
                 </p>
                 <p className="mt-1 font-numeric text-3xl font-semibold tracking-widest">
                   {ticket.otp}
+                </p>
+              </div>
+            )}
+
+            {ticket.status === "arrived" && !ticket.otp && ticket.qr_code_id && (
+              <div className="mt-6 rounded-lg bg-status-success/10 p-4 text-center">
+                <KeyRound className="mx-auto size-5 text-status-success" />
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Hand your QR card to the valet to collect your vehicle.
                 </p>
               </div>
             )}
