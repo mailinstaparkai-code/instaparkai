@@ -45,7 +45,9 @@ export default async function ValetOperatorsPage({
   const [{ data: allOperators }, { data: dailyStatusRows }] = await Promise.all([
     supabase
       .from("valet_accounts")
-      .select("id, username, full_name, employee_id, email, phone, photo_path, is_active")
+      .select(
+        "id, username, full_name, employee_id, email, phone, photo_path, is_active, driving_license_path, driving_license_expiry, aadhar_path, police_verification_path"
+      )
       .eq("role", "valet_operator")
       .eq("assigned_site_id", session.assignedSiteId)
       .order("created_at", { ascending: false }),
@@ -72,6 +74,27 @@ export default async function ValetOperatorsPage({
           })
       )
     ).filter((entry): entry is [string, string] => !!entry[1])
+  );
+
+  const DOC_FIELDS = [
+    ["driving_license_path", "driving_license"],
+    ["aadhar_path", "aadhar"],
+    ["police_verification_path", "police_verification"],
+  ] as const;
+
+  const docUrlById = new Map(
+    (
+      await Promise.all(
+        (allOperators ?? []).flatMap((op) =>
+          DOC_FIELDS.map(async ([column, field]): Promise<[string, string] | null> => {
+            const path = op[column];
+            if (!path) return null;
+            const { data } = await supabase.storage.from(BUCKET).createSignedUrl(path, 3600);
+            return data?.signedUrl ? [`${op.id}:${field}`, data.signedUrl] : null;
+          })
+        )
+      )
+    ).filter((entry): entry is [string, string] => !!entry)
   );
 
   const operators = (allOperators ?? []).filter((op) => {
@@ -113,6 +136,11 @@ export default async function ValetOperatorsPage({
             key={op.id}
             operator={op}
             photoUrl={photoUrlById.get(op.id) ?? null}
+            documentUrls={{
+              driving_license: docUrlById.get(`${op.id}:driving_license`) ?? null,
+              aadhar: docUrlById.get(`${op.id}:aadhar`) ?? null,
+              police_verification: docUrlById.get(`${op.id}:police_verification`) ?? null,
+            }}
             dailyStatus={dailyStatusById.get(op.id) ?? null}
             updateAction={updateOperator}
             leaveAction={setOperatorLeave}

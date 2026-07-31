@@ -49,3 +49,28 @@ export async function uploadOperatorPhoto(
 
   return error ? null : path;
 }
+
+// Generic sibling of uploadOperatorPhoto for the Driving License / Aadhar / Police
+// Verification fields -- kept separate rather than folding photo into this too, so
+// the existing photo_path storage path format (and any already-issued signed URLs)
+// stays untouched.
+export async function uploadOperatorDocument(
+  supabase: ReturnType<typeof createServiceClient>,
+  siteId: string,
+  operatorId: string,
+  formData: FormData,
+  fieldName: string,
+  label: string
+): Promise<string | null> {
+  const file = formData.get(fieldName);
+  if (!(file instanceof File) || file.size === 0) return null;
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const ext = file.type === "application/pdf" ? "pdf" : "jpg";
+  const path = `${siteId}/operators/${operatorId}-${label}-${Date.now()}.${ext}`;
+  const { error } = await supabase.storage
+    .from(BUCKET)
+    .upload(path, buffer, { contentType: file.type || "image/jpeg" });
+
+  return error ? null : path;
+}

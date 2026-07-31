@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/service";
 import { hashPassword } from "@/lib/valet-auth/password";
 import { getValetSession } from "@/lib/valet-auth/session";
-import { uploadOperatorPhoto } from "@/lib/valet-photos";
+import { uploadOperatorPhoto, uploadOperatorDocument } from "@/lib/valet-photos";
 import { todayIST } from "@/lib/operator-availability";
 
 const PATH = "/parking-admin/operators";
@@ -24,6 +24,7 @@ export async function createOperator(formData: FormData) {
   const employee_id = formData.get("employee_id")?.toString().trim() || null;
   const email = formData.get("email")?.toString().trim() || null;
   const phone = formData.get("phone")?.toString().trim() || null;
+  const driving_license_expiry = formData.get("driving_license_expiry")?.toString().trim() || null;
   if (!username || !password) return;
 
   const session = await assertParkingAdmin();
@@ -40,15 +41,29 @@ export async function createOperator(formData: FormData) {
       employee_id,
       email,
       phone,
+      driving_license_expiry,
       created_by: session.accountId,
     })
     .select("id")
     .single();
   if (error) throw new Error(error.message);
 
-  const photo_path = await uploadOperatorPhoto(supabase, session.assignedSiteId, created.id, formData);
-  if (photo_path) {
-    await supabase.from("valet_accounts").update({ photo_path }).eq("id", created.id);
+  // Uploaded in parallel (4 photo/document fields) rather than one-at-a-time --
+  // same rationale as uploadTicketPhotos: each is a separate round trip to Storage.
+  const [photo_path, driving_license_path, aadhar_path, police_verification_path] = await Promise.all([
+    uploadOperatorPhoto(supabase, session.assignedSiteId, created.id, formData),
+    uploadOperatorDocument(supabase, session.assignedSiteId, created.id, formData, "driving_license", "dl"),
+    uploadOperatorDocument(supabase, session.assignedSiteId, created.id, formData, "aadhar", "aadhar"),
+    uploadOperatorDocument(supabase, session.assignedSiteId, created.id, formData, "police_verification", "police"),
+  ]);
+
+  const uploads: Record<string, unknown> = {};
+  if (photo_path) uploads.photo_path = photo_path;
+  if (driving_license_path) uploads.driving_license_path = driving_license_path;
+  if (aadhar_path) uploads.aadhar_path = aadhar_path;
+  if (police_verification_path) uploads.police_verification_path = police_verification_path;
+  if (Object.keys(uploads).length) {
+    await supabase.from("valet_accounts").update(uploads).eq("id", created.id);
   }
 
   revalidatePath(PATH);
@@ -62,20 +77,34 @@ export async function updateOperator(formData: FormData) {
   const employee_id = formData.get("employee_id")?.toString().trim() || null;
   const email = formData.get("email")?.toString().trim() || null;
   const phone = formData.get("phone")?.toString().trim() || null;
+  const driving_license_expiry = formData.get("driving_license_expiry")?.toString().trim() || null;
   if (!id || !username) return;
 
   const session = await assertParkingAdmin();
   const supabase = createServiceClient();
 
-  const update: Record<string, unknown> = { username, full_name, employee_id, email, phone };
+  const update: Record<string, unknown> = {
+    username,
+    full_name,
+    employee_id,
+    email,
+    phone,
+    driving_license_expiry,
+  };
   if (password) {
     update.password_hash = hashPassword(password);
   }
 
-  const photo_path = await uploadOperatorPhoto(supabase, session.assignedSiteId, id, formData);
-  if (photo_path) {
-    update.photo_path = photo_path;
-  }
+  const [photo_path, driving_license_path, aadhar_path, police_verification_path] = await Promise.all([
+    uploadOperatorPhoto(supabase, session.assignedSiteId, id, formData),
+    uploadOperatorDocument(supabase, session.assignedSiteId, id, formData, "driving_license", "dl"),
+    uploadOperatorDocument(supabase, session.assignedSiteId, id, formData, "aadhar", "aadhar"),
+    uploadOperatorDocument(supabase, session.assignedSiteId, id, formData, "police_verification", "police"),
+  ]);
+  if (photo_path) update.photo_path = photo_path;
+  if (driving_license_path) update.driving_license_path = driving_license_path;
+  if (aadhar_path) update.aadhar_path = aadhar_path;
+  if (police_verification_path) update.police_verification_path = police_verification_path;
 
   const { error } = await supabase
     .from("valet_accounts")

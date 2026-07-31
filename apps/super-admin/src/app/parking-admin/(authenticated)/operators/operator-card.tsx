@@ -16,6 +16,13 @@ import { ConfirmDeleteDialog } from "../../components/confirm-delete-dialog";
 import { OperatorFormFields } from "./operator-form-fields";
 import { DailyStatusSelect } from "./daily-status-select";
 
+// Duplicated rather than imported from @/lib/operator-availability, which pulls in
+// "server-only" and can't be bundled into this Client Component (same reason
+// operators/page.tsx keeps its own copy instead of importing that lib's).
+function todayIST(): string {
+  return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Kolkata" });
+}
+
 type Operator = {
   id: string;
   username: string;
@@ -24,11 +31,36 @@ type Operator = {
   email: string | null;
   phone: string | null;
   is_active: boolean;
+  driving_license_path: string | null;
+  driving_license_expiry: string | null;
+  aadhar_path: string | null;
+  police_verification_path: string | null;
 };
+
+const DAYS_TO_MS = 24 * 60 * 60 * 1000;
+
+function dlExpiryBadge(expiry: string | null): { label: string; className: string } | null {
+  if (!expiry) return null;
+  const today = todayIST();
+  if (expiry < today) {
+    return { label: "DL expired", className: "bg-status-danger/15 text-status-danger" };
+  }
+  const daysLeft = Math.round(
+    (new Date(`${expiry}T00:00:00Z`).getTime() - new Date(`${today}T00:00:00Z`).getTime()) / DAYS_TO_MS
+  );
+  if (daysLeft <= 30) {
+    return {
+      label: `DL expires in ${daysLeft} day${daysLeft === 1 ? "" : "s"}`,
+      className: "bg-status-warning/15 text-status-warning",
+    };
+  }
+  return null;
+}
 
 export function OperatorCard({
   operator,
   photoUrl,
+  documentUrls,
   dailyStatus,
   updateAction,
   leaveAction,
@@ -38,6 +70,11 @@ export function OperatorCard({
 }: {
   operator: Operator;
   photoUrl: string | null;
+  documentUrls: {
+    driving_license: string | null;
+    aadhar: string | null;
+    police_verification: string | null;
+  };
   dailyStatus: string | null;
   updateAction: (formData: FormData) => Promise<void> | void;
   leaveAction: (formData: FormData) => Promise<void> | void;
@@ -129,6 +166,50 @@ export function OperatorCard({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {(() => {
+        const badge = dlExpiryBadge(operator.driving_license_expiry);
+        const hasDocs =
+          documentUrls.driving_license || documentUrls.aadhar || documentUrls.police_verification;
+        if (!badge && !hasDocs) return null;
+        return (
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs">
+            {documentUrls.driving_license && (
+              <a
+                href={documentUrls.driving_license}
+                target="_blank"
+                rel="noreferrer"
+                className="text-brand-orange hover:underline"
+              >
+                Driving License
+              </a>
+            )}
+            {badge && (
+              <span className={`rounded-full px-2 py-0.5 font-medium ${badge.className}`}>{badge.label}</span>
+            )}
+            {documentUrls.aadhar && (
+              <a
+                href={documentUrls.aadhar}
+                target="_blank"
+                rel="noreferrer"
+                className="text-brand-orange hover:underline"
+              >
+                Aadhar Card
+              </a>
+            )}
+            {documentUrls.police_verification && (
+              <a
+                href={documentUrls.police_verification}
+                target="_blank"
+                rel="noreferrer"
+                className="text-brand-orange hover:underline"
+              >
+                Police Verification
+              </a>
+            )}
+          </div>
+        );
+      })()}
 
       <div className="mt-4 flex items-center justify-between gap-2 border-t border-border pt-3">
         <DailyStatusSelect operatorId={operator.id} value={dailyStatus} action={dailyStatusAction} />

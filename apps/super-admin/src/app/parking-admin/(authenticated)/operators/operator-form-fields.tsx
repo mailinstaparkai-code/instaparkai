@@ -1,6 +1,8 @@
 import { Input } from "@/components/ui/input";
 import { Field } from "../../components/field";
 import { PhotoInput } from "../../components/photo-input";
+import { DocumentInput } from "./document-input";
+import { DlDocumentInput } from "./dl-document-input";
 
 export function OperatorFormFields({
   defaultValues,
@@ -12,6 +14,7 @@ export function OperatorFormFields({
     employee_id?: string | null;
     email?: string | null;
     phone?: string | null;
+    driving_license_expiry?: string | null;
   };
   passwordPlaceholder?: string;
 }) {
@@ -41,6 +44,9 @@ export function OperatorFormFields({
         <Input name="phone" type="tel" defaultValue={defaultValues?.phone ?? ""} />
       </Field>
       <PhotoInput name="photo" label="Photo" />
+      <DlDocumentInput defaultExpiry={defaultValues?.driving_license_expiry} />
+      <PhotoInput name="aadhar" label="Aadhar Card" />
+      <DocumentInput name="police_verification" label="Police Verification (optional)" required={false} />
     </>
   );
 }
