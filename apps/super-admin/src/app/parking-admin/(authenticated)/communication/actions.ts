@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getValetSession } from "@/lib/valet-auth/session";
+import { getCurrentSiteId, getValetSession } from "@/lib/valet-auth/session";
 import { sendTestMessage as sendTestMessageInternal, type Channel, type TriggerKey } from "@/lib/communication-triggers";
 
 const PATH = "/parking-admin/communication";
@@ -31,7 +31,7 @@ export async function updateCommunicationSettings(formData: FormData) {
   const { data: existing } = await supabase
     .from("communication_settings")
     .select(SECRET_FIELDS.join(", "))
-    .eq("parking_space_id", session.assignedSiteId)
+    .eq("parking_space_id", getCurrentSiteId(session))
     .maybeSingle<Record<(typeof SECRET_FIELDS)[number], string | null>>();
 
   // Blank field on submit means "keep the existing value" -- credentials are never
@@ -44,7 +44,7 @@ export async function updateCommunicationSettings(formData: FormData) {
 
   const { error } = await supabase.from("communication_settings").upsert(
     {
-      parking_space_id: session.assignedSiteId,
+      parking_space_id: getCurrentSiteId(session),
       sms_enabled: formData.get("sms_enabled") === "on",
       whatsapp_enabled: formData.get("whatsapp_enabled") === "on",
       email_enabled: formData.get("email_enabled") === "on",
@@ -74,7 +74,7 @@ export async function updateTriggerSetting(formData: FormData) {
 
   const { error } = await supabase.from("communication_trigger_settings").upsert(
     {
-      parking_space_id: session.assignedSiteId,
+      parking_space_id: getCurrentSiteId(session),
       trigger_key,
       channel,
       enabled,
@@ -105,12 +105,12 @@ export async function sendTestMessage(
   const { data: site } = await supabase
     .from("parking_spaces")
     .select("name")
-    .eq("id", session.assignedSiteId)
+    .eq("id", getCurrentSiteId(session))
     .single();
 
   const result = await sendTestMessageInternal({
     supabase,
-    siteId: session.assignedSiteId,
+    siteId: getCurrentSiteId(session),
     siteName: site?.name ?? "Valet parking",
     triggerKey: trigger_key,
     channel,

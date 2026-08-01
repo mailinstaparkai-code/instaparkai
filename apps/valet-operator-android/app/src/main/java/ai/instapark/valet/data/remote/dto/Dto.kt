@@ -19,16 +19,26 @@ data class LoginResponse(
     val account: Account,
 )
 
+data class AccessibleSite(
+    val id: String,
+    val name: String,
+)
+
 data class MeResponse(
     val id: String,
     val username: String,
     val role: String,
     val fullName: String?,
     val assignedSiteId: String,
+    val currentSiteId: String? = null,
+    val accessibleSites: List<AccessibleSite> = emptyList(),
     val siteName: String?,
     val valetParkingEnabled: Boolean,
     val qrCodeModeEnabled: Boolean,
 )
+
+data class SwitchSiteRequest(val siteId: String)
+data class SwitchSiteResponse(val currentSiteId: String)
 
 data class DashboardKpis(
     val activeVehicles: Int,
@@ -205,3 +215,124 @@ data class NotificationItem(
 data class NotificationsResponse(
     val notifications: List<NotificationItem>,
 )
+
+// -- Reports --------------------------------------------------------------
+
+data class TransactionRow(
+    val key: String,
+    val type: String,
+    val label: String,
+    val timestamp: String,
+    val vehicleNumber: String,
+    val operatorLabel: String,
+    val fare: Int?,
+    val paymentCollected: Boolean?,
+)
+
+data class ReportStats(
+    val checkIns: Int,
+    val handovers: Int,
+    val activeOperators: Int,
+)
+
+data class VehicleTransactionsResponse(
+    val transactions: List<TransactionRow>,
+    val page: Int,
+    val totalPages: Int,
+    val totalCount: Int,
+    val cappedAt: Int?,
+    val stats: ReportStats,
+    val operatorOptions: List<FilterOption>,
+    val from: String,
+    val to: String,
+)
+
+// -- Configuration: Zones & Slots -------------------------------------------
+
+data class SlotItem(
+    val id: String,
+    val slotNumber: String,
+    val isEv: Boolean,
+    val isDisabledSlot: Boolean,
+    val status: String,
+)
+
+data class ZoneItem(
+    val id: String,
+    val name: String,
+    val slots: List<SlotItem>,
+)
+
+data class ZonesResponse(val zones: List<ZoneItem>)
+data class CreateZoneRequest(val name: String)
+data class CreateZoneResponse(val zone: ZoneItem)
+data class CreateSlotRequest(val slotNumber: String, val isEv: Boolean, val isDisabledSlot: Boolean)
+data class CreateSlotResponse(val slot: SlotItem)
+
+// -- Configuration: Vehicle types -------------------------------------------
+
+data class VehicleTypeItem(val id: String, val name: String)
+data class VehicleTypesResponse(val vehicleTypes: List<VehicleTypeItem>)
+data class CreateVehicleTypeRequest(val name: String)
+data class CreateVehicleTypeResponse(val vehicleType: VehicleTypeItem)
+
+// -- Configuration: Tariffs -------------------------------------------------
+
+data class SlabTier(val uptoMinutes: Int?, val rate: Double)
+
+data class TariffRuleItem(
+    val id: String,
+    val vehicleCategory: String,
+    val pricingType: String,
+    val rate: Double,
+    val surgeMultiplier: Double?,
+    val slabTiers: List<SlabTier>?,
+)
+
+data class TariffRulesResponse(val tariffRules: List<TariffRuleItem>)
+data class CreateTariffRuleRequest(
+    val vehicleCategory: String,
+    val pricingType: String,
+    val rate: Double? = null,
+    val surgeMultiplier: Double? = null,
+    val slabTiers: List<SlabTier>? = null,
+)
+data class CreateTariffRuleResponse(val tariffRule: TariffRuleItem)
+
+// -- Configuration: Guest requests / QR --------------------------------------
+
+data class QrCodeItem(
+    val id: String,
+    val code: String,
+    val createdAt: String,
+    val inUse: Boolean,
+    val ticket: TicketOperatorLite?,
+)
+
+data class TicketOperatorLite(val id: String, val vehicleNumber: String, val status: String)
+
+data class GuestRequestsResponse(val guestRequestMode: String, val qrCodes: List<QrCodeItem>)
+data class SetGuestRequestModeRequest(val mode: String)
+data class SetGuestRequestModeResponse(val guestRequestMode: String)
+data class GenerateQrCodesRequest(val count: Int)
+data class GenerateQrCodesResponse(val qrCodes: List<QrCodeItem>)
+
+// -- Operators ----------------------------------------------------------
+
+data class OperatorItem(
+    val id: String,
+    val username: String,
+    val fullName: String?,
+    val employeeId: String?,
+    val email: String?,
+    val phone: String?,
+    val isActive: Boolean,
+    val drivingLicenseExpiry: String?,
+    val dailyStatus: String?,
+)
+
+data class OperatorsResponse(val operators: List<OperatorItem>)
+data class CreateOperatorResponse(val id: String)
+data class SetOperatorActiveRequest(val isActive: Boolean)
+data class SetOperatorDailyStatusRequest(val status: String)
+data class SetOperatorLeaveRequest(val startDate: String, val endDate: String)

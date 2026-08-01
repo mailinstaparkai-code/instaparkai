@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getValetSession } from "@/lib/valet-auth/session";
+import { getCurrentSiteId, getValetSession } from "@/lib/valet-auth/session";
 import {
   TICKET_TIMELINE_SELECT,
   TRANSACTION_META,
@@ -57,7 +57,7 @@ export default async function VehicleTransactionReportPage({
     supabase
       .from("valet_tickets")
       .select(TICKET_TIMELINE_SELECT)
-      .eq("parking_space_id", session.assignedSiteId)
+      .eq("parking_space_id", getCurrentSiteId(session))
       .gte("checked_in_at", `${from}T00:00:00`)
       .lte("checked_in_at", `${to}T23:59:59`)
       .order("checked_in_at", { ascending: false })
@@ -70,7 +70,7 @@ export default async function VehicleTransactionReportPage({
     supabase
       .from("valet_accounts")
       .select("id, username, full_name")
-      .eq("assigned_site_id", session.assignedSiteId)
+      .eq("assigned_site_id", getCurrentSiteId(session))
       .order("username"),
   ]);
 

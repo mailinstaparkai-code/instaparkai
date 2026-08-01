@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import QRCode from "qrcode";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getValetSession } from "@/lib/valet-auth/session";
+import { getCurrentSiteId, getValetSession } from "@/lib/valet-auth/session";
 import { getBaseUrl } from "@/lib/parking-admin/queue";
 import { PrintButton } from "./print-button";
 
@@ -25,7 +25,7 @@ export default async function PrintQrCodesPage({
   let query = supabase
     .from("qr_codes")
     .select("id, code")
-    .eq("site_id", session.assignedSiteId)
+    .eq("site_id", getCurrentSiteId(session))
     .order("code");
   if (idList?.length) query = query.in("id", idList);
 

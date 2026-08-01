@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getValetSession } from "@/lib/valet-auth/session";
+import { getCurrentSiteId, getValetSession } from "@/lib/valet-auth/session";
 import { CopyLinkButton } from "../queue/copy-link-button";
 import { PhotosButton } from "../queue/photos-button";
 import { TicketTimelineDialog } from "../queue/ticket-timeline-dialog";
@@ -116,12 +116,12 @@ export default async function VehicleLogPage({
     supabase
       .from("vehicle_types")
       .select("id, name")
-      .eq("parking_space_id", session.assignedSiteId)
+      .eq("parking_space_id", getCurrentSiteId(session))
       .order("name"),
     supabase
       .from("valet_accounts")
       .select("id, username, full_name")
-      .eq("assigned_site_id", session.assignedSiteId)
+      .eq("assigned_site_id", getCurrentSiteId(session))
       .order("username"),
   ]);
 
@@ -134,7 +134,7 @@ export default async function VehicleLogPage({
   let baseQuery = supabase
     .from("valet_tickets")
     .select(TICKET_SELECT, { count: "exact" })
-    .eq("parking_space_id", session.assignedSiteId);
+    .eq("parking_space_id", getCurrentSiteId(session));
 
   if (statusFilter.length) baseQuery = baseQuery.in("status", statusFilter);
   if (vehicleTypeFilter.length) baseQuery = baseQuery.in("vehicle_type", vehicleTypeFilter);
@@ -151,7 +151,7 @@ export default async function VehicleLogPage({
   let statsQuery = supabase
     .from("valet_tickets")
     .select("fare_amount, payment_collected, checked_in_at, completed_at")
-    .eq("parking_space_id", session.assignedSiteId)
+    .eq("parking_space_id", getCurrentSiteId(session))
     .eq("status", "completed")
     .order("checked_in_at", { ascending: false })
     .limit(500);

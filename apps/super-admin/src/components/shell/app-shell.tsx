@@ -9,6 +9,7 @@ import { Menu, X, Sparkles, Bell, Sun, Moon, LogOut, Smartphone } from "lucide-r
 import { Button } from "@/components/ui/button";
 import { superAdminNav, parkingAdminNav, valetOperatorNav } from "./nav-config";
 import { NotificationsBell } from "./notifications-bell";
+import { SiteSwitcher } from "./site-switcher";
 import { CommandPalette } from "@/app/parking-admin/components/command-palette";
 
 export function AppShell({
@@ -16,12 +17,18 @@ export function AppShell({
   userLabel,
   userSubLabel,
   signOutAction,
+  sites,
+  currentSiteId,
   children,
 }: {
   nav: "super-admin" | "parking-admin" | "valet-operator";
   userLabel: string;
   userSubLabel?: string;
   signOutAction: () => void;
+  // parking_admin only, and only rendered when there's more than one site to
+  // switch between -- see SiteSwitcher.
+  sites?: { id: string; name: string }[];
+  currentSiteId?: string;
   children: React.ReactNode;
 }) {
   const navItems =
@@ -148,6 +155,10 @@ export function AppShell({
           </button>
 
           {nav === "super-admin" ? <div className="flex-1" /> : <CommandPalette />}
+
+          {nav === "parking-admin" && sites && currentSiteId && (
+            <SiteSwitcher sites={sites} currentSiteId={currentSiteId} />
+          )}
 
           <span
             className={`hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium sm:flex ${

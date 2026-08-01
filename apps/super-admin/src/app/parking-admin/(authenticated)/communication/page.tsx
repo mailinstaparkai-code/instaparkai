@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getValetSession } from "@/lib/valet-auth/session";
+import { getCurrentSiteId, getValetSession } from "@/lib/valet-auth/session";
 import { TRIGGER_KEYS } from "@/lib/communication-triggers";
 import { StatCards } from "./components/stat-cards";
 import { TabBar } from "./components/tab-bar";
@@ -34,7 +34,7 @@ export default async function CommunicationPage({
     : "whatsapp";
 
   const supabase = createServiceClient();
-  const siteId = session.assignedSiteId;
+  const siteId = getCurrentSiteId(session);
 
   const [
     { data: commSettings },

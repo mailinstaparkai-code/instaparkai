@@ -2,25 +2,50 @@ package ai.instapark.valet.data.remote
 
 import ai.instapark.valet.data.remote.dto.AutoAllocateRequest
 import ai.instapark.valet.data.remote.dto.CheckInResponse
+import ai.instapark.valet.data.remote.dto.CreateOperatorResponse
+import ai.instapark.valet.data.remote.dto.CreateSlotRequest
+import ai.instapark.valet.data.remote.dto.CreateSlotResponse
+import ai.instapark.valet.data.remote.dto.CreateTariffRuleRequest
+import ai.instapark.valet.data.remote.dto.CreateTariffRuleResponse
+import ai.instapark.valet.data.remote.dto.CreateVehicleTypeRequest
+import ai.instapark.valet.data.remote.dto.CreateVehicleTypeResponse
+import ai.instapark.valet.data.remote.dto.CreateZoneRequest
+import ai.instapark.valet.data.remote.dto.CreateZoneResponse
 import ai.instapark.valet.data.remote.dto.DashboardResponse
 import ai.instapark.valet.data.remote.dto.DeviceTokenRequest
 import ai.instapark.valet.data.remote.dto.DispatchRequest
+import ai.instapark.valet.data.remote.dto.GenerateQrCodesRequest
+import ai.instapark.valet.data.remote.dto.GenerateQrCodesResponse
+import ai.instapark.valet.data.remote.dto.GuestRequestsResponse
 import ai.instapark.valet.data.remote.dto.LoginRequest
 import ai.instapark.valet.data.remote.dto.LoginResponse
 import ai.instapark.valet.data.remote.dto.MarkParkedRequest
 import ai.instapark.valet.data.remote.dto.MeResponse
 import ai.instapark.valet.data.remote.dto.MyDailyStatus
+import ai.instapark.valet.data.remote.dto.OperatorsResponse
+import ai.instapark.valet.data.remote.dto.SetGuestRequestModeRequest
+import ai.instapark.valet.data.remote.dto.SetGuestRequestModeResponse
+import ai.instapark.valet.data.remote.dto.SetOperatorActiveRequest
+import ai.instapark.valet.data.remote.dto.SetOperatorDailyStatusRequest
+import ai.instapark.valet.data.remote.dto.SetOperatorLeaveRequest
 import ai.instapark.valet.data.remote.dto.SetStatusRequest
 import ai.instapark.valet.data.remote.dto.NotificationsResponse
 import ai.instapark.valet.data.remote.dto.PhotosResponse
 import ai.instapark.valet.data.remote.dto.QueueResponse
+import ai.instapark.valet.data.remote.dto.SwitchSiteRequest
+import ai.instapark.valet.data.remote.dto.SwitchSiteResponse
+import ai.instapark.valet.data.remote.dto.TariffRulesResponse
 import ai.instapark.valet.data.remote.dto.TimelineResponse
 import ai.instapark.valet.data.remote.dto.UpdateTicketRequest
+import ai.instapark.valet.data.remote.dto.VehicleTypesResponse
+import ai.instapark.valet.data.remote.dto.VehicleTransactionsResponse
 import ai.instapark.valet.data.remote.dto.VehiclesResponse
 import ai.instapark.valet.data.remote.dto.VoidRequest
+import ai.instapark.valet.data.remote.dto.ZonesResponse
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Multipart
 import retrofit2.http.PATCH
@@ -122,4 +147,106 @@ interface ParkingAdminApi {
 
     @POST("device-tokens")
     suspend fun registerDeviceToken(@Body request: DeviceTokenRequest)
+
+    @POST("me/switch-site")
+    suspend fun switchSite(@Body request: SwitchSiteRequest): SwitchSiteResponse
+
+    @GET("reports/vehicle-transactions")
+    suspend fun vehicleTransactionsReport(
+        @Query("type") type: String? = null,
+        @Query("operator") operator: String? = null,
+        @Query("from") from: String? = null,
+        @Query("to") to: String? = null,
+        @Query("page") page: Int = 1,
+    ): VehicleTransactionsResponse
+
+    @GET("configuration/zones")
+    suspend fun zones(): ZonesResponse
+
+    @POST("configuration/zones")
+    suspend fun createZone(@Body request: CreateZoneRequest): CreateZoneResponse
+
+    @DELETE("configuration/zones/{id}")
+    suspend fun deleteZone(@Path("id") id: String)
+
+    @POST("configuration/zones/{zoneId}/slots")
+    suspend fun createSlot(@Path("zoneId") zoneId: String, @Body request: CreateSlotRequest): CreateSlotResponse
+
+    @DELETE("configuration/slots/{id}")
+    suspend fun deleteSlot(@Path("id") id: String)
+
+    @GET("configuration/vehicle-types")
+    suspend fun vehicleTypes(): VehicleTypesResponse
+
+    @POST("configuration/vehicle-types")
+    suspend fun createVehicleType(@Body request: CreateVehicleTypeRequest): CreateVehicleTypeResponse
+
+    @DELETE("configuration/vehicle-types/{id}")
+    suspend fun deleteVehicleType(@Path("id") id: String)
+
+    @GET("configuration/tariffs")
+    suspend fun tariffRules(): TariffRulesResponse
+
+    @POST("configuration/tariffs")
+    suspend fun createTariffRule(@Body request: CreateTariffRuleRequest): CreateTariffRuleResponse
+
+    @DELETE("configuration/tariffs/{id}")
+    suspend fun deleteTariffRule(@Path("id") id: String)
+
+    @GET("configuration/guest-requests")
+    suspend fun guestRequests(): GuestRequestsResponse
+
+    @PATCH("configuration/guest-requests")
+    suspend fun setGuestRequestMode(@Body request: SetGuestRequestModeRequest): SetGuestRequestModeResponse
+
+    @POST("configuration/qr-codes")
+    suspend fun generateQrCodes(@Body request: GenerateQrCodesRequest): GenerateQrCodesResponse
+
+    @GET("operators")
+    suspend fun operators(): OperatorsResponse
+
+    @Multipart
+    @POST("operators")
+    suspend fun createOperator(
+        @Part("username") username: RequestBody,
+        @Part("password") password: RequestBody,
+        @Part("fullName") fullName: RequestBody?,
+        @Part("employeeId") employeeId: RequestBody?,
+        @Part("email") email: RequestBody?,
+        @Part("phone") phone: RequestBody?,
+        @Part("drivingLicenseExpiry") drivingLicenseExpiry: RequestBody?,
+        @Part photo: MultipartBody.Part? = null,
+        @Part drivingLicense: MultipartBody.Part? = null,
+        @Part aadhar: MultipartBody.Part? = null,
+        @Part policeVerification: MultipartBody.Part? = null,
+    ): CreateOperatorResponse
+
+    @Multipart
+    @PATCH("operators/{id}")
+    suspend fun updateOperator(
+        @Path("id") id: String,
+        @Part("username") username: RequestBody,
+        @Part("password") password: RequestBody?,
+        @Part("fullName") fullName: RequestBody?,
+        @Part("employeeId") employeeId: RequestBody?,
+        @Part("email") email: RequestBody?,
+        @Part("phone") phone: RequestBody?,
+        @Part("drivingLicenseExpiry") drivingLicenseExpiry: RequestBody?,
+        @Part photo: MultipartBody.Part? = null,
+        @Part drivingLicense: MultipartBody.Part? = null,
+        @Part aadhar: MultipartBody.Part? = null,
+        @Part policeVerification: MultipartBody.Part? = null,
+    )
+
+    @DELETE("operators/{id}")
+    suspend fun deleteOperator(@Path("id") id: String)
+
+    @PATCH("operators/{id}/active")
+    suspend fun setOperatorActive(@Path("id") id: String, @Body request: SetOperatorActiveRequest)
+
+    @PATCH("operators/{id}/daily-status")
+    suspend fun setOperatorDailyStatus(@Path("id") id: String, @Body request: SetOperatorDailyStatusRequest)
+
+    @POST("operators/{id}/leave")
+    suspend fun setOperatorLeave(@Path("id") id: String, @Body request: SetOperatorLeaveRequest)
 }

@@ -22,6 +22,7 @@ class TokenStore(private val context: Context) {
         val TOKEN = stringPreferencesKey("token")
         val ROLE = stringPreferencesKey("role")
         val ASSIGNED_SITE_ID = stringPreferencesKey("assigned_site_id")
+        val CURRENT_SITE_ID = stringPreferencesKey("current_site_id")
         val FULL_NAME = stringPreferencesKey("full_name")
         val USERNAME = stringPreferencesKey("username")
     }
@@ -29,6 +30,7 @@ class TokenStore(private val context: Context) {
     val roleFlow: Flow<String?> = context.dataStore.data.map { it[Keys.ROLE] }
     val fullNameFlow: Flow<String?> = context.dataStore.data.map { it[Keys.FULL_NAME] }
     val usernameFlow: Flow<String?> = context.dataStore.data.map { it[Keys.USERNAME] }
+    val currentSiteIdFlow: Flow<String?> = context.dataStore.data.map { it[Keys.CURRENT_SITE_ID] }
 
     suspend fun currentToken(): String? = context.dataStore.data.first()[Keys.TOKEN]
 
@@ -38,6 +40,7 @@ class TokenStore(private val context: Context) {
         assignedSiteId: String,
         fullName: String?,
         username: String,
+        currentSiteId: String? = null,
     ) {
         context.dataStore.edit { prefs ->
             prefs[Keys.TOKEN] = token
@@ -45,7 +48,13 @@ class TokenStore(private val context: Context) {
             prefs[Keys.ASSIGNED_SITE_ID] = assignedSiteId
             prefs[Keys.USERNAME] = username
             if (fullName != null) prefs[Keys.FULL_NAME] = fullName else prefs.remove(Keys.FULL_NAME)
+            val resolvedCurrentSite = currentSiteId ?: assignedSiteId
+            prefs[Keys.CURRENT_SITE_ID] = resolvedCurrentSite
         }
+    }
+
+    suspend fun setCurrentSiteId(siteId: String) {
+        context.dataStore.edit { prefs -> prefs[Keys.CURRENT_SITE_ID] = siteId }
     }
 
     suspend fun clear() {

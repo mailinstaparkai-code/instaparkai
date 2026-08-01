@@ -3,11 +3,15 @@ package ai.instapark.valet.ui.navigation
 import ai.instapark.valet.R
 import ai.instapark.valet.ui.appContainer
 import ai.instapark.valet.ui.components.BrandedSplash
+import ai.instapark.valet.ui.configuration.ConfigurationScreen
 import ai.instapark.valet.ui.dashboard.DashboardScreen
 import ai.instapark.valet.ui.login.LoginScreen
+import ai.instapark.valet.ui.more.MoreScreen
 import ai.instapark.valet.ui.notifications.NotificationsBell
+import ai.instapark.valet.ui.operators.OperatorsScreen
 import ai.instapark.valet.ui.profile.ProfileScreen
 import ai.instapark.valet.ui.queue.QueueScreen
+import ai.instapark.valet.ui.reports.ReportsScreen
 import ai.instapark.valet.ui.theme.ValetTheme
 import ai.instapark.valet.ui.theme.ValetTokens
 import ai.instapark.valet.ui.vehicles.VehiclesScreen
@@ -30,11 +34,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.List
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.DirectionsCar
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.MoreHoriz
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -42,6 +49,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,12 +70,23 @@ import androidx.navigation.compose.rememberNavController
 
 private data class BottomTab(val route: String, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
 
-private val bottomTabs = listOf(
+// valet_operator keeps exactly today's 4 tabs, unchanged -- mirrors the web's
+// valetOperatorNav vs parkingAdminNav split (nav-config.ts). parking_admin
+// additionally gets a "More" tab hosting Reports/Configuration/Operators,
+// which don't fit the dock's fixed-width layout as top-level tabs.
+private val operatorTabs = listOf(
     BottomTab(Screen.Dashboard.route, "Home", Icons.Outlined.Home),
     BottomTab(Screen.Queue.route, "Queue", Icons.AutoMirrored.Outlined.List),
     BottomTab(Screen.Vehicles.route, "Vehicles", Icons.Outlined.DirectionsCar),
     BottomTab(Screen.Profile.route, "Profile", Icons.Outlined.Person),
 )
+
+private val parkingAdminTabs = operatorTabs + BottomTab(Screen.More.route, "More", Icons.Outlined.MoreHoriz)
+
+// Reports/Configuration/Operators are conceptually children of "More" -- the
+// dock highlights More while on any of them, and the top bar grows a back
+// button so there's a way back without them being tabs of their own.
+private val moreChildRoutes = setOf(Screen.Reports.route, Screen.Configuration.route, Screen.Operators.route)
 
 private fun navigateToTab(navController: NavHostController, route: String) {
     navController.navigate(route) {
@@ -104,10 +123,14 @@ private fun BrandTitle() {
 /** design.md §9 "Dock" -- floating frosted capsule replacing the plain NavigationBar. */
 @Composable
 private fun FloatingDock(
+    tabs: List<BottomTab>,
     currentRoute: String?,
     onTabSelected: (String) -> Unit,
 ) {
     val colors = ValetTheme.colors
+    // Reports/Configuration/Operators are children of More (see moreChildRoutes) --
+    // they highlight the More tab rather than leaving the dock with no active tab.
+    val effectiveRoute = if (currentRoute in moreChildRoutes) Screen.More.route else currentRoute
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -121,8 +144,8 @@ private fun FloatingDock(
                 .clip(RoundedCornerShape(26.dp))
                 .background(colors.surface.copy(alpha = 0.9f)),
         ) {
-            bottomTabs.forEach { tab ->
-                val selected = currentRoute == tab.route
+            tabs.forEach { tab ->
+                val selected = effectiveRoute == tab.route
                 val pillColor by animateColorAsState(
                     targetValue = if (selected) colors.primary else androidx.compose.ui.graphics.Color.Transparent,
                     animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = 380f),
@@ -192,12 +215,26 @@ fun ValetNavGraph() {
     val showBottomBar = currentRoute != Screen.Login.route
     val colors = ValetTheme.colors
 
+    // role is read reactively (not once at start) so the tab set updates the
+    // moment restoreSession()/login finish resolving it -- valet_operator
+    // never sees the parking_admin-only tabs, matching the web's role split.
+    val role by container.tokenStore.roleFlow.collectAsState(initial = null)
+    val bottomTabs = if (role == "parking_admin") parkingAdminTabs else operatorTabs
+    val isMoreChild = currentRoute in moreChildRoutes
+
     Scaffold(
         containerColor = colors.canvasBottom,
         topBar = {
             if (showBottomBar) {
                 TopAppBar(
                     title = { BrandTitle() },
+                    navigationIcon = {
+                        if (isMoreChild) {
+                            IconButton(onClick = { navController.popBackStack() }) {
+                                Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
+                            }
+                        }
+                    },
                     actions = { NotificationsBell() },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = androidx.compose.ui.graphics.Color.Transparent,
@@ -207,7 +244,7 @@ fun ValetNavGraph() {
         },
         bottomBar = {
             if (showBottomBar) {
-                FloatingDock(currentRoute = currentRoute) { route ->
+                FloatingDock(tabs = bottomTabs, currentRoute = currentRoute) { route ->
                     if (currentRoute != route) navigateToTab(navController, route)
                 }
             }
@@ -245,6 +282,18 @@ fun ValetNavGraph() {
                     }
                 )
             }
+            // parking_admin-only -- unreachable for valet_operator since
+            // there's no nav entry point into these routes for that role.
+            composable(Screen.More.route) {
+                MoreScreen(
+                    onGoToReports = { navController.navigate(Screen.Reports.route) },
+                    onGoToConfiguration = { navController.navigate(Screen.Configuration.route) },
+                    onGoToOperators = { navController.navigate(Screen.Operators.route) },
+                )
+            }
+            composable(Screen.Reports.route) { ReportsScreen() }
+            composable(Screen.Configuration.route) { ConfigurationScreen() }
+            composable(Screen.Operators.route) { OperatorsScreen() }
         }
     }
 }

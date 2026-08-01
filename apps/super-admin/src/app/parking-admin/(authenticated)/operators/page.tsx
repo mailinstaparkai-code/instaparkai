@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getValetSession } from "@/lib/valet-auth/session";
+import { getCurrentSiteId, getValetSession } from "@/lib/valet-auth/session";
 import { BUCKET } from "@/lib/valet-photos";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,7 +49,7 @@ export default async function ValetOperatorsPage({
         "id, username, full_name, employee_id, email, phone, photo_path, is_active, driving_license_path, driving_license_expiry, aadhar_path, police_verification_path"
       )
       .eq("role", "valet_operator")
-      .eq("assigned_site_id", session.assignedSiteId)
+      .eq("assigned_site_id", getCurrentSiteId(session))
       .order("created_at", { ascending: false }),
     supabase
       .from("operator_daily_status")

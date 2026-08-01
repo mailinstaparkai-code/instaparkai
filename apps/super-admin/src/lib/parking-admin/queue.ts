@@ -4,7 +4,7 @@ import { unstable_cache } from "next/cache";
 import { randomBytes, randomUUID } from "node:crypto";
 import { headers } from "next/headers";
 import { createServiceClient } from "@/lib/supabase/service";
-import type { ValetSession } from "@/lib/valet-auth/session";
+import { getCurrentSiteId, type ValetSession } from "@/lib/valet-auth/session";
 import { generateOtp } from "@/lib/otp";
 import { BUCKET, uploadTicketPhotos } from "@/lib/valet-photos";
 import { fireTrigger } from "@/lib/communication-triggers";
@@ -276,7 +276,7 @@ export async function getQueueData(
     .select(
       "id, ticket_token, vehicle_number, vehicle_type, mobile_number, status, checked_in_at, checked_in_by, fare_amount, check_in_photos, handover_photos, slots(slot_number), qr_code_id, qr_codes(code)"
     )
-    .eq("parking_space_id", session.assignedSiteId)
+    .eq("parking_space_id", getCurrentSiteId(session))
     .in("status", ACTIVE_STATUSES as unknown as string[]);
   if (statusFilter.length) ticketsQuery = ticketsQuery.in("status", statusFilter);
   if (vehicleTypeFilter.length) ticketsQuery = ticketsQuery.in("vehicle_type", vehicleTypeFilter);
@@ -294,19 +294,19 @@ export async function getQueueData(
     supabase
       .from("zones")
       .select("id, name, slots(id, slot_number, status)")
-      .eq("parking_space_id", session.assignedSiteId),
-    getCachedTariffRules(session.assignedSiteId),
+      .eq("parking_space_id", getCurrentSiteId(session)),
+    getCachedTariffRules(getCurrentSiteId(session)),
     supabase
       .from("parking_spaces")
       .select("auto_allocate_operator, guest_request_mode")
-      .eq("id", session.assignedSiteId)
+      .eq("id", getCurrentSiteId(session))
       .single(),
-    getAvailableOperators(supabase, session.assignedSiteId, { respectDailyStatus: false }),
-    getCachedVehicleTypes(session.assignedSiteId),
+    getAvailableOperators(supabase, getCurrentSiteId(session), { respectDailyStatus: false }),
+    getCachedVehicleTypes(getCurrentSiteId(session)),
     supabase
       .from("valet_accounts")
       .select("id", { count: "exact", head: true })
-      .eq("assigned_site_id", session.assignedSiteId)
+      .eq("assigned_site_id", getCurrentSiteId(session))
       .eq("role", "valet_operator")
       .eq("is_active", true),
   ]);
@@ -373,7 +373,7 @@ export async function setAutoAllocate(
   const { error } = await supabase
     .from("parking_spaces")
     .update({ auto_allocate_operator: enabled })
-    .eq("id", session.assignedSiteId);
+    .eq("id", getCurrentSiteId(session));
   if (error) throw new Error(error.message);
 }
 
@@ -420,18 +420,18 @@ export async function checkInVehicle(
   }
 
   let qrCodeId: string | null = null;
-  if (await isQrModeEnabled(supabase, session.assignedSiteId)) {
+  if (await isQrModeEnabled(supabase, getCurrentSiteId(session))) {
     const qrCode = fields.qrCode?.trim().toUpperCase();
     if (!qrCode) {
       throw new AppError("invalid_request", "QR code is required for this site.", 400);
     }
-    qrCodeId = await resolveQrCodeForCheckIn(supabase, session.assignedSiteId, qrCode);
+    qrCodeId = await resolveQrCodeForCheckIn(supabase, getCurrentSiteId(session), qrCode);
   }
 
   const ticketId = randomUUID();
   const photos = await uploadTicketPhotos(
     supabase,
-    session.assignedSiteId,
+    getCurrentSiteId(session),
     ticketId,
     "checkin",
     formData,
@@ -443,7 +443,7 @@ export async function checkInVehicle(
   // (see markAsParked) -- check-in only covers arrival at reception.
   const { error } = await supabase.from("valet_tickets").insert({
     id: ticketId,
-    parking_space_id: session.assignedSiteId,
+    parking_space_id: getCurrentSiteId(session),
     ticket_token: ticketToken,
     vehicle_number,
     vehicle_type,
@@ -458,12 +458,12 @@ export async function checkInVehicle(
   await Promise.all([
     (async () => {
       const [siteName, baseUrl] = await Promise.all([
-        getSiteName(supabase, session.assignedSiteId),
+        getSiteName(supabase, getCurrentSiteId(session)),
         getBaseUrl(),
       ]);
       await fireTrigger({
         supabase,
-        siteId: session.assignedSiteId,
+        siteId: getCurrentSiteId(session),
         triggerKey: "vehicle_checked_in",
         ticketId,
         mobileNumber: mobile_number,
@@ -478,7 +478,7 @@ export async function checkInVehicle(
     })(),
     notify({
       supabase,
-      siteId: session.assignedSiteId,
+      siteId: getCurrentSiteId(session),
       ticketId,
       kind: "vehicle_checked_in",
       message: `${vehicle_number} checked in`,
@@ -509,7 +509,7 @@ export async function markAsParked(
   id: string,
   slotId: string
 ): Promise<void> {
-  const ticket = await loadTicket(supabase, id, session.assignedSiteId);
+  const ticket = await loadTicket(supabase, id, getCurrentSiteId(session));
   if (!ticket) throw new AppError("not_found", "Ticket not found.", 404);
   if (ticket.status !== "checked_in") {
     throw new AppError("invalid_state", "Ticket is not awaiting parking.", 409);
@@ -535,7 +535,7 @@ export async function markAsParked(
 
   await notify({
     supabase,
-    siteId: session.assignedSiteId,
+    siteId: getCurrentSiteId(session),
     ticketId: id,
     kind: "vehicle_parked",
     message: `${ticket.vehicle_number} parked`,
@@ -550,7 +550,7 @@ export async function requestVehicle(
   // Staff-side "guest requested" is Parking Admin only -- the guest's own path is
   // requestVehicleByGuest() in app/track/[token]/actions.ts, unrelated to this session.
   assertParkingAdminRole(session);
-  const ticket = await loadTicket(supabase, id, session.assignedSiteId);
+  const ticket = await loadTicket(supabase, id, getCurrentSiteId(session));
   if (!ticket) throw new AppError("not_found", "Ticket not found.", 404);
   if (ticket.status !== "parked") {
     throw new AppError("invalid_state", "Ticket is not parked.", 409);
@@ -574,12 +574,12 @@ export async function requestVehicle(
   await Promise.all([
     (async () => {
       const [siteName, baseUrl] = await Promise.all([
-        getSiteName(supabase, session.assignedSiteId),
+        getSiteName(supabase, getCurrentSiteId(session)),
         getBaseUrl(),
       ]);
       await fireTrigger({
         supabase,
-        siteId: session.assignedSiteId,
+        siteId: getCurrentSiteId(session),
         triggerKey: "pickup_requested",
         ticketId: id,
         mobileNumber: ticket.mobile_number,
@@ -592,17 +592,17 @@ export async function requestVehicle(
     })(),
     notify({
       supabase,
-      siteId: session.assignedSiteId,
+      siteId: getCurrentSiteId(session),
       ticketId: id,
       kind: "vehicle_requested",
       message: `${ticket.vehicle_number} pickup requested`,
     }),
   ]);
 
-  if (await isAutoAllocateEnabled(supabase, session.assignedSiteId)) {
-    const available = await getAvailableOperators(supabase, session.assignedSiteId);
+  if (await isAutoAllocateEnabled(supabase, getCurrentSiteId(session))) {
+    const available = await getAvailableOperators(supabase, getCurrentSiteId(session));
     if (available.length > 0) {
-      await dispatchToOperator(supabase, session.assignedSiteId, ticket, available[0].id);
+      await dispatchToOperator(supabase, getCurrentSiteId(session), ticket, available[0].id);
     }
     // No operator available right now -- ticket stays "requested"; a manual dispatch
     // (or the next request once someone frees up) can still pick it up from there.
@@ -616,7 +616,7 @@ export async function dispatchVehicle(
   operatorId: string
 ): Promise<void> {
   assertParkingAdminRole(session);
-  const ticket = await loadTicket(supabase, id, session.assignedSiteId);
+  const ticket = await loadTicket(supabase, id, getCurrentSiteId(session));
   if (!ticket) throw new AppError("not_found", "Ticket not found.", 404);
   if (ticket.status !== "requested") {
     throw new AppError("invalid_state", "Ticket is not awaiting dispatch.", 409);
@@ -626,13 +626,13 @@ export async function dispatchVehicle(
     .from("valet_accounts")
     .select("id")
     .eq("id", operatorId)
-    .eq("assigned_site_id", session.assignedSiteId)
+    .eq("assigned_site_id", getCurrentSiteId(session))
     .eq("role", "valet_operator")
     .eq("is_active", true)
     .maybeSingle();
   if (!operator) throw new AppError("invalid_request", "Selected operator is not available.", 400);
 
-  await dispatchToOperator(supabase, session.assignedSiteId, ticket, operatorId);
+  await dispatchToOperator(supabase, getCurrentSiteId(session), ticket, operatorId);
 }
 
 export async function markArrived(
@@ -640,7 +640,7 @@ export async function markArrived(
   session: ValetSession,
   id: string
 ): Promise<void> {
-  const ticket = await loadTicket(supabase, id, session.assignedSiteId);
+  const ticket = await loadTicket(supabase, id, getCurrentSiteId(session));
   if (!ticket) throw new AppError("not_found", "Ticket not found.", 404);
   if (ticket.status !== "in_transit") {
     throw new AppError("invalid_state", "Ticket is not in transit.", 409);
@@ -659,12 +659,12 @@ export async function markArrived(
   await Promise.all([
     (async () => {
       const [siteName, baseUrl] = await Promise.all([
-        getSiteName(supabase, session.assignedSiteId),
+        getSiteName(supabase, getCurrentSiteId(session)),
         getBaseUrl(),
       ]);
       await fireTrigger({
         supabase,
-        siteId: session.assignedSiteId,
+        siteId: getCurrentSiteId(session),
         triggerKey: "vehicle_arrived",
         ticketId: id,
         mobileNumber: ticket.mobile_number,
@@ -678,7 +678,7 @@ export async function markArrived(
     })(),
     notify({
       supabase,
-      siteId: session.assignedSiteId,
+      siteId: getCurrentSiteId(session),
       ticketId: id,
       kind: "vehicle_arrived",
       message: `${ticket.vehicle_number} has arrived`,
@@ -698,7 +698,7 @@ export async function updateTicketDetails(
     throw new AppError("invalid_request", "Vehicle number and mobile number are required.", 400);
   }
 
-  const ticket = await loadTicket(supabase, id, session.assignedSiteId);
+  const ticket = await loadTicket(supabase, id, getCurrentSiteId(session));
   if (!ticket) throw new AppError("not_found", "Ticket not found.", 404);
   if (ticket.status === "completed" || ticket.status === "voided") {
     throw new AppError("invalid_state", "Ticket can no longer be edited.", 409);
@@ -717,7 +717,7 @@ export async function voidTicket(
   id: string,
   reason: string | null
 ): Promise<void> {
-  const ticket = await loadTicket(supabase, id, session.assignedSiteId);
+  const ticket = await loadTicket(supabase, id, getCurrentSiteId(session));
   if (!ticket) throw new AppError("not_found", "Ticket not found.", 404);
   if (ticket.status === "completed" || ticket.status === "voided") {
     throw new AppError("invalid_state", "Ticket can no longer be voided.", 409);
@@ -740,7 +740,7 @@ export async function voidTicket(
 
   await notify({
     supabase,
-    siteId: session.assignedSiteId,
+    siteId: getCurrentSiteId(session),
     ticketId: id,
     kind: "vehicle_voided",
     message: `${ticket.vehicle_number} voided`,
@@ -756,7 +756,7 @@ export async function completeHandover(
 ): Promise<void> {
   const fareRaw = fields.fareAmount?.trim() || undefined;
 
-  const ticket = await loadTicket(supabase, id, session.assignedSiteId);
+  const ticket = await loadTicket(supabase, id, getCurrentSiteId(session));
   if (!ticket) throw new AppError("not_found", "Ticket not found.", 404);
   if (ticket.status !== "arrived") {
     throw new AppError("invalid_state", "Ticket is not awaiting handover.", 409);
@@ -775,7 +775,7 @@ export async function completeHandover(
 
   const handoverPhotos = await uploadTicketPhotos(
     supabase,
-    session.assignedSiteId,
+    getCurrentSiteId(session),
     id,
     "handover",
     formData,
@@ -801,10 +801,10 @@ export async function completeHandover(
 
   await Promise.all([
     (async () => {
-      const siteName = await getSiteName(supabase, session.assignedSiteId);
+      const siteName = await getSiteName(supabase, getCurrentSiteId(session));
       await fireTrigger({
         supabase,
-        siteId: session.assignedSiteId,
+        siteId: getCurrentSiteId(session),
         triggerKey: "handover_complete",
         ticketId: id,
         mobileNumber: ticket.mobile_number,
@@ -818,7 +818,7 @@ export async function completeHandover(
     })(),
     notify({
       supabase,
-      siteId: session.assignedSiteId,
+      siteId: getCurrentSiteId(session),
       ticketId: id,
       kind: "handover_complete",
       message: `${ticket.vehicle_number} handover complete`,
@@ -835,7 +835,7 @@ export async function getTicketPhotoUrls(
     .from("valet_tickets")
     .select("check_in_photos, handover_photos")
     .eq("id", ticketId)
-    .eq("parking_space_id", session.assignedSiteId)
+    .eq("parking_space_id", getCurrentSiteId(session))
     .single<{
       check_in_photos: { label: string; path: string }[];
       handover_photos: { label: string; path: string }[];
@@ -866,7 +866,7 @@ export async function getTicketTimeline(
     .from("valet_tickets")
     .select(TICKET_TIMELINE_SELECT)
     .eq("id", ticketId)
-    .eq("parking_space_id", session.assignedSiteId)
+    .eq("parking_space_id", getCurrentSiteId(session))
     .single<TicketRow>();
   if (!ticket) return [];
 

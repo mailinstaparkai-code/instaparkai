@@ -2,7 +2,7 @@
 
 import { revalidatePath, updateTag } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getValetSession } from "@/lib/valet-auth/session";
+import { getCurrentSiteId, getValetSession } from "@/lib/valet-auth/session";
 import * as qrCodesLib from "@/lib/parking-admin/qr-codes";
 
 const PATH = "/parking-admin/configuration";
@@ -26,7 +26,7 @@ export async function createZone(formData: FormData) {
 
   const { error } = await supabase
     .from("zones")
-    .insert({ parking_space_id: session.assignedSiteId, name });
+    .insert({ parking_space_id: getCurrentSiteId(session), name });
   if (error) throw new Error(error.message);
 
   revalidatePath(PATH);
@@ -43,7 +43,7 @@ export async function deleteZone(formData: FormData) {
     .from("zones")
     .delete()
     .eq("id", id)
-    .eq("parking_space_id", session.assignedSiteId);
+    .eq("parking_space_id", getCurrentSiteId(session));
   if (error) throw new Error(error.message);
 
   revalidatePath(PATH);
@@ -65,7 +65,7 @@ export async function createSlot(formData: FormData) {
     .from("zones")
     .select("id")
     .eq("id", zone_id)
-    .eq("parking_space_id", session.assignedSiteId)
+    .eq("parking_space_id", getCurrentSiteId(session))
     .maybeSingle();
   if (!zone) throw new Error("Zone not found.");
 
@@ -88,7 +88,7 @@ export async function deleteSlot(formData: FormData) {
     .from("slots")
     .select("id, zones!inner(parking_space_id)")
     .eq("id", id)
-    .eq("zones.parking_space_id", session.assignedSiteId)
+    .eq("zones.parking_space_id", getCurrentSiteId(session))
     .maybeSingle();
   if (!slot) throw new Error("Slot not found.");
 
@@ -109,11 +109,11 @@ export async function createVehicleType(formData: FormData) {
 
   const { error } = await supabase
     .from("vehicle_types")
-    .insert({ parking_space_id: session.assignedSiteId, name });
+    .insert({ parking_space_id: getCurrentSiteId(session), name });
   if (error) throw new Error(error.message);
 
   revalidatePath(PATH);
-  updateTag(`vehicle-types:${session.assignedSiteId}`);
+  updateTag(`vehicle-types:${getCurrentSiteId(session)}`);
 }
 
 export async function deleteVehicleType(formData: FormData) {
@@ -127,11 +127,11 @@ export async function deleteVehicleType(formData: FormData) {
     .from("vehicle_types")
     .delete()
     .eq("id", id)
-    .eq("parking_space_id", session.assignedSiteId);
+    .eq("parking_space_id", getCurrentSiteId(session));
   if (error) throw new Error(error.message);
 
   revalidatePath(PATH);
-  updateTag(`vehicle-types:${session.assignedSiteId}`);
+  updateTag(`vehicle-types:${getCurrentSiteId(session)}`);
 }
 
 // -- Tariff rules -------------------------------------------------------
@@ -166,7 +166,7 @@ export async function createTariffRule(formData: FormData) {
 
   const supabase = createServiceClient();
   const { error } = await supabase.from("tariff_rules").insert({
-    parking_space_id: session.assignedSiteId,
+    parking_space_id: getCurrentSiteId(session),
     vehicle_category,
     pricing_type,
     rate,
@@ -176,7 +176,7 @@ export async function createTariffRule(formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath(PATH);
-  updateTag(`tariff-rules:${session.assignedSiteId}`);
+  updateTag(`tariff-rules:${getCurrentSiteId(session)}`);
 }
 
 export async function deleteTariffRule(formData: FormData) {
@@ -190,11 +190,11 @@ export async function deleteTariffRule(formData: FormData) {
     .from("tariff_rules")
     .delete()
     .eq("id", id)
-    .eq("parking_space_id", session.assignedSiteId);
+    .eq("parking_space_id", getCurrentSiteId(session));
   if (error) throw new Error(error.message);
 
   revalidatePath(PATH);
-  updateTag(`tariff-rules:${session.assignedSiteId}`);
+  updateTag(`tariff-rules:${getCurrentSiteId(session)}`);
 }
 
 // -- Guest request mode / QR codes --------------------------------------

@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getValetSession } from "@/lib/valet-auth/session";
+import { getCurrentSiteId, getValetSession } from "@/lib/valet-auth/session";
 import { listQrCodes } from "@/lib/parking-admin/qr-codes";
 import { ZonesSlotsTab } from "./components/zones-slots-tab";
 import { VehicleTypesTab } from "./components/vehicle-types-tab";
@@ -39,22 +39,22 @@ export default async function ConfigurationPage({
       supabase
         .from("zones")
         .select("id, name, slots(id, slot_number, is_ev, is_disabled_slot, status)")
-        .eq("parking_space_id", session.assignedSiteId)
+        .eq("parking_space_id", getCurrentSiteId(session))
         .order("name"),
       supabase
         .from("vehicle_types")
         .select("id, name")
-        .eq("parking_space_id", session.assignedSiteId)
+        .eq("parking_space_id", getCurrentSiteId(session))
         .order("name"),
       supabase
         .from("tariff_rules")
         .select("id, vehicle_category, pricing_type, rate, surge_multiplier, slab_tiers")
-        .eq("parking_space_id", session.assignedSiteId)
+        .eq("parking_space_id", getCurrentSiteId(session))
         .order("vehicle_category"),
       supabase
         .from("parking_spaces")
         .select("guest_request_mode")
-        .eq("id", session.assignedSiteId)
+        .eq("id", getCurrentSiteId(session))
         .single(),
       listQrCodes(supabase, session),
     ]);

@@ -3,7 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { vehicleImageSrc } from "@/lib/vehicle-image";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getValetSession } from "@/lib/valet-auth/session";
+import { getCurrentSiteId, getValetSession } from "@/lib/valet-auth/session";
 import { ALL_STATUSES, listVehicles, STATUS_LABEL } from "@/lib/parking-admin/vehicles";
 import { CopyLinkButton } from "../../(authenticated)/queue/copy-link-button";
 import { PhotosButton } from "../../(authenticated)/queue/photos-button";
@@ -72,7 +72,7 @@ export default async function MobileVehiclesPage({
     operatorOptions,
   } = await listVehicles(
     supabase,
-    session.assignedSiteId,
+    getCurrentSiteId(session),
     { status: statusFilter, vehicleType: vehicleTypeFilter, operator: operatorFilter },
     page
   );

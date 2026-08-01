@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { Layers } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  createParkingAdmin,
   createTariffRule,
   createZone,
   deleteParkingSpace,
@@ -84,14 +84,36 @@ export default async function ParkingSpaceDetailPage({
 
   if (!space || space.organization_id !== orgId) notFound();
 
-  let parkingAdmins: { id: string; username: string; full_name: string | null }[] = [];
+  // parking_admin accounts may now be assigned to more than one site, so
+  // this reads through valet_admin_sites -- who currently has access to
+  // *this* site -- rather than the account's single assigned_site_id.
+  // Creating/editing a parking admin's site assignments happens on the org
+  // page, where the full set of the org's sites can be shown as checkboxes.
+  let parkingAdmins: { id: string; username: string; full_name: string | null; onlyThisSite: boolean }[] = [];
   if (isSuperAdmin) {
-    const { data } = await createServiceClient()
-      .from("valet_accounts")
-      .select("id, username, full_name")
-      .eq("role", "parking_admin")
-      .eq("assigned_site_id", space.id);
-    parkingAdmins = data ?? [];
+    const service = createServiceClient();
+    const { data } = await service
+      .from("valet_admin_sites")
+      .select("valet_accounts(id, username, full_name)")
+      .eq("site_id", space.id);
+    const accts = (data ?? [])
+      .map((m) => m.valet_accounts as unknown as { id: string; username: string; full_name: string | null } | null)
+      .filter((a): a is { id: string; username: string; full_name: string | null } => a !== null);
+
+    if (accts.length) {
+      const { data: allMemberships } = await service
+        .from("valet_admin_sites")
+        .select("account_id")
+        .in("account_id", accts.map((a) => a.id));
+      const siteCountByAccount = new Map<string, number>();
+      for (const m of allMemberships ?? []) {
+        siteCountByAccount.set(m.account_id, (siteCountByAccount.get(m.account_id) ?? 0) + 1);
+      }
+      parkingAdmins = accts.map((a) => ({
+        ...a,
+        onlyThisSite: (siteCountByAccount.get(a.id) ?? 0) <= 1,
+      }));
+    }
   }
 
   const workflow = space.access_workflows;
@@ -141,7 +163,11 @@ export default async function ParkingSpaceDetailPage({
                     ]
                   : []),
                 "Its tariff rules and access workflow will be deleted.",
-                ...parkingAdmins.map((a) => `The Parking Admin login "${a.username}" will be deleted.`),
+                ...parkingAdmins.map((a) =>
+                  a.onlyThisSite
+                    ? `The Parking Admin login "${a.username}" will be deleted.`
+                    : `"${a.username}" will lose access to this site (they still manage other sites).`
+                ),
               ]}
             />
           </div>
@@ -259,24 +285,15 @@ export default async function ParkingSpaceDetailPage({
           <div className="glass-card p-4 md:col-span-2">
             <div className="flex items-center justify-between">
               <p className="text-xs font-medium text-muted-foreground">Parking admin</p>
-              <FormDialog
-                trigger={<button className="text-xs text-brand-orange">+ New</button>}
-                title="New parking admin"
-                action={createParkingAdmin}
-                submitLabel="Create"
-              >
-                <input type="hidden" name="parking_space_id" value={space.id} />
-                <Field label="Username">
-                  <Input name="username" required />
-                </Field>
-                <Field label="Password">
-                  <Input name="password" type="password" required />
-                </Field>
-                <Field label="Full name">
-                  <Input name="full_name" />
-                </Field>
-              </FormDialog>
+              <Link href={`/dashboard/parking-spaces/${orgId}`} className="text-xs text-brand-orange">
+                Manage on org page
+              </Link>
             </div>
+            {/* Creating/editing admins (and their site assignments -- an
+                admin may now manage more than one site) happens on the org
+                page, where all of the org's sites can be shown as
+                checkboxes. This card is read-only: who currently has
+                access to *this* site. */}
             {parkingAdmins.length > 0 ? (
               <ul className="mt-2 flex flex-col gap-1 text-sm">
                 {parkingAdmins.map((admin) => (

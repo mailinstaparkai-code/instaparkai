@@ -1,6 +1,6 @@
 import "server-only";
 import type { createServiceClient } from "@/lib/supabase/service";
-import type { ValetSession } from "@/lib/valet-auth/session";
+import { getCurrentSiteId, type ValetSession } from "@/lib/valet-auth/session";
 import { getMyDailyStatus, type MyDailyStatus } from "./operator-status";
 
 export type DashboardSummary = {
@@ -24,7 +24,7 @@ export async function getDashboardSummary(
   supabase: ReturnType<typeof createServiceClient>,
   session: ValetSession
 ): Promise<DashboardSummary> {
-  const siteId = session.assignedSiteId;
+  const siteId = getCurrentSiteId(session);
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 

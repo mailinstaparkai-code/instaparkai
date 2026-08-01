@@ -1,7 +1,7 @@
 "use server";
 
 import { createServiceClient } from "@/lib/supabase/service";
-import { getValetSession } from "@/lib/valet-auth/session";
+import { getCurrentSiteId, getValetSession } from "@/lib/valet-auth/session";
 
 export type CommandSearchResult = {
   plate: string;
@@ -23,7 +23,7 @@ export async function searchVehiclesAction(query: string): Promise<CommandSearch
   const { data } = await supabase
     .from("valet_tickets")
     .select("vehicle_number, vehicle_type, mobile_number, status, slots(slot_number)")
-    .eq("parking_space_id", session.assignedSiteId)
+    .eq("parking_space_id", getCurrentSiteId(session))
     .or(`vehicle_number.ilike.%${trimmed}%,mobile_number.ilike.%${trimmed}%`)
     .order("checked_in_at", { ascending: false })
     .limit(6);

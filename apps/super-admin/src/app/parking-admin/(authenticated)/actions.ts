@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { destroyValetSession, getValetSession } from "@/lib/valet-auth/session";
+import { destroyValetSession, getCurrentSiteId, getValetSession } from "@/lib/valet-auth/session";
 import { createServiceClient } from "@/lib/supabase/service";
 import * as notificationsLib from "@/lib/parking-admin/notifications";
 
@@ -17,7 +17,7 @@ export async function getRecentNotifications() {
   if (!session) return [];
 
   const supabase = createServiceClient();
-  return notificationsLib.getRecentNotifications(supabase, session.assignedSiteId);
+  return notificationsLib.getRecentNotifications(supabase, getCurrentSiteId(session));
 }
 
 export async function markAllNotificationsRead() {
@@ -25,5 +25,5 @@ export async function markAllNotificationsRead() {
   if (!session) return;
 
   const supabase = createServiceClient();
-  await notificationsLib.markAllNotificationsRead(supabase, session.assignedSiteId);
+  await notificationsLib.markAllNotificationsRead(supabase, getCurrentSiteId(session));
 }

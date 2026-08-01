@@ -2,7 +2,7 @@ import type { CSSProperties } from "react";
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import { createServiceClient } from "@/lib/supabase/service";
-import { getValetSession } from "@/lib/valet-auth/session";
+import { getCurrentSiteId, getValetSession } from "@/lib/valet-auth/session";
 import { Car, ListOrdered, CircleCheckBig, Clock } from "lucide-react";
 import { ParkingMap } from "./parking-map";
 
@@ -20,22 +20,22 @@ export default async function ParkingAdminDashboardPage() {
     supabase
       .from("parking_spaces")
       .select("name, valet_parking_enabled")
-      .eq("id", session.assignedSiteId)
+      .eq("id", getCurrentSiteId(session))
       .single(),
     supabase
       .from("valet_tickets")
       .select("status, checked_in_at, completed_at")
-      .eq("parking_space_id", session.assignedSiteId)
+      .eq("parking_space_id", getCurrentSiteId(session))
       .gte("checked_in_at", startOfToday.toISOString()),
     supabase
       .from("zones")
       .select("id, name, slots(id, slot_number, status)")
-      .eq("parking_space_id", session.assignedSiteId)
+      .eq("parking_space_id", getCurrentSiteId(session))
       .order("name"),
     supabase
       .from("valet_tickets")
       .select("id, slot_id, vehicle_number")
-      .eq("parking_space_id", session.assignedSiteId)
+      .eq("parking_space_id", getCurrentSiteId(session))
       .eq("status", "parked")
       .not("slot_id", "is", null),
   ]);

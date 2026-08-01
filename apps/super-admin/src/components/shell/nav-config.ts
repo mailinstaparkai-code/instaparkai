@@ -18,6 +18,7 @@ import {
   ListOrdered,
   Car,
   MessageSquare,
+  Ticket,
   type LucideIcon,
 } from "lucide-react";
 
@@ -32,10 +33,11 @@ export const superAdminNav: NavItem[] = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { label: "Live Occupancy", href: null, icon: MapPin },
   { label: "Parking Spaces", href: "/dashboard/parking-spaces", icon: Building2 },
+  { label: "Subscription Plans", href: "/dashboard/subscription-plans", icon: CreditCard },
   { label: "Camera Monitoring", href: null, icon: Camera },
   { label: "ANPR Console", href: null, icon: ScanLine },
   { label: "Entry & Exit Control", href: null, icon: ArrowLeftRight },
-  { label: "Pass Management", href: null, icon: CreditCard },
+  { label: "Pass Management", href: null, icon: Ticket },
   { label: "Visitors", href: null, icon: Users },
   { label: "Payments", href: null, icon: Wallet },
   { label: "Analytics & BI", href: null, icon: BarChart3 },

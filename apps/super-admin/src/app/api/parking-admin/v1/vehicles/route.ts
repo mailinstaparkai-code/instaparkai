@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { listVehicles, type VehicleTicketRow } from "@/lib/parking-admin/vehicles";
 import { requireApiSession } from "@/lib/parking-admin/api-auth";
 import { errorResponse } from "@/lib/parking-admin/errors";
+import { getCurrentSiteId } from "@/lib/valet-auth/session";
 
 function parseCsv(value: string | null): string[] {
   return value ? value.split(",").filter(Boolean) : [];
@@ -43,7 +44,7 @@ export async function GET(req: Request) {
     const supabase = createServiceClient();
     const result = await listVehicles(
       supabase,
-      session.assignedSiteId,
+      getCurrentSiteId(session),
       { status, vehicleType, operator },
       page
     );

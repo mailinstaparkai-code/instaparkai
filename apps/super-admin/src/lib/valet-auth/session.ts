@@ -9,7 +9,7 @@ const SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days, web cookie
 const API_SESSION_TTL_MS = 1000 * 60 * 60 * 24 * 30; // 30 days, native app bearer token
 const API_SESSION_SLIDING_WINDOW_MS = 1000 * 60 * 60 * 24 * 7; // extend when within 7 days of expiry
 
-function hashToken(token: string): string {
+export function hashToken(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
@@ -17,9 +17,23 @@ export type ValetSession = {
   accountId: string;
   username: string;
   role: "parking_admin" | "valet_operator";
+  // Default/primary site. For valet_operator this is still the only site
+  // they can ever access. For parking_admin, prefer accessibleSiteIds /
+  // currentSiteId (via getCurrentSiteId) for anything that scopes a query --
+  // this field is now just the fallback/initial selection.
   assignedSiteId: string;
+  accessibleSiteIds: string[];
+  currentSiteId: string;
   fullName: string | null;
 };
+
+// The seam every existing "session.assignedSiteId used to scope a query"
+// call site should read through instead -- returns the site the caller is
+// *currently* looking at, which for a multi-site parking_admin may differ
+// from their default assignedSiteId after switchSite().
+export function getCurrentSiteId(session: ValetSession): string {
+  return session.currentSiteId;
+}
 
 export async function createValetSession(accountId: string) {
   const token = randomBytes(32).toString("hex");
@@ -79,7 +93,7 @@ export const getValetSessionFromToken = cache(async function getValetSessionFrom
   const { data } = await supabase
     .from("valet_sessions")
     .select(
-      "expires_at, client, valet_accounts(id, username, role, assigned_site_id, full_name, is_active)"
+      "expires_at, client, current_site_id, valet_accounts(id, username, role, assigned_site_id, full_name, is_active, valet_admin_sites(site_id))"
     )
     .eq("token_hash", tokenHash)
     .single();
@@ -95,8 +109,29 @@ export const getValetSessionFromToken = cache(async function getValetSessionFrom
     assigned_site_id: string;
     full_name: string | null;
     is_active: boolean;
+    valet_admin_sites: { site_id: string }[] | null;
   };
   if (!account.is_active) return null;
+
+  const accessibleSiteIds =
+    account.role === "parking_admin" && account.valet_admin_sites?.length
+      ? account.valet_admin_sites.map((s) => s.site_id)
+      : [account.assigned_site_id];
+
+  let currentSiteId = data.current_site_id ?? account.assigned_site_id;
+  if (!accessibleSiteIds.includes(currentSiteId)) {
+    currentSiteId = accessibleSiteIds[0];
+    // Best-effort write-back so the next request doesn't re-derive the same
+    // fallback -- never let this block returning the session.
+    try {
+      await supabase
+        .from("valet_sessions")
+        .update({ current_site_id: currentSiteId })
+        .eq("token_hash", tokenHash);
+    } catch {
+      // Non-critical -- the session is still valid this request either way.
+    }
+  }
 
   // Sliding expiry for API (Android) tokens only -- the web cookie's 7-day TTL
   // stays fixed. Best-effort bookkeeping: never let it block returning the session.
@@ -117,6 +152,8 @@ export const getValetSessionFromToken = cache(async function getValetSessionFrom
     username: account.username,
     role: account.role,
     assignedSiteId: account.assigned_site_id,
+    accessibleSiteIds,
+    currentSiteId,
     fullName: account.full_name,
   };
 });

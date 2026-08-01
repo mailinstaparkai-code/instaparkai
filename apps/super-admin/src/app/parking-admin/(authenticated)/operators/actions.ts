@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/service";
 import { hashPassword } from "@/lib/valet-auth/password";
-import { getValetSession } from "@/lib/valet-auth/session";
+import { getCurrentSiteId, getValetSession } from "@/lib/valet-auth/session";
 import { uploadOperatorPhoto, uploadOperatorDocument } from "@/lib/valet-photos";
 import { todayIST } from "@/lib/operator-availability";
 
@@ -36,7 +36,7 @@ export async function createOperator(formData: FormData) {
       username,
       password_hash: hashPassword(password),
       role: "valet_operator",
-      assigned_site_id: session.assignedSiteId,
+      assigned_site_id: getCurrentSiteId(session),
       full_name,
       employee_id,
       email,
@@ -51,10 +51,10 @@ export async function createOperator(formData: FormData) {
   // Uploaded in parallel (4 photo/document fields) rather than one-at-a-time --
   // same rationale as uploadTicketPhotos: each is a separate round trip to Storage.
   const [photo_path, driving_license_path, aadhar_path, police_verification_path] = await Promise.all([
-    uploadOperatorPhoto(supabase, session.assignedSiteId, created.id, formData),
-    uploadOperatorDocument(supabase, session.assignedSiteId, created.id, formData, "driving_license", "dl"),
-    uploadOperatorDocument(supabase, session.assignedSiteId, created.id, formData, "aadhar", "aadhar"),
-    uploadOperatorDocument(supabase, session.assignedSiteId, created.id, formData, "police_verification", "police"),
+    uploadOperatorPhoto(supabase, getCurrentSiteId(session), created.id, formData),
+    uploadOperatorDocument(supabase, getCurrentSiteId(session), created.id, formData, "driving_license", "dl"),
+    uploadOperatorDocument(supabase, getCurrentSiteId(session), created.id, formData, "aadhar", "aadhar"),
+    uploadOperatorDocument(supabase, getCurrentSiteId(session), created.id, formData, "police_verification", "police"),
   ]);
 
   const uploads: Record<string, unknown> = {};
@@ -96,10 +96,10 @@ export async function updateOperator(formData: FormData) {
   }
 
   const [photo_path, driving_license_path, aadhar_path, police_verification_path] = await Promise.all([
-    uploadOperatorPhoto(supabase, session.assignedSiteId, id, formData),
-    uploadOperatorDocument(supabase, session.assignedSiteId, id, formData, "driving_license", "dl"),
-    uploadOperatorDocument(supabase, session.assignedSiteId, id, formData, "aadhar", "aadhar"),
-    uploadOperatorDocument(supabase, session.assignedSiteId, id, formData, "police_verification", "police"),
+    uploadOperatorPhoto(supabase, getCurrentSiteId(session), id, formData),
+    uploadOperatorDocument(supabase, getCurrentSiteId(session), id, formData, "driving_license", "dl"),
+    uploadOperatorDocument(supabase, getCurrentSiteId(session), id, formData, "aadhar", "aadhar"),
+    uploadOperatorDocument(supabase, getCurrentSiteId(session), id, formData, "police_verification", "police"),
   ]);
   if (photo_path) update.photo_path = photo_path;
   if (driving_license_path) update.driving_license_path = driving_license_path;
@@ -110,7 +110,7 @@ export async function updateOperator(formData: FormData) {
     .from("valet_accounts")
     .update(update)
     .eq("id", id)
-    .eq("assigned_site_id", session.assignedSiteId)
+    .eq("assigned_site_id", getCurrentSiteId(session))
     .eq("role", "valet_operator");
   if (error) throw new Error(error.message);
 
@@ -129,7 +129,7 @@ export async function setOperatorActive(formData: FormData) {
     .from("valet_accounts")
     .update({ is_active })
     .eq("id", id)
-    .eq("assigned_site_id", session.assignedSiteId)
+    .eq("assigned_site_id", getCurrentSiteId(session))
     .eq("role", "valet_operator");
   if (error) throw new Error(error.message);
 
@@ -148,7 +148,7 @@ export async function setOperatorDailyStatus(formData: FormData) {
     .from("valet_accounts")
     .select("id")
     .eq("id", operator_id)
-    .eq("assigned_site_id", session.assignedSiteId)
+    .eq("assigned_site_id", getCurrentSiteId(session))
     .eq("role", "valet_operator")
     .maybeSingle();
   if (!operator) throw new Error("Operator not found.");
@@ -183,7 +183,7 @@ export async function setOperatorLeave(formData: FormData) {
     .from("valet_accounts")
     .select("id")
     .eq("id", operator_id)
-    .eq("assigned_site_id", session.assignedSiteId)
+    .eq("assigned_site_id", getCurrentSiteId(session))
     .eq("role", "valet_operator")
     .maybeSingle();
   if (!operator) throw new Error("Operator not found.");
@@ -222,7 +222,7 @@ export async function deleteOperator(formData: FormData) {
     .from("valet_accounts")
     .delete()
     .eq("id", id)
-    .eq("assigned_site_id", session.assignedSiteId)
+    .eq("assigned_site_id", getCurrentSiteId(session))
     .eq("role", "valet_operator");
   if (error) throw new Error(error.message);
 

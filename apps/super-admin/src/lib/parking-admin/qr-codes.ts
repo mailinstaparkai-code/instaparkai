@@ -1,6 +1,6 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
-import type { ValetSession } from "@/lib/valet-auth/session";
+import { getCurrentSiteId, type ValetSession } from "@/lib/valet-auth/session";
 import { assertParkingAdminRole, ACTIVE_STATUSES } from "./queue";
 import { AppError } from "./errors";
 
@@ -36,7 +36,7 @@ export async function generateQrCodes(
   const lastNumber = last ? Number(last.code.slice(CODE_PREFIX.length)) || 0 : 0;
 
   const rows = Array.from({ length: count }, (_, i) => ({
-    site_id: session.assignedSiteId,
+    site_id: getCurrentSiteId(session),
     code: `${CODE_PREFIX}${String(lastNumber + i + 1).padStart(4, "0")}`,
   }));
 
@@ -54,7 +54,7 @@ export async function listQrCodes(
   const { data: codes } = await supabase
     .from("qr_codes")
     .select("id, code, created_at")
-    .eq("site_id", session.assignedSiteId)
+    .eq("site_id", getCurrentSiteId(session))
     .order("code", { ascending: false });
   if (!codes?.length) return [];
 
@@ -107,6 +107,6 @@ export async function setGuestRequestMode(
   const { error } = await supabase
     .from("parking_spaces")
     .update({ guest_request_mode: mode })
-    .eq("id", session.assignedSiteId);
+    .eq("id", getCurrentSiteId(session));
   if (error) throw new Error(error.message);
 }
