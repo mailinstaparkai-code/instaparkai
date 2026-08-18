@@ -56,7 +56,13 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import java.time.OffsetDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+
+// Every timestamp from the API is a lifecycle event tied to a specific physical site in
+// India -- always render in IST regardless of the device's own timezone, matching the
+// web dashboard's formatISTTime (lib/format-date.ts).
+private val IST_ZONE = ZoneId.of("Asia/Kolkata")
 
 private val KIND_LABEL = mapOf(
     "vehicle_checked_in" to "Checked in",
@@ -204,7 +210,7 @@ private fun NotificationRow(item: NotificationItem) {
 }
 
 private fun formatTime(iso: String): String = try {
-    OffsetDateTime.parse(iso).format(DateTimeFormatter.ofPattern("hh:mm a"))
+    OffsetDateTime.parse(iso).atZoneSameInstant(IST_ZONE).format(DateTimeFormatter.ofPattern("hh:mm a"))
 } catch (e: Exception) {
     iso
 }
