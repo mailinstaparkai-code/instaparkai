@@ -70,6 +70,13 @@ data class SetStatusRequest(val status: String)
 
 data class DeviceTokenRequest(val platform: String, val token: String)
 
+data class AppVersionResponse(
+    val latestVersionCode: Int?,
+    val latestVersionName: String?,
+    val apkUrl: String?,
+    val releaseNotes: String?,
+)
+
 data class FilterOption(
     val value: String,
     val label: String,

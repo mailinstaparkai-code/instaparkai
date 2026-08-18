@@ -1,5 +1,6 @@
 package ai.instapark.valet.data.remote
 
+import ai.instapark.valet.data.remote.dto.AppVersionResponse
 import ai.instapark.valet.data.remote.dto.AutoAllocateRequest
 import ai.instapark.valet.data.remote.dto.CheckInResponse
 import ai.instapark.valet.data.remote.dto.CreateOperatorResponse
@@ -66,6 +67,9 @@ interface ParkingAdminApi {
 
     @GET("dashboard")
     suspend fun dashboard(): DashboardResponse
+
+    @GET("app-version")
+    suspend fun appVersion(@Query("platform") platform: String = "android"): AppVersionResponse
 
     @GET("status")
     suspend fun myStatus(): MyDailyStatus

@@ -3,6 +3,7 @@ package ai.instapark.valet
 import ai.instapark.valet.data.local.SearchStore
 import ai.instapark.valet.data.local.ThemeStore
 import ai.instapark.valet.data.local.TokenStore
+import ai.instapark.valet.data.local.UpdateStore
 import ai.instapark.valet.data.remote.AuthInterceptor
 import ai.instapark.valet.data.remote.ParkingAdminApi
 import ai.instapark.valet.data.remote.SessionTokenHolder
@@ -14,6 +15,7 @@ import ai.instapark.valet.data.repository.PushTokenRepository
 import ai.instapark.valet.data.repository.QueueRepository
 import ai.instapark.valet.data.repository.ReportsRepository
 import ai.instapark.valet.data.repository.SessionRepository
+import ai.instapark.valet.data.repository.UpdateRepository
 import ai.instapark.valet.data.repository.VehiclesRepository
 import android.content.Context
 import com.google.gson.Gson
@@ -31,6 +33,7 @@ class AppContainer(context: Context) {
     val tokenStore = TokenStore(context)
     val themeStore = ThemeStore(context)
     val searchStore = SearchStore(context)
+    val updateStore = UpdateStore(context)
     private val sessionTokenHolder = SessionTokenHolder()
     private val gson = Gson()
 
@@ -62,4 +65,5 @@ class AppContainer(context: Context) {
     val reportsRepository = ReportsRepository(api, gson)
     val configurationRepository = ConfigurationRepository(api, gson)
     val operatorsRepository = OperatorsRepository(api, gson)
+    val updateRepository = UpdateRepository(api, gson)
 }
