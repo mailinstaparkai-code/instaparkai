@@ -5,6 +5,8 @@ import ai.instapark.valet.data.remote.dto.CreateSlotRequest
 import ai.instapark.valet.data.remote.dto.CreateSlotResponse
 import ai.instapark.valet.data.remote.dto.CreateTariffRuleRequest
 import ai.instapark.valet.data.remote.dto.CreateTariffRuleResponse
+import ai.instapark.valet.data.remote.dto.CreateVehiclePassRequest
+import ai.instapark.valet.data.remote.dto.CreateVehiclePassResponse
 import ai.instapark.valet.data.remote.dto.CreateVehicleTypeResponse
 import ai.instapark.valet.data.remote.dto.CreateZoneResponse
 import ai.instapark.valet.data.remote.dto.CreateVehicleTypeRequest
@@ -14,6 +16,7 @@ import ai.instapark.valet.data.remote.dto.GenerateQrCodesResponse
 import ai.instapark.valet.data.remote.dto.GuestRequestsResponse
 import ai.instapark.valet.data.remote.dto.SetGuestRequestModeRequest
 import ai.instapark.valet.data.remote.dto.TariffRulesResponse
+import ai.instapark.valet.data.remote.dto.VehiclePassesResponse
 import ai.instapark.valet.data.remote.dto.VehicleTypesResponse
 import ai.instapark.valet.data.remote.dto.ZonesResponse
 import ai.instapark.valet.data.remote.toApiException
@@ -40,6 +43,11 @@ class ConfigurationRepository(
     suspend fun createVehicleType(name: String): Result<CreateVehicleTypeResponse> =
         wrap { api.createVehicleType(CreateVehicleTypeRequest(name)) }
     suspend fun deleteVehicleType(id: String): Result<Unit> = wrap { api.deleteVehicleType(id) }
+
+    suspend fun vehiclePasses(): Result<VehiclePassesResponse> = wrap { api.vehiclePasses() }
+    suspend fun createVehiclePass(vehicleNumber: String, label: String?): Result<CreateVehiclePassResponse> =
+        wrap { api.createVehiclePass(CreateVehiclePassRequest(vehicleNumber, label)) }
+    suspend fun deleteVehiclePass(id: String): Result<Unit> = wrap { api.deleteVehiclePass(id) }
 
     suspend fun tariffRules(): Result<TariffRulesResponse> = wrap { api.tariffRules() }
     suspend fun createTariffRule(request: CreateTariffRuleRequest): Result<CreateTariffRuleResponse> =

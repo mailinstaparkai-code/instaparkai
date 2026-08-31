@@ -224,6 +224,7 @@ private fun QueueContent(response: QueueResponse, viewModel: QueueViewModel) {
                     canMarkParked = isAdmin || ticket.checkedInBy == response.myAccountId,
                     canRequest = response.canRequest,
                     canDispatch = response.canDispatch,
+                    directCheckoutModeEnabled = response.directCheckoutModeEnabled,
                     modifier = Modifier.animateItem(),
                 )
             }
@@ -244,6 +245,7 @@ private fun QueueContent(response: QueueResponse, viewModel: QueueViewModel) {
         CheckInDialog(
             vehicleTypeOptions = response.filters.vehicleTypeOptions,
             qrCodeModeEnabled = response.guestRequestMode == "qr",
+            directCheckoutModeEnabled = response.directCheckoutModeEnabled,
             pending = viewModel.mutationPending,
             onDismiss = { showCheckIn = false },
             onSubmit = { vehicleNumber, vehicleType, mobileNumber, qrCode, photos, onError ->
@@ -314,11 +316,13 @@ private fun TicketCard(
     canMarkParked: Boolean,
     canRequest: Boolean,
     canDispatch: Boolean,
+    directCheckoutModeEnabled: Boolean,
     modifier: Modifier = Modifier,
 ) {
     var showMarkParked by remember { mutableStateOf(false) }
     var showDispatch by remember { mutableStateOf(false) }
     var showHandover by remember { mutableStateOf(false) }
+    var showDirectCheckout by remember { mutableStateOf(false) }
     var showEdit by remember { mutableStateOf(false) }
     var showVoid by remember { mutableStateOf(false) }
     var showPhotos by remember { mutableStateOf(false) }
@@ -414,7 +418,7 @@ private fun TicketCard(
             // Role-aware primary action, full-width in the status accent
             val actionShape = RoundedCornerShape(14.dp)
             @Composable
-            fun accentAction(label: String, enabled: Boolean = true, onClick: () -> Unit) {
+            fun accentAction(label: String, enabled: Boolean = true, modifier: Modifier = Modifier.fillMaxWidth(), onClick: () -> Unit) {
                 Button(
                     onClick = onClick,
                     enabled = enabled,
@@ -425,16 +429,44 @@ private fun TicketCard(
                         disabledContainerColor = colors.hairlineSoft,
                         disabledContentColor = colors.inkSecondary,
                     ),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = modifier,
                 ) { Text(label, fontWeight = FontWeight.SemiBold) }
             }
 
+            @Composable
+            fun checkoutAction(modifier: Modifier = Modifier.fillMaxWidth()) {
+                Button(
+                    onClick = { showDirectCheckout = true },
+                    shape = actionShape,
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = colors.accent,
+                        contentColor = Color.White,
+                    ),
+                    modifier = modifier,
+                ) { Text("Checkout", fontWeight = FontWeight.SemiBold) }
+            }
+
             when (ticket.status) {
-                "checked_in" -> if (canMarkParked) {
+                // Direct Checkout mode leaves "Mark as parked" available too (some sites
+                // still like slot tracking) rather than replacing it -- checkout doesn't
+                // require having gone through parked first (completeDirectCheckout
+                // accepts either status).
+                "checked_in" -> if (canMarkParked && directCheckoutModeEnabled) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        accentAction(
+                            label = if (availableSlots.isEmpty()) "No slots" else "Mark as parked",
+                            enabled = availableSlots.isNotEmpty(),
+                            modifier = Modifier.weight(1f),
+                        ) { showMarkParked = true }
+                        checkoutAction(modifier = Modifier.weight(1f))
+                    }
+                } else if (canMarkParked) {
                     accentAction(
                         label = if (availableSlots.isEmpty()) "No available slots" else "Mark as parked",
                         enabled = availableSlots.isNotEmpty(),
                     ) { showMarkParked = true }
+                } else if (directCheckoutModeEnabled) {
+                    checkoutAction()
                 } else {
                     Text(
                         "Waiting for the check-in operator to park",
@@ -442,7 +474,9 @@ private fun TicketCard(
                         color = colors.inkSecondary,
                     )
                 }
-                "parked" -> if (canRequest) {
+                "parked" -> if (directCheckoutModeEnabled) {
+                    checkoutAction()
+                } else if (canRequest) {
                     accentAction("Guest requested") { viewModel.requestVehicle(ticket.id) {} }
                 }
                 "requested" -> if (canDispatch) {
@@ -503,6 +537,20 @@ private fun TicketCard(
             onConfirm = { code, fare, paid, photo, onError ->
                 viewModel.completeHandover(ticket.id, code, ticket.qrCode != null, fare, paid, photo) { error ->
                     if (error == null) showHandover = false else onError(error)
+                }
+            },
+        )
+    }
+    if (showDirectCheckout) {
+        DirectCheckoutDialog(
+            vehicleNumber = ticket.vehicleNumber,
+            suggestedFare = ticket.suggestedFare,
+            isPassVehicle = ticket.isPassVehicle,
+            pending = viewModel.mutationPending,
+            onDismiss = { showDirectCheckout = false },
+            onConfirm = { fare, paid, photo, onError ->
+                viewModel.completeDirectCheckout(ticket.id, fare, paid, photo) { error ->
+                    if (error == null) showDirectCheckout = false else onError(error)
                 }
             },
         )
@@ -588,6 +636,7 @@ private fun PhotosDialog(ticketId: String, viewModel: QueueViewModel, onDismiss:
 private fun CheckInDialog(
     vehicleTypeOptions: List<ai.instapark.valet.data.remote.dto.FilterOption>,
     qrCodeModeEnabled: Boolean,
+    directCheckoutModeEnabled: Boolean,
     pending: Boolean,
     onDismiss: () -> Unit,
     onSubmit: (String, String, String, String?, CheckInPhotos, (String) -> Unit) -> Unit,
@@ -614,8 +663,9 @@ private fun CheckInDialog(
             DialogPrimaryButton(
                 text = if (pending) "Checking in…" else "Check in",
                 icon = Icons.Outlined.CheckCircle,
-                enabled = !pending && vehicleNumber.isNotBlank() && mobileNumber.isNotBlank() &&
-                    (!qrCodeModeEnabled || qrCode.isNotBlank()),
+                enabled = !pending && vehicleNumber.isNotBlank() &&
+                    (directCheckoutModeEnabled || mobileNumber.isNotBlank()) &&
+                    (directCheckoutModeEnabled || !qrCodeModeEnabled || qrCode.isNotBlank()),
                 onClick = {
                     val photos = CheckInPhotos(frontPhoto, backPhoto, leftPhoto, rightPhoto, odometerPhoto)
                     val code = qrCode.trim().takeIf { it.isNotBlank() }
@@ -645,7 +695,11 @@ private fun CheckInDialog(
             onSelect = { vehicleType = it },
         )
         Spacer(Modifier.height(14.dp))
-        Text("Mobile number", style = MaterialTheme.typography.labelMedium, color = colors.inkSecondary)
+        Text(
+            if (directCheckoutModeEnabled) "Mobile number (optional)" else "Mobile number",
+            style = MaterialTheme.typography.labelMedium,
+            color = colors.inkSecondary,
+        )
         Spacer(Modifier.height(4.dp))
         OutlinedTextField(
             value = mobileNumber,
@@ -656,7 +710,7 @@ private fun CheckInDialog(
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
         )
-        if (qrCodeModeEnabled) {
+        if (!directCheckoutModeEnabled && qrCodeModeEnabled) {
             Spacer(Modifier.height(14.dp))
             Text("QR code", style = MaterialTheme.typography.labelMedium, color = colors.inkSecondary)
             Spacer(Modifier.height(4.dp))
@@ -862,6 +916,77 @@ private fun HandoverDialog(
         Text("Handover photo (optional)", style = MaterialTheme.typography.labelMedium, color = colors.inkSecondary)
         Spacer(Modifier.height(6.dp))
         PhotoCaptureField("Photo", handoverPhoto, { handoverPhoto = it }, Modifier.fillMaxWidth(0.4f))
+        error?.let {
+            Spacer(Modifier.height(10.dp))
+            Text(it, color = colors.danger, style = MaterialTheme.typography.bodySmall)
+        }
+    }
+}
+
+// Direct Checkout mode's checkout dialog -- no OTP/QR gate (unlike HandoverDialog),
+// since completeDirectCheckout skips that entirely. Collapses to a single-tap confirm
+// for a whitelisted (pass) vehicle: fare is forced to 0 server-side regardless, so the
+// fare/payment/photo fields would be misleading noise here.
+@Composable
+private fun DirectCheckoutDialog(
+    vehicleNumber: String,
+    suggestedFare: Int?,
+    isPassVehicle: Boolean,
+    pending: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: (String?, Boolean, java.io.File?, (String) -> Unit) -> Unit,
+) {
+    var fare by remember { mutableStateOf(suggestedFare?.toString() ?: "") }
+    var paid by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    var paymentPhoto by remember { mutableStateOf<java.io.File?>(null) }
+    val colors = ValetTheme.colors
+
+    PremiumDialog(
+        icon = Icons.Outlined.CheckCircle,
+        title = "Checkout $vehicleNumber",
+        subtitle = if (isPassVehicle) {
+            "This vehicle is whitelisted — no payment needed."
+        } else {
+            "Confirm the fare and attach a screenshot of the UPI payment."
+        },
+        accent = colors.success,
+        onDismissRequest = onDismiss,
+        footer = {
+            DialogSecondaryButton("Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
+            DialogPrimaryButton(
+                text = if (pending) "Completing…" else "Complete checkout",
+                icon = Icons.Outlined.CheckCircle,
+                enabled = !pending,
+                onClick = {
+                    val submittedFare = if (isPassVehicle) "0" else fare.ifBlank { null }
+                    val submittedPaid = if (isPassVehicle) true else paid
+                    onConfirm(submittedFare, submittedPaid, paymentPhoto) { message -> error = message }
+                },
+                modifier = Modifier.weight(1.6f),
+            )
+        },
+    ) {
+        if (!isPassVehicle) {
+            OutlinedTextField(
+                value = fare,
+                onValueChange = { fare = it },
+                label = { Text("Fare amount (₹)") },
+                singleLine = true,
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(10.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Switch(checked = paid, onCheckedChange = { paid = it })
+                Spacer(Modifier.width(8.dp))
+                Text("Payment collected", style = MaterialTheme.typography.bodySmall)
+            }
+            HorizontalDivider(modifier = Modifier.padding(vertical = 14.dp), color = colors.hairlineSoft)
+            Text("Payment screenshot (optional)", style = MaterialTheme.typography.labelMedium, color = colors.inkSecondary)
+            Spacer(Modifier.height(6.dp))
+            PhotoCaptureField("Photo", paymentPhoto, { paymentPhoto = it }, Modifier.fillMaxWidth(0.4f))
+        }
         error?.let {
             Spacer(Modifier.height(10.dp))
             Text(it, color = colors.danger, style = MaterialTheme.typography.bodySmall)

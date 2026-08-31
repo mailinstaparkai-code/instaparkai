@@ -147,6 +147,9 @@ data class QueueTicket(
     val photoCount: Int,
     val slotNumber: String?,
     val qrCode: String?,
+    // Direct Checkout mode only -- null/false for a site not in that mode.
+    val suggestedFare: Int?,
+    val isPassVehicle: Boolean,
 )
 
 data class SlotOption(
@@ -172,6 +175,7 @@ data class QueueResponse(
     val autoAllocateEnabled: Boolean,
     val canToggleAutoAllocate: Boolean,
     val guestRequestMode: String,
+    val directCheckoutModeEnabled: Boolean,
     val canRequest: Boolean,
     val canDispatch: Boolean,
     val myAccountId: String?,
@@ -282,6 +286,13 @@ data class VehicleTypeItem(val id: String, val name: String)
 data class VehicleTypesResponse(val vehicleTypes: List<VehicleTypeItem>)
 data class CreateVehicleTypeRequest(val name: String)
 data class CreateVehicleTypeResponse(val vehicleType: VehicleTypeItem)
+
+// -- Configuration: Vehicle Passes -------------------------------------------
+
+data class VehiclePassItem(val id: String, val vehicleNumber: String, val label: String?)
+data class VehiclePassesResponse(val vehiclePasses: List<VehiclePassItem>)
+data class CreateVehiclePassRequest(val vehicleNumber: String, val label: String?)
+data class CreateVehiclePassResponse(val vehiclePass: VehiclePassItem)
 
 // -- Configuration: Tariffs -------------------------------------------------
 

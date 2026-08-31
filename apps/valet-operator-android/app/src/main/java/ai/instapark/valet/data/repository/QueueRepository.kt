@@ -95,6 +95,20 @@ class QueueRepository(
         )
     }
 
+    suspend fun completeDirectCheckout(
+        id: String,
+        fareAmount: String?,
+        paymentCollected: Boolean,
+        paymentPhoto: File? = null,
+    ): Result<Unit> = wrap {
+        api.completeDirectCheckout(
+            id = id,
+            fareAmount = fareAmount?.textBody(),
+            paymentCollected = paymentCollected.toString().textBody(),
+            photoHandover = filePart("photo_handover", paymentPhoto),
+        )
+    }
+
     suspend fun updateTicket(id: String, vehicleNumber: String, mobileNumber: String): Result<Unit> = wrap {
         api.updateTicket(id, UpdateTicketRequest(vehicleNumber, mobileNumber))
     }

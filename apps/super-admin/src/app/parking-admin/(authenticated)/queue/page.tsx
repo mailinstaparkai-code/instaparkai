@@ -15,6 +15,7 @@ import { PhotoInput } from "../../components/photo-input";
 import { VehicleTypeSelector } from "../../components/vehicle-type-selector";
 import {
   checkInVehicle,
+  completeDirectCheckout,
   completeHandover,
   dispatchVehicle,
   markArrived,
@@ -26,6 +27,7 @@ import {
 } from "./actions";
 import { CopyLinkButton } from "./copy-link-button";
 import { HandoverButton } from "./handover-button";
+import { DirectCheckoutButton } from "./direct-checkout-button";
 import { PhotosButton } from "./photos-button";
 import { DispatchOperatorButton } from "./dispatch-operator-button";
 import { MarkParkedButton } from "./mark-parked-button";
@@ -68,6 +70,7 @@ function TicketRowActions({
   canRequest,
   canDispatch,
   canMarkParked,
+  directCheckoutModeEnabled,
 }: {
   ticket: Ticket;
   suggestedFare: number | null;
@@ -77,19 +80,33 @@ function TicketRowActions({
   canRequest: boolean;
   canDispatch: boolean;
   canMarkParked: boolean;
+  directCheckoutModeEnabled: boolean;
 }) {
+  const isCheckoutable = ticket.status === "checked_in" || ticket.status === "parked";
+
   return (
     <div className="flex items-center gap-1">
       {ticket.status === "checked_in" && canMarkParked && (
         <MarkParkedButton ticketId={ticket.id} slots={availableSlots} action={markAsParked} />
       )}
-      {ticket.status === "parked" && canRequest && (
-        <form action={requestVehicle}>
-          <input type="hidden" name="id" value={ticket.id} />
-          <Button type="submit" size="sm" variant="outline">
-            Guest requested
-          </Button>
-        </form>
+      {directCheckoutModeEnabled && isCheckoutable ? (
+        <DirectCheckoutButton
+          ticketId={ticket.id}
+          vehicleNumber={ticket.vehicle_number}
+          suggestedFare={ticket.is_pass_vehicle ? 0 : ticket.suggested_fare}
+          isPassVehicle={ticket.is_pass_vehicle}
+          action={completeDirectCheckout}
+        />
+      ) : (
+        ticket.status === "parked" &&
+        canRequest && (
+          <form action={requestVehicle}>
+            <input type="hidden" name="id" value={ticket.id} />
+            <Button type="submit" size="sm" variant="outline">
+              Guest requested
+            </Button>
+          </form>
+        )
       )}
       {ticket.status === "requested" && canDispatch && (
         <DispatchOperatorButton
@@ -152,6 +169,7 @@ export default async function LiveQueuePage({
     tariffRules,
     autoAllocateEnabled,
     guestRequestMode,
+    directCheckoutModeEnabled,
     canRequest,
     canDispatch,
     myAccountId,
@@ -196,13 +214,18 @@ export default async function LiveQueuePage({
               defaultValue={vehicleTypeFilterOptions[0]?.value ?? "car"}
             />
           </Field>
-          <Field label="Mobile number">
+          <Field label={directCheckoutModeEnabled ? "Mobile number (optional)" : "Mobile number"}>
             <div className="relative">
               <Phone className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input name="mobile_number" required placeholder="Enter mobile number" className="pl-8" />
+              <Input
+                name="mobile_number"
+                required={!directCheckoutModeEnabled}
+                placeholder="Enter mobile number"
+                className="pl-8"
+              />
             </div>
           </Field>
-          {guestRequestMode === "qr" && (
+          {!directCheckoutModeEnabled && guestRequestMode === "qr" && (
             <Field label="QR code">
               <Input name="qr_code" required placeholder="e.g. IPK-0001" className="uppercase" />
             </Field>
@@ -329,6 +352,7 @@ export default async function LiveQueuePage({
                       canRequest={canRequest}
                       canDispatch={canDispatch}
                       canMarkParked={session.role === "parking_admin" || t.checked_in_by === myAccountId}
+                      directCheckoutModeEnabled={directCheckoutModeEnabled}
                     />
                   </td>
                 </tr>
@@ -401,6 +425,7 @@ export default async function LiveQueuePage({
                 canRequest={canRequest}
                 canDispatch={canDispatch}
                 canMarkParked={session.role === "parking_admin" || t.checked_in_by === myAccountId}
+                directCheckoutModeEnabled={directCheckoutModeEnabled}
               />
             </div>
           );

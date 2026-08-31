@@ -4,6 +4,7 @@ import ai.instapark.valet.data.remote.ApiException
 import ai.instapark.valet.data.remote.dto.CreateTariffRuleRequest
 import ai.instapark.valet.data.remote.dto.GuestRequestsResponse
 import ai.instapark.valet.data.remote.dto.TariffRuleItem
+import ai.instapark.valet.data.remote.dto.VehiclePassItem
 import ai.instapark.valet.data.remote.dto.VehicleTypeItem
 import ai.instapark.valet.data.remote.dto.ZoneItem
 import ai.instapark.valet.data.repository.ConfigurationRepository
@@ -20,6 +21,7 @@ enum class ConfigTab(val label: String) {
     VEHICLE_TYPES("Vehicles"),
     TARIFFS("Fares"),
     GUEST_REQUESTS("Requests"),
+    VEHICLE_PASSES("Passes"),
 }
 
 sealed interface ConfigLoadState {
@@ -42,6 +44,8 @@ class ConfigurationViewModel(private val repository: ConfigurationRepository) : 
         private set
     var guestRequests by mutableStateOf<GuestRequestsResponse?>(null)
         private set
+    var vehiclePasses by mutableStateOf<List<VehiclePassItem>>(emptyList())
+        private set
 
     private val loadedTabs = mutableSetOf<ConfigTab>()
 
@@ -63,6 +67,7 @@ class ConfigurationViewModel(private val repository: ConfigurationRepository) : 
                 ConfigTab.VEHICLE_TYPES -> repository.vehicleTypes().onSuccess { vehicleTypes = it.vehicleTypes }
                 ConfigTab.TARIFFS -> repository.tariffRules().onSuccess { tariffRules = it.tariffRules }
                 ConfigTab.GUEST_REQUESTS -> repository.guestRequests().onSuccess { guestRequests = it }
+                ConfigTab.VEHICLE_PASSES -> repository.vehiclePasses().onSuccess { vehiclePasses = it.vehiclePasses }
             }
             result
                 .onSuccess {
@@ -110,6 +115,14 @@ class ConfigurationViewModel(private val repository: ConfigurationRepository) : 
 
     fun deleteTariffRule(id: String) {
         viewModelScope.launch { repository.deleteTariffRule(id).onSuccess { refreshCurrentTab() } }
+    }
+
+    fun createVehiclePass(vehicleNumber: String, label: String?) {
+        viewModelScope.launch { repository.createVehiclePass(vehicleNumber, label).onSuccess { refreshCurrentTab() } }
+    }
+
+    fun deleteVehiclePass(id: String) {
+        viewModelScope.launch { repository.deleteVehiclePass(id).onSuccess { refreshCurrentTab() } }
     }
 
     fun setGuestRequestMode(mode: String) {

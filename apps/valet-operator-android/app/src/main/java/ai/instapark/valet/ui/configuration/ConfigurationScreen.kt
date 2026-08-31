@@ -3,6 +3,7 @@ package ai.instapark.valet.ui.configuration
 import ai.instapark.valet.data.remote.dto.CreateTariffRuleRequest
 import ai.instapark.valet.data.remote.dto.QrCodeItem
 import ai.instapark.valet.data.remote.dto.TariffRuleItem
+import ai.instapark.valet.data.remote.dto.VehiclePassItem
 import ai.instapark.valet.data.remote.dto.VehicleTypeItem
 import ai.instapark.valet.data.remote.dto.ZoneItem
 import ai.instapark.valet.ui.appContainer
@@ -37,6 +38,7 @@ import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.DirectionsCar
 import androidx.compose.material.icons.outlined.LocalParking
 import androidx.compose.material.icons.outlined.QrCode
+import androidx.compose.material.icons.outlined.Verified
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -61,6 +63,7 @@ private val tabOptions = listOf(
     SegmentOption(ConfigTab.VEHICLE_TYPES.name, "Vehicles", Icons.Outlined.DirectionsCar),
     SegmentOption(ConfigTab.TARIFFS.name, "Fares", Icons.Outlined.CurrencyRupee),
     SegmentOption(ConfigTab.GUEST_REQUESTS.name, "Requests", Icons.Outlined.QrCode),
+    SegmentOption(ConfigTab.VEHICLE_PASSES.name, "Passes", Icons.Outlined.Verified),
 )
 
 @Composable
@@ -98,6 +101,7 @@ fun ConfigurationScreen() {
                 ConfigTab.VEHICLE_TYPES -> VehicleTypesTab(viewModel)
                 ConfigTab.TARIFFS -> TariffsTab(viewModel)
                 ConfigTab.GUEST_REQUESTS -> GuestRequestsTab(viewModel)
+                ConfigTab.VEHICLE_PASSES -> VehiclePassesTab(viewModel)
             }
         }
     }
@@ -421,6 +425,106 @@ private fun GuestRequestsTab(viewModel: ConfigurationViewModel) {
             label = "Count",
             onDismiss = { generateOpen = false },
             onSubmit = { count -> count.toIntOrNull()?.let { viewModel.generateQrCodes(it) }; generateOpen = false },
+        )
+    }
+}
+
+// -- Vehicle passes -------------------------------------------------------
+
+@Composable
+private fun VehiclePassesTab(viewModel: ConfigurationViewModel) {
+    val colors = ValetTheme.colors
+    var addOpen by remember { mutableStateOf(false) }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+            Text(
+                "Whitelisted vehicles always check out at ₹0 with no payment step — used by Direct Checkout mode's checkout flow.",
+                style = MaterialTheme.typography.bodySmall,
+                color = colors.inkSecondary,
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                DialogSecondaryButton(text = "+ Vehicle pass", onClick = { addOpen = true })
+            }
+        }
+        LazyColumn(
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            items(viewModel.vehiclePasses, key = { it.id }) { pass: VehiclePassItem ->
+                GlassCard(modifier = Modifier.fillMaxWidth(), cornerRadius = 14.dp) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column {
+                            Text(pass.vehicleNumber, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                            pass.label?.let {
+                                Text(it, style = MaterialTheme.typography.bodySmall, color = colors.inkSecondary)
+                            }
+                        }
+                        IconButton(onClick = { viewModel.deleteVehiclePass(pass.id) }) {
+                            Icon(Icons.Outlined.DeleteOutline, contentDescription = "Delete", tint = colors.danger)
+                        }
+                    }
+                }
+            }
+            if (viewModel.vehiclePasses.isEmpty()) {
+                item { Text("No vehicle passes yet.", modifier = Modifier.padding(24.dp)) }
+            }
+        }
+    }
+
+    if (addOpen) {
+        AddVehiclePassDialog(
+            onDismiss = { addOpen = false },
+            onSubmit = { vehicleNumber, label -> viewModel.createVehiclePass(vehicleNumber, label); addOpen = false },
+        )
+    }
+}
+
+@Composable
+private fun AddVehiclePassDialog(onDismiss: () -> Unit, onSubmit: (String, String?) -> Unit) {
+    val colors = ValetTheme.colors
+    var vehicleNumber by remember { mutableStateOf("") }
+    var label by remember { mutableStateOf("") }
+
+    PremiumDialog(
+        icon = Icons.Outlined.Verified,
+        title = "New vehicle pass",
+        onDismissRequest = onDismiss,
+        footer = {
+            DialogSecondaryButton(text = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
+            DialogPrimaryButton(
+                text = "Add",
+                enabled = vehicleNumber.isNotBlank(),
+                onClick = { onSubmit(vehicleNumber.trim().uppercase(), label.trim().ifBlank { null }) },
+                modifier = Modifier.weight(1f),
+            )
+        },
+    ) {
+        OutlinedTextField(
+            value = vehicleNumber,
+            onValueChange = { vehicleNumber = it.uppercase() },
+            label = { Text("Vehicle number") },
+            placeholder = { Text("KA01AB1234") },
+            singleLine = true,
+            shape = RoundedCornerShape(14.dp),
+            colors = fieldColors(colors),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+        )
+        Spacer(Modifier.height(12.dp))
+        OutlinedTextField(
+            value = label,
+            onValueChange = { label = it },
+            label = { Text("Label (optional)") },
+            placeholder = { Text("Staff car") },
+            singleLine = true,
+            shape = RoundedCornerShape(14.dp),
+            colors = fieldColors(colors),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
         )
     }
 }

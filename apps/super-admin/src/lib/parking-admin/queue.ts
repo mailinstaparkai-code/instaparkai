@@ -12,7 +12,8 @@ import { getAvailableOperators } from "@/lib/operator-availability";
 import { TICKET_TIMELINE_SELECT, unpivot, type TicketRow, type Transaction } from "@/lib/ticket-timeline";
 import { notify } from "@/lib/valet-notifications";
 import { dispatchPush } from "@/lib/push/dispatch";
-import { type TariffRule } from "@/lib/tariff";
+import { computeFare, type TariffRule } from "@/lib/tariff";
+import { isVehicleWhitelisted } from "./vehicle-passes";
 import { AppError } from "./errors";
 
 export const ACTIVE_STATUSES = ["checked_in", "parked", "requested", "in_transit", "arrived"] as const;
@@ -92,6 +93,11 @@ export type QueueTicket = {
   slots: { slot_number: string } | null;
   qr_code_id: string | null;
   qr_codes: { code: string } | null;
+  // Direct Checkout mode only -- a fare preview computed in getQueueData for
+  // checked_in/parked tickets, so the UI can show "fare due" before the operator
+  // opens the checkout dialog. Always null/false when the site isn't in that mode.
+  suggested_fare: number | null;
+  is_pass_vehicle: boolean;
 };
 
 export function assertValetStaffRole(session: ValetSession | null): asserts session is ValetSession {
@@ -125,7 +131,7 @@ const getSiteRow = cache(async function getSiteRow(
 ) {
   const { data } = await supabase
     .from("parking_spaces")
-    .select("name, auto_allocate_operator, guest_request_mode")
+    .select("name, auto_allocate_operator, guest_request_mode, direct_checkout_mode")
     .eq("id", siteId)
     .single();
   return data;
@@ -150,6 +156,16 @@ export async function isQrModeEnabled(
 ) {
   const site = await getSiteRow(supabase, siteId);
   return site?.guest_request_mode === "qr";
+}
+
+// When on, checkout skips the guest request/dispatch/OTP pipeline entirely -- see
+// completeDirectCheckout below. Off by default; every existing site is unaffected.
+export async function isDirectCheckoutEnabled(
+  supabase: ReturnType<typeof createServiceClient>,
+  siteId: string
+) {
+  const site = await getSiteRow(supabase, siteId);
+  return site?.direct_checkout_mode ?? false;
 }
 
 // Shared by the manual dispatch picker and auto-allocation -- moves a "requested"
@@ -250,6 +266,7 @@ export type QueueData = {
   autoAllocateEnabled: boolean;
   canToggleAutoAllocate: boolean;
   guestRequestMode: "link" | "qr";
+  directCheckoutModeEnabled: boolean;
   // "Guest requested" and manual dispatch are Parking Admin only; mark-as-parked is
   // the checked-in operator or an admin (evaluated per-ticket, see QueueTicket).
   canRequest: boolean;
@@ -298,7 +315,7 @@ export async function getQueueData(
     getCachedTariffRules(getCurrentSiteId(session)),
     supabase
       .from("parking_spaces")
-      .select("auto_allocate_operator, guest_request_mode")
+      .select("auto_allocate_operator, guest_request_mode, direct_checkout_mode")
       .eq("id", getCurrentSiteId(session))
       .single(),
     getAvailableOperators(supabase, getCurrentSiteId(session), { respectDailyStatus: false }),
@@ -347,8 +364,33 @@ export async function getQueueData(
   const statusOptions = ACTIVE_STATUSES.map((s) => ({ value: s, label: STATUS_LABEL[s] }));
   const vehicleTypeOptions = (vehicleTypes ?? []).map((vt) => ({ value: vt.name, label: vt.name }));
 
+  const directCheckoutModeEnabled = site?.direct_checkout_mode ?? false;
+
+  // Fare/pass preview is Direct Checkout-only and only meaningful for tickets that
+  // haven't been checked out yet -- costs nothing for every other site (no extra
+  // query) and doesn't touch requested/in_transit/arrived tickets, which still go
+  // through the classic handover flow's own fare entry regardless of this flag.
+  let passSet = new Set<string>();
+  if (directCheckoutModeEnabled) {
+    const { data: passes } = await supabase
+      .from("vehicle_passes")
+      .select("vehicle_number")
+      .eq("parking_space_id", getCurrentSiteId(session));
+    passSet = new Set((passes ?? []).map((p) => p.vehicle_number.toUpperCase()));
+  }
+
+  const ticketsWithPreview = (tickets ?? []).map((t) => {
+    if (!directCheckoutModeEnabled || (t.status !== "checked_in" && t.status !== "parked")) {
+      return { ...t, suggested_fare: null, is_pass_vehicle: false };
+    }
+    const isPassVehicle = passSet.has(t.vehicle_number.toUpperCase());
+    const minutesParked = Math.max(0, (Date.now() - new Date(t.checked_in_at).getTime()) / 60000);
+    const suggestedFare = isPassVehicle ? 0 : computeFare(tariffRules ?? [], t.vehicle_type, minutesParked);
+    return { ...t, suggested_fare: suggestedFare, is_pass_vehicle: isPassVehicle };
+  });
+
   return {
-    tickets: tickets ?? [],
+    tickets: ticketsWithPreview,
     availableSlots,
     operatorOptions,
     vehicleTypeOptions,
@@ -357,6 +399,7 @@ export async function getQueueData(
     autoAllocateEnabled: site?.auto_allocate_operator ?? false,
     canToggleAutoAllocate: session.role === "parking_admin",
     guestRequestMode: (site?.guest_request_mode as "link" | "qr" | undefined) ?? "link",
+    directCheckoutModeEnabled,
     canRequest: session.role === "parking_admin",
     canDispatch: session.role === "parking_admin",
     myAccountId: session.accountId,
@@ -373,6 +416,19 @@ export async function setAutoAllocate(
   const { error } = await supabase
     .from("parking_spaces")
     .update({ auto_allocate_operator: enabled })
+    .eq("id", getCurrentSiteId(session));
+  if (error) throw new Error(error.message);
+}
+
+export async function setDirectCheckoutMode(
+  supabase: ReturnType<typeof createServiceClient>,
+  session: ValetSession,
+  enabled: boolean
+) {
+  assertParkingAdminRole(session);
+  const { error } = await supabase
+    .from("parking_spaces")
+    .update({ direct_checkout_mode: enabled })
     .eq("id", getCurrentSiteId(session));
   if (error) throw new Error(error.message);
 }
@@ -415,12 +471,15 @@ export async function checkInVehicle(
   const vehicle_number = fields.vehicleNumber.trim().toUpperCase();
   const vehicle_type = fields.vehicleType || "car";
   const mobile_number = fields.mobileNumber.trim();
-  if (!vehicle_number || !mobile_number) {
+  const directCheckoutMode = await isDirectCheckoutEnabled(supabase, getCurrentSiteId(session));
+  if (!vehicle_number || (!directCheckoutMode && !mobile_number)) {
     throw new AppError("invalid_request", "Vehicle number and mobile number are required.", 400);
   }
 
+  // Direct Checkout mode has no guest self-service tracking to key a QR code to --
+  // mobile number and QR are both purely optional metadata in that mode.
   let qrCodeId: string | null = null;
-  if (await isQrModeEnabled(supabase, getCurrentSiteId(session))) {
+  if (!directCheckoutMode && (await isQrModeEnabled(supabase, getCurrentSiteId(session)))) {
     const qrCode = fields.qrCode?.trim().toUpperCase();
     if (!qrCode) {
       throw new AppError("invalid_request", "QR code is required for this site.", 400);
@@ -456,26 +515,30 @@ export async function checkInVehicle(
   if (error) throw new Error(error.message);
 
   await Promise.all([
-    (async () => {
-      const [siteName, baseUrl] = await Promise.all([
-        getSiteName(supabase, getCurrentSiteId(session)),
-        getBaseUrl(),
-      ]);
-      await fireTrigger({
-        supabase,
-        siteId: getCurrentSiteId(session),
-        triggerKey: "vehicle_checked_in",
-        ticketId,
-        mobileNumber: mobile_number,
-        variables: {
-          vehicleNumber: vehicle_number,
-          vehicleType: vehicle_type,
-          mobileNumber: mobile_number,
-          siteName,
-          trackingUrl: `${baseUrl}/track/${ticketToken}`,
-        },
-      });
-    })(),
+    // No mobile number in Direct Checkout mode means no guest to notify -- skip the
+    // trigger entirely rather than firing a messaging call with a blank number.
+    mobile_number
+      ? (async () => {
+          const [siteName, baseUrl] = await Promise.all([
+            getSiteName(supabase, getCurrentSiteId(session)),
+            getBaseUrl(),
+          ]);
+          await fireTrigger({
+            supabase,
+            siteId: getCurrentSiteId(session),
+            triggerKey: "vehicle_checked_in",
+            ticketId,
+            mobileNumber: mobile_number,
+            variables: {
+              vehicleNumber: vehicle_number,
+              vehicleType: vehicle_type,
+              mobileNumber: mobile_number,
+              siteName,
+              trackingUrl: `${baseUrl}/track/${ticketToken}`,
+            },
+          });
+        })()
+      : Promise.resolve(),
     notify({
       supabase,
       siteId: getCurrentSiteId(session),
@@ -500,6 +563,8 @@ export async function checkInVehicle(
     slots: null,
     qr_code_id: qrCodeId,
     qr_codes: null,
+    suggested_fare: null,
+    is_pass_vehicle: false,
   };
 }
 
@@ -747,6 +812,72 @@ export async function voidTicket(
   });
 }
 
+// Shared by completeHandover (gated by OTP/QR match) and completeDirectCheckout
+// (gated by direct_checkout_mode instead) -- the actual "finish this ticket" write:
+// photo upload, completion fields, slot-freeing, guest trigger + in-app notify.
+async function finalizeTicketCompletion(
+  supabase: ReturnType<typeof createServiceClient>,
+  siteId: string,
+  ticket: LoadedTicket,
+  fields: { fareAmount: string | null; paymentCollected: boolean },
+  formData: FormData,
+  deliveredBy: string
+): Promise<void> {
+  const fareRaw = fields.fareAmount?.trim() || undefined;
+
+  const handoverPhotos = await uploadTicketPhotos(
+    supabase,
+    siteId,
+    ticket.id,
+    "handover",
+    formData,
+    [{ name: "photo_handover", label: "handover" }]
+  );
+
+  const { error } = await supabase
+    .from("valet_tickets")
+    .update({
+      status: "completed",
+      completed_at: new Date().toISOString(),
+      fare_amount: fareRaw ? Number(fareRaw) : null,
+      payment_collected: fields.paymentCollected,
+      handover_photos: handoverPhotos,
+      delivered_by: deliveredBy,
+    })
+    .eq("id", ticket.id);
+  if (error) throw new Error(error.message);
+
+  if (ticket.slot_id) {
+    await supabase.from("slots").update({ status: "available" }).eq("id", ticket.slot_id);
+  }
+
+  await Promise.all([
+    (async () => {
+      const siteName = await getSiteName(supabase, siteId);
+      await fireTrigger({
+        supabase,
+        siteId,
+        triggerKey: "handover_complete",
+        ticketId: ticket.id,
+        mobileNumber: ticket.mobile_number,
+        variables: {
+          vehicleNumber: ticket.vehicle_number,
+          siteName,
+          fareAmount: fareRaw ?? "0",
+          paymentStatus: fields.paymentCollected ? "paid" : "pending",
+        },
+      });
+    })(),
+    notify({
+      supabase,
+      siteId,
+      ticketId: ticket.id,
+      kind: "handover_complete",
+      message: `${ticket.vehicle_number} handover complete`,
+    }),
+  ]);
+}
+
 export async function completeHandover(
   supabase: ReturnType<typeof createServiceClient>,
   session: ValetSession,
@@ -754,8 +885,6 @@ export async function completeHandover(
   fields: { otp?: string; qrCode?: string; fareAmount: string | null; paymentCollected: boolean },
   formData: FormData
 ): Promise<void> {
-  const fareRaw = fields.fareAmount?.trim() || undefined;
-
   const ticket = await loadTicket(supabase, id, getCurrentSiteId(session));
   if (!ticket) throw new AppError("not_found", "Ticket not found.", 404);
   if (ticket.status !== "arrived") {
@@ -773,57 +902,37 @@ export async function completeHandover(
     if (ticket.otp !== otpEntered) throw new AppError("invalid_otp", "Incorrect OTP.", 400);
   }
 
-  const handoverPhotos = await uploadTicketPhotos(
-    supabase,
-    getCurrentSiteId(session),
-    id,
-    "handover",
-    formData,
-    [{ name: "photo_handover", label: "handover" }]
-  );
+  await finalizeTicketCompletion(supabase, getCurrentSiteId(session), ticket, fields, formData, session.accountId);
+}
 
-  const { error } = await supabase
-    .from("valet_tickets")
-    .update({
-      status: "completed",
-      completed_at: new Date().toISOString(),
-      fare_amount: fareRaw ? Number(fareRaw) : null,
-      payment_collected: fields.paymentCollected,
-      handover_photos: handoverPhotos,
-      delivered_by: session.accountId,
-    })
-    .eq("id", id);
-  if (error) throw new Error(error.message);
-
-  if (ticket.slot_id) {
-    await supabase.from("slots").update({ status: "available" }).eq("id", ticket.slot_id);
+// Direct Checkout mode's checkout action -- no OTP/QR gate, reachable from
+// checked_in or parked (a Direct Checkout ticket never goes through request/
+// dispatch/arrived at all). Open to any authenticated valet role, matching
+// completeHandover's own openness (this is a staff action, not admin-only).
+export async function completeDirectCheckout(
+  supabase: ReturnType<typeof createServiceClient>,
+  session: ValetSession,
+  id: string,
+  fields: { fareAmount: string | null; paymentCollected: boolean },
+  formData: FormData
+): Promise<void> {
+  const siteId = getCurrentSiteId(session);
+  if (!(await isDirectCheckoutEnabled(supabase, siteId))) {
+    throw new AppError("forbidden", "Direct checkout mode is not enabled for this site.", 403);
   }
 
-  await Promise.all([
-    (async () => {
-      const siteName = await getSiteName(supabase, getCurrentSiteId(session));
-      await fireTrigger({
-        supabase,
-        siteId: getCurrentSiteId(session),
-        triggerKey: "handover_complete",
-        ticketId: id,
-        mobileNumber: ticket.mobile_number,
-        variables: {
-          vehicleNumber: ticket.vehicle_number,
-          siteName,
-          fareAmount: fareRaw ?? "0",
-          paymentStatus: fields.paymentCollected ? "paid" : "pending",
-        },
-      });
-    })(),
-    notify({
-      supabase,
-      siteId: getCurrentSiteId(session),
-      ticketId: id,
-      kind: "handover_complete",
-      message: `${ticket.vehicle_number} handover complete`,
-    }),
-  ]);
+  const ticket = await loadTicket(supabase, id, siteId);
+  if (!ticket) throw new AppError("not_found", "Ticket not found.", 404);
+  if (ticket.status !== "checked_in" && ticket.status !== "parked") {
+    throw new AppError("invalid_state", "Ticket is not awaiting checkout.", 409);
+  }
+
+  // Whitelisted vehicles always check out at zero fare with no payment step --
+  // enforced server-side regardless of what the client submits.
+  const isPass = await isVehicleWhitelisted(siteId, ticket.vehicle_number);
+  const effectiveFields = isPass ? { fareAmount: "0", paymentCollected: true } : fields;
+
+  await finalizeTicketCompletion(supabase, siteId, ticket, effectiveFields, formData, session.accountId);
 }
 
 export async function getTicketPhotoUrls(

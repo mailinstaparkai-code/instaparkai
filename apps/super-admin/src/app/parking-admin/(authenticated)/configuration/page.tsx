@@ -7,12 +7,16 @@ import { ZonesSlotsTab } from "./components/zones-slots-tab";
 import { VehicleTypesTab } from "./components/vehicle-types-tab";
 import { TariffTab } from "./components/tariff-tab";
 import { GuestRequestsTab } from "./components/guest-requests-tab";
+import { CheckoutModeTab } from "./components/checkout-mode-tab";
+import { VehiclePassesTab } from "./components/vehicle-passes-tab";
 
 const TABS = [
   { key: "zones", label: "Zones & Slots" },
   { key: "vehicle-types", label: "Vehicle Types" },
   { key: "tariffs", label: "Payments" },
   { key: "requests", label: "Vehicle Requests" },
+  { key: "checkout-mode", label: "Checkout Mode" },
+  { key: "vehicle-passes", label: "Vehicle Passes" },
 ] as const;
 type Tab = (typeof TABS)[number]["key"];
 
@@ -34,7 +38,7 @@ export default async function ConfigurationPage({
 
   const supabase = createServiceClient();
 
-  const [{ data: zones }, { data: vehicleTypes }, { data: tariffRules }, { data: site }, qrCodes] =
+  const [{ data: zones }, { data: vehicleTypes }, { data: tariffRules }, { data: site }, qrCodes, { data: vehiclePasses }] =
     await Promise.all([
       supabase
         .from("zones")
@@ -53,10 +57,15 @@ export default async function ConfigurationPage({
         .order("vehicle_category"),
       supabase
         .from("parking_spaces")
-        .select("guest_request_mode")
+        .select("guest_request_mode, direct_checkout_mode")
         .eq("id", getCurrentSiteId(session))
         .single(),
       listQrCodes(supabase, session),
+      supabase
+        .from("vehicle_passes")
+        .select("id, vehicle_number, label")
+        .eq("parking_space_id", getCurrentSiteId(session))
+        .order("vehicle_number"),
     ]);
 
   return (
@@ -95,6 +104,10 @@ export default async function ConfigurationPage({
           qrCodes={qrCodes}
         />
       )}
+      {tab === "checkout-mode" && (
+        <CheckoutModeTab directCheckoutModeEnabled={site?.direct_checkout_mode ?? false} />
+      )}
+      {tab === "vehicle-passes" && <VehiclePassesTab vehiclePasses={vehiclePasses ?? []} />}
     </div>
   );
 }

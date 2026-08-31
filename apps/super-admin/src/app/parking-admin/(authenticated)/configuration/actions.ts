@@ -4,6 +4,8 @@ import { revalidatePath, updateTag } from "next/cache";
 import { createServiceClient } from "@/lib/supabase/service";
 import { getCurrentSiteId, getValetSession } from "@/lib/valet-auth/session";
 import * as qrCodesLib from "@/lib/parking-admin/qr-codes";
+import * as queueLib from "@/lib/parking-admin/queue";
+import * as vehiclePassesLib from "@/lib/parking-admin/vehicle-passes";
 
 const PATH = "/parking-admin/configuration";
 
@@ -220,4 +222,47 @@ export async function generateQrCodes(formData: FormData) {
   await qrCodesLib.generateQrCodes(supabase, session, count);
 
   revalidatePath(PATH);
+}
+
+// -- Direct Checkout mode ----------------------------------------------
+
+export async function updateDirectCheckoutMode(formData: FormData) {
+  const enabled = formData.get("direct_checkout_mode") === "on";
+
+  const session = await assertParkingAdmin();
+  const supabase = createServiceClient();
+
+  await queueLib.setDirectCheckoutMode(supabase, session, enabled);
+
+  revalidatePath(PATH);
+  revalidatePath("/parking-admin/queue");
+}
+
+// -- Vehicle passes -------------------------------------------------------
+
+export async function createVehiclePass(formData: FormData) {
+  const vehicle_number = formData.get("vehicle_number")?.toString().trim();
+  const label = formData.get("label")?.toString().trim();
+  if (!vehicle_number) return;
+
+  const session = await assertParkingAdmin();
+  const supabase = createServiceClient();
+
+  await vehiclePassesLib.createVehiclePass(supabase, session, { vehicleNumber: vehicle_number, label });
+
+  revalidatePath(PATH);
+  updateTag(`vehicle-passes:${getCurrentSiteId(session)}`);
+}
+
+export async function deleteVehiclePass(formData: FormData) {
+  const id = formData.get("id")?.toString();
+  if (!id) return;
+
+  const session = await assertParkingAdmin();
+  const supabase = createServiceClient();
+
+  await vehiclePassesLib.deleteVehiclePass(supabase, session, id);
+
+  revalidatePath(PATH);
+  updateTag(`vehicle-passes:${getCurrentSiteId(session)}`);
 }

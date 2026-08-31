@@ -8,6 +8,8 @@ import ai.instapark.valet.data.remote.dto.CreateSlotRequest
 import ai.instapark.valet.data.remote.dto.CreateSlotResponse
 import ai.instapark.valet.data.remote.dto.CreateTariffRuleRequest
 import ai.instapark.valet.data.remote.dto.CreateTariffRuleResponse
+import ai.instapark.valet.data.remote.dto.CreateVehiclePassRequest
+import ai.instapark.valet.data.remote.dto.CreateVehiclePassResponse
 import ai.instapark.valet.data.remote.dto.CreateVehicleTypeRequest
 import ai.instapark.valet.data.remote.dto.CreateVehicleTypeResponse
 import ai.instapark.valet.data.remote.dto.CreateZoneRequest
@@ -38,6 +40,7 @@ import ai.instapark.valet.data.remote.dto.SwitchSiteResponse
 import ai.instapark.valet.data.remote.dto.TariffRulesResponse
 import ai.instapark.valet.data.remote.dto.TimelineResponse
 import ai.instapark.valet.data.remote.dto.UpdateTicketRequest
+import ai.instapark.valet.data.remote.dto.VehiclePassesResponse
 import ai.instapark.valet.data.remote.dto.VehicleTypesResponse
 import ai.instapark.valet.data.remote.dto.VehicleTransactionsResponse
 import ai.instapark.valet.data.remote.dto.VehiclesResponse
@@ -128,6 +131,15 @@ interface ParkingAdminApi {
         @Part photoHandover: MultipartBody.Part? = null,
     )
 
+    @Multipart
+    @POST("queue/{id}/direct-checkout")
+    suspend fun completeDirectCheckout(
+        @Path("id") id: String,
+        @Part("fare_amount") fareAmount: RequestBody?,
+        @Part("payment_collected") paymentCollected: RequestBody,
+        @Part photoHandover: MultipartBody.Part? = null,
+    )
+
     @PATCH("queue/{id}")
     suspend fun updateTicket(@Path("id") id: String, @Body request: UpdateTicketRequest)
 
@@ -187,6 +199,15 @@ interface ParkingAdminApi {
 
     @DELETE("configuration/vehicle-types/{id}")
     suspend fun deleteVehicleType(@Path("id") id: String)
+
+    @GET("configuration/vehicle-passes")
+    suspend fun vehiclePasses(): VehiclePassesResponse
+
+    @POST("configuration/vehicle-passes")
+    suspend fun createVehiclePass(@Body request: CreateVehiclePassRequest): CreateVehiclePassResponse
+
+    @DELETE("configuration/vehicle-passes/{id}")
+    suspend fun deleteVehiclePass(@Path("id") id: String)
 
     @GET("configuration/tariffs")
     suspend fun tariffRules(): TariffRulesResponse

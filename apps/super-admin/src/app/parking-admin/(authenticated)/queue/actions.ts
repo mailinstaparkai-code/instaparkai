@@ -38,7 +38,10 @@ export async function checkInVehicle(formData: FormData) {
   const vehicle_type = formData.get("vehicle_type")?.toString() || "car";
   const mobile_number = formData.get("mobile_number")?.toString().trim();
   const qr_code = formData.get("qr_code")?.toString().trim();
-  if (!vehicle_number || !mobile_number) return;
+  // mobile_number is only required in the classic flow -- queueLib.checkInVehicle
+  // itself decides based on the site's direct_checkout_mode, so this wrapper only
+  // guards the one field that's always required.
+  if (!vehicle_number) return;
 
   const session = await assertValetStaff();
   const supabase = createServiceClient();
@@ -46,7 +49,7 @@ export async function checkInVehicle(formData: FormData) {
   await queueLib.checkInVehicle(
     supabase,
     session,
-    { vehicleNumber: vehicle_number, vehicleType: vehicle_type, mobileNumber: mobile_number, qrCode: qr_code },
+    { vehicleNumber: vehicle_number, vehicleType: vehicle_type, mobileNumber: mobile_number ?? "", qrCode: qr_code },
     formData
   );
 
@@ -169,6 +172,27 @@ export async function completeHandover(formData: FormData) {
     session,
     id,
     { otp: otpEntered, qrCode: qrCodeEntered, fareAmount: fareRaw || null, paymentCollected: payment_collected },
+    formData
+  );
+
+  revalidatePath(PATH);
+  revalidatePath("/parking-admin/dashboard");
+}
+
+export async function completeDirectCheckout(formData: FormData) {
+  const id = formData.get("id")?.toString();
+  const fareRaw = formData.get("fare_amount")?.toString().trim();
+  const payment_collected = formData.get("payment_collected") === "on";
+  if (!id) return;
+
+  const session = await assertValetStaff();
+  const supabase = createServiceClient();
+
+  await queueLib.completeDirectCheckout(
+    supabase,
+    session,
+    id,
+    { fareAmount: fareRaw || null, paymentCollected: payment_collected },
     formData
   );
 

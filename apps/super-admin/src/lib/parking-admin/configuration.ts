@@ -243,3 +243,48 @@ export async function deleteTariffRule(
   if (error) throw new AppError("delete_failed", error.message, 400);
   revalidateTag(`tariff-rules:${siteId}`, "max");
 }
+
+// -- Vehicle passes -------------------------------------------------------
+
+export function mapVehiclePassForApi(pass: { id: string; vehicle_number: string; label: string | null }) {
+  return { id: pass.id, vehicleNumber: pass.vehicle_number, label: pass.label };
+}
+
+export async function listVehiclePasses(supabase: ReturnType<typeof createServiceClient>, siteId: string) {
+  const { data } = await supabase
+    .from("vehicle_passes")
+    .select("id, vehicle_number, label")
+    .eq("parking_space_id", siteId)
+    .order("vehicle_number");
+  return data ?? [];
+}
+
+export async function createVehiclePass(
+  supabase: ReturnType<typeof createServiceClient>,
+  siteId: string,
+  vehicleNumber: string,
+  label: string | null
+) {
+  const { data, error } = await supabase
+    .from("vehicle_passes")
+    .insert({ parking_space_id: siteId, vehicle_number: vehicleNumber.trim().toUpperCase(), label })
+    .select("id, vehicle_number, label")
+    .single();
+  if (error) throw new AppError("insert_failed", error.message, 400);
+  revalidateTag(`vehicle-passes:${siteId}`, "max");
+  return data;
+}
+
+export async function deleteVehiclePass(
+  supabase: ReturnType<typeof createServiceClient>,
+  siteId: string,
+  id: string
+) {
+  const { error } = await supabase
+    .from("vehicle_passes")
+    .delete()
+    .eq("id", id)
+    .eq("parking_space_id", siteId);
+  if (error) throw new AppError("delete_failed", error.message, 400);
+  revalidateTag(`vehicle-passes:${siteId}`, "max");
+}

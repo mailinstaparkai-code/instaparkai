@@ -101,6 +101,14 @@ class QueueViewModel(private val repository: QueueRepository) : ViewModel() {
         onDone
     )
 
+    fun completeDirectCheckout(
+        id: String,
+        fareAmount: String?,
+        paymentCollected: Boolean,
+        paymentPhoto: File?,
+        onDone: (String?) -> Unit,
+    ) = perform({ repository.completeDirectCheckout(id, fareAmount, paymentCollected, paymentPhoto) }, onDone)
+
     fun updateTicket(id: String, vehicleNumber: String, mobileNumber: String, onDone: (String?) -> Unit) =
         perform({ repository.updateTicket(id, vehicleNumber, mobileNumber) }, onDone)
 
