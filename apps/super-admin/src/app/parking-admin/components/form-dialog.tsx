@@ -36,20 +36,30 @@ export function FormDialog({
 }) {
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPending(true);
+    setError(null);
     try {
       await action(new FormData(event.currentTarget));
       setOpen(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong.");
     } finally {
       setPending(false);
     }
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) setError(null);
+      }}
+    >
       <DialogTrigger render={trigger} />
       <DialogContent>
         {icon ? (
@@ -61,6 +71,7 @@ export function FormDialog({
         )}
         <form id="form-dialog-form" onSubmit={handleSubmit} className="flex flex-col gap-3">
           {children}
+          {error && <p className="text-sm text-status-danger">{error}</p>}
         </form>
         <DialogFooter>
           <DialogSecondaryButton onClick={() => setOpen(false)}>Cancel</DialogSecondaryButton>

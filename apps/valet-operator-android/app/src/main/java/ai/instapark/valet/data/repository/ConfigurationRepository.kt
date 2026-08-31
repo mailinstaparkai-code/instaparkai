@@ -3,6 +3,8 @@ package ai.instapark.valet.data.repository
 import ai.instapark.valet.data.remote.ParkingAdminApi
 import ai.instapark.valet.data.remote.dto.CreateSlotRequest
 import ai.instapark.valet.data.remote.dto.CreateSlotResponse
+import ai.instapark.valet.data.remote.dto.CreateSlotsBulkRequest
+import ai.instapark.valet.data.remote.dto.CreateSlotsBulkResponse
 import ai.instapark.valet.data.remote.dto.CreateTariffRuleRequest
 import ai.instapark.valet.data.remote.dto.CreateTariffRuleResponse
 import ai.instapark.valet.data.remote.dto.CreateVehiclePassRequest
@@ -38,6 +40,15 @@ class ConfigurationRepository(
     suspend fun createSlot(zoneId: String, slotNumber: String, isEv: Boolean, isDisabledSlot: Boolean): Result<CreateSlotResponse> =
         wrap { api.createSlot(zoneId, CreateSlotRequest(slotNumber, isEv, isDisabledSlot)) }
     suspend fun deleteSlot(id: String): Result<Unit> = wrap { api.deleteSlot(id) }
+    suspend fun createSlotsBulk(
+        zoneId: String,
+        prefix: String?,
+        start: Int,
+        end: Int,
+        isEv: Boolean,
+        isDisabledSlot: Boolean,
+    ): Result<CreateSlotsBulkResponse> =
+        wrap { api.createSlotsBulk(zoneId, CreateSlotsBulkRequest(prefix, start, end, isEv, isDisabledSlot)) }
 
     suspend fun vehicleTypes(): Result<VehicleTypesResponse> = wrap { api.vehicleTypes() }
     suspend fun createVehicleType(name: String): Result<CreateVehicleTypeResponse> =

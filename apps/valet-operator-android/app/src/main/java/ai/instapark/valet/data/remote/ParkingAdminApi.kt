@@ -6,6 +6,8 @@ import ai.instapark.valet.data.remote.dto.CheckInResponse
 import ai.instapark.valet.data.remote.dto.CreateOperatorResponse
 import ai.instapark.valet.data.remote.dto.CreateSlotRequest
 import ai.instapark.valet.data.remote.dto.CreateSlotResponse
+import ai.instapark.valet.data.remote.dto.CreateSlotsBulkRequest
+import ai.instapark.valet.data.remote.dto.CreateSlotsBulkResponse
 import ai.instapark.valet.data.remote.dto.CreateTariffRuleRequest
 import ai.instapark.valet.data.remote.dto.CreateTariffRuleResponse
 import ai.instapark.valet.data.remote.dto.CreateVehiclePassRequest
@@ -187,6 +189,9 @@ interface ParkingAdminApi {
 
     @POST("configuration/zones/{zoneId}/slots")
     suspend fun createSlot(@Path("zoneId") zoneId: String, @Body request: CreateSlotRequest): CreateSlotResponse
+
+    @POST("configuration/zones/{zoneId}/slots/bulk")
+    suspend fun createSlotsBulk(@Path("zoneId") zoneId: String, @Body request: CreateSlotsBulkRequest): CreateSlotsBulkResponse
 
     @DELETE("configuration/slots/{id}")
     suspend fun deleteSlot(@Path("id") id: String)

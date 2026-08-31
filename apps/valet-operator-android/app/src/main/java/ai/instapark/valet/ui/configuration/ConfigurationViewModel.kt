@@ -101,6 +101,28 @@ class ConfigurationViewModel(private val repository: ConfigurationRepository) : 
         viewModelScope.launch { repository.deleteSlot(id).onSuccess { refreshCurrentTab() } }
     }
 
+    // Unlike its fire-and-forget siblings above, a bulk range is much more likely to
+    // fail (bad range, duplicate collision), so this surfaces the error back to the
+    // dialog instead of swallowing it.
+    fun createSlotsBulk(
+        zoneId: String,
+        prefix: String?,
+        start: Int,
+        end: Int,
+        isEv: Boolean,
+        isDisabledSlot: Boolean,
+        onDone: (String?) -> Unit,
+    ) {
+        viewModelScope.launch {
+            repository.createSlotsBulk(zoneId, prefix, start, end, isEv, isDisabledSlot)
+                .onSuccess {
+                    refreshCurrentTab()
+                    onDone(null)
+                }
+                .onFailure { onDone((it as? ApiException)?.message ?: "Something went wrong.") }
+        }
+    }
+
     fun createVehicleType(name: String) {
         viewModelScope.launch { repository.createVehicleType(name).onSuccess { refreshCurrentTab() } }
     }

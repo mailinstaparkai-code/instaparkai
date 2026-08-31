@@ -97,6 +97,53 @@ export async function createSlot(
   return data;
 }
 
+const MAX_BULK_SLOTS = 500;
+
+export async function createSlotsBulk(
+  supabase: ReturnType<typeof createServiceClient>,
+  siteId: string,
+  zoneId: string,
+  fields: { prefix: string; start: number; end: number; is_ev: boolean; is_disabled_slot: boolean }
+) {
+  const { data: zone } = await supabase
+    .from("zones")
+    .select("id")
+    .eq("id", zoneId)
+    .eq("parking_space_id", siteId)
+    .maybeSingle();
+  if (!zone) throw new AppError("not_found", "Zone not found.", 404);
+
+  if (fields.end < fields.start) {
+    throw new AppError("invalid_request", "End must be greater than or equal to start.", 400);
+  }
+  const count = fields.end - fields.start + 1;
+  if (count > MAX_BULK_SLOTS) {
+    throw new AppError("invalid_request", `Cannot create more than ${MAX_BULK_SLOTS} slots at once.`, 400);
+  }
+
+  const rows = Array.from({ length: count }, (_, i) => {
+    const n = fields.start + i;
+    return {
+      zone_id: zoneId,
+      slot_number: fields.prefix ? `${fields.prefix} ${n}` : String(n),
+      is_ev: fields.is_ev,
+      is_disabled_slot: fields.is_disabled_slot,
+    };
+  });
+
+  const { data, error } = await supabase
+    .from("slots")
+    .insert(rows)
+    .select("id, slot_number, is_ev, is_disabled_slot, status");
+  if (error) {
+    if (error.code === "23505") {
+      throw new AppError("invalid_request", "Some of these slot numbers already exist in this zone.", 409);
+    }
+    throw new AppError("insert_failed", error.message, 400);
+  }
+  return data;
+}
+
 export async function deleteSlot(
   supabase: ReturnType<typeof createServiceClient>,
   siteId: string,

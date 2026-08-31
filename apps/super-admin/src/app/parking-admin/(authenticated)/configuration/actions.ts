@@ -79,6 +79,49 @@ export async function createSlot(formData: FormData) {
   revalidatePath(PATH);
 }
 
+const MAX_BULK_SLOTS = 500;
+
+export async function createSlotsBulk(formData: FormData) {
+  const zone_id = formData.get("zone_id")?.toString();
+  const prefix = formData.get("prefix")?.toString().trim() ?? "";
+  const start = Number(formData.get("start_number"));
+  const end = Number(formData.get("end_number"));
+  const is_ev = formData.get("is_ev") === "on";
+  const is_disabled_slot = formData.get("is_disabled_slot") === "on";
+  if (!zone_id || !Number.isFinite(start) || !Number.isFinite(end) || end < start) return;
+
+  const count = end - start + 1;
+  if (count > MAX_BULK_SLOTS) {
+    throw new Error(`Cannot create more than ${MAX_BULK_SLOTS} slots at once.`);
+  }
+
+  const session = await assertParkingAdmin();
+  const supabase = createServiceClient();
+
+  const { data: zone } = await supabase
+    .from("zones")
+    .select("id")
+    .eq("id", zone_id)
+    .eq("parking_space_id", getCurrentSiteId(session))
+    .maybeSingle();
+  if (!zone) throw new Error("Zone not found.");
+
+  const rows = Array.from({ length: count }, (_, i) => {
+    const n = start + i;
+    return { zone_id, slot_number: prefix ? `${prefix} ${n}` : String(n), is_ev, is_disabled_slot };
+  });
+
+  const { error } = await supabase.from("slots").insert(rows);
+  if (error) {
+    if (error.code === "23505") {
+      throw new Error("Some of these slot numbers already exist in this zone.");
+    }
+    throw new Error(error.message);
+  }
+
+  revalidatePath(PATH);
+}
+
 export async function deleteSlot(formData: FormData) {
   const id = formData.get("id")?.toString();
   if (!id) return;

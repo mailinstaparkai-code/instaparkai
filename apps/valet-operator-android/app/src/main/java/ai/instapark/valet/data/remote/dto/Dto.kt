@@ -279,6 +279,8 @@ data class CreateZoneRequest(val name: String)
 data class CreateZoneResponse(val zone: ZoneItem)
 data class CreateSlotRequest(val slotNumber: String, val isEv: Boolean, val isDisabledSlot: Boolean)
 data class CreateSlotResponse(val slot: SlotItem)
+data class CreateSlotsBulkRequest(val prefix: String?, val start: Int, val end: Int, val isEv: Boolean, val isDisabledSlot: Boolean)
+data class CreateSlotsBulkResponse(val slots: List<SlotItem>)
 
 // -- Configuration: Vehicle types -------------------------------------------
 

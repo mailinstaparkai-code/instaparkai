@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Field } from "../../../components/field";
 import { FormDialog } from "../../../components/form-dialog";
 import { DeleteButton } from "../../../components/delete-button";
-import { createZone, createSlot, deleteZone, deleteSlot } from "../actions";
+import { createZone, createSlot, createSlotsBulk, deleteZone, deleteSlot } from "../actions";
 
 type Slot = {
   id: string;
@@ -54,6 +54,41 @@ export function ZonesSlotsTab({ zones }: { zones: Zone[] }) {
                 <Field label="Slot number">
                   <Input name="slot_number" required placeholder="A-101" />
                 </Field>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="is_ev" />
+                  EV charging
+                </label>
+                <label className="flex items-center gap-2 text-sm">
+                  <input type="checkbox" name="is_disabled_slot" />
+                  Accessible slot
+                </label>
+              </FormDialog>
+              <FormDialog
+                trigger={
+                  <Button variant="outline" size="sm">
+                    + Bulk add
+                  </Button>
+                }
+                title={`Bulk add slots in ${zone.name}`}
+                action={createSlotsBulk}
+                submitLabel="Create"
+              >
+                <input type="hidden" name="zone_id" value={zone.id} />
+                <Field label="Prefix (optional)">
+                  <Input name="prefix" placeholder="Car" />
+                </Field>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Start number">
+                    <Input name="start_number" type="number" required placeholder="1" />
+                  </Field>
+                  <Field label="End number">
+                    <Input name="end_number" type="number" required placeholder="22" />
+                  </Field>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Creates one slot per number in the range, named "&lt;prefix&gt; &lt;n&gt;" (e.g.
+                  "Car 1"). Leave prefix blank for bare numbers. Max 500 slots per batch.
+                </p>
                 <label className="flex items-center gap-2 text-sm">
                   <input type="checkbox" name="is_ev" />
                   EV charging

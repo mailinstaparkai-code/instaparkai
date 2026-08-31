@@ -37,6 +37,7 @@ import androidx.compose.material.icons.outlined.CurrencyRupee
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.DirectionsCar
 import androidx.compose.material.icons.outlined.LocalParking
+import androidx.compose.material.icons.outlined.PlaylistAdd
 import androidx.compose.material.icons.outlined.QrCode
 import androidx.compose.material.icons.outlined.Verified
 import androidx.compose.material3.Button
@@ -122,6 +123,7 @@ private fun ZonesTab(viewModel: ConfigurationViewModel) {
     val colors = ValetTheme.colors
     var addZoneOpen by remember { mutableStateOf(false) }
     var addSlotForZone by remember { mutableStateOf<ZoneItem?>(null) }
+    var bulkAddForZone by remember { mutableStateOf<ZoneItem?>(null) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.End) {
@@ -143,6 +145,9 @@ private fun ZonesTab(viewModel: ConfigurationViewModel) {
                             Row {
                                 IconButton(onClick = { addSlotForZone = zone }) {
                                     Icon(Icons.Outlined.Add, contentDescription = "Add slot", tint = colors.primary)
+                                }
+                                IconButton(onClick = { bulkAddForZone = zone }) {
+                                    Icon(Icons.Outlined.PlaylistAdd, contentDescription = "Bulk add slots", tint = colors.primary)
                                 }
                                 IconButton(onClick = { viewModel.deleteZone(zone.id) }) {
                                     Icon(Icons.Outlined.DeleteOutline, contentDescription = "Delete zone", tint = colors.danger)
@@ -192,6 +197,103 @@ private fun ZonesTab(viewModel: ConfigurationViewModel) {
             onDismiss = { addSlotForZone = null },
             onSubmit = { slotNumber -> viewModel.createSlot(zone.id, slotNumber, isEv = false, isDisabledSlot = false); addSlotForZone = null },
         )
+    }
+
+    bulkAddForZone?.let { zone ->
+        BulkAddSlotsDialog(
+            zoneName = zone.name,
+            onDismiss = { bulkAddForZone = null },
+            onSubmit = { prefix, start, end, onError ->
+                viewModel.createSlotsBulk(zone.id, prefix, start, end, isEv = false, isDisabledSlot = false) { error ->
+                    if (error == null) bulkAddForZone = null else onError(error)
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun BulkAddSlotsDialog(
+    zoneName: String,
+    onDismiss: () -> Unit,
+    onSubmit: (String?, Int, Int, (String) -> Unit) -> Unit,
+) {
+    val colors = ValetTheme.colors
+    var prefix by remember { mutableStateOf("") }
+    var start by remember { mutableStateOf("1") }
+    var end by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+    var pending by remember { mutableStateOf(false) }
+
+    val startNum = start.toIntOrNull()
+    val endNum = end.toIntOrNull()
+    val count = if (startNum != null && endNum != null) endNum - startNum + 1 else null
+    val valid = startNum != null && endNum != null && count != null && count in 1..500
+
+    PremiumDialog(
+        icon = Icons.Outlined.PlaylistAdd,
+        title = "Bulk add slots in $zoneName",
+        onDismissRequest = onDismiss,
+        footer = {
+            DialogSecondaryButton(text = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
+            DialogPrimaryButton(
+                text = if (pending) "Creating…" else "Create",
+                enabled = valid && !pending,
+                onClick = {
+                    pending = true
+                    error = null
+                    onSubmit(prefix.trim().ifBlank { null }, startNum!!, endNum!!) { message ->
+                        pending = false
+                        error = message
+                    }
+                },
+                modifier = Modifier.weight(1f),
+            )
+        },
+    ) {
+        OutlinedTextField(
+            value = prefix,
+            onValueChange = { prefix = it },
+            label = { Text("Prefix (optional)") },
+            placeholder = { Text("Car") },
+            singleLine = true,
+            shape = RoundedCornerShape(14.dp),
+            colors = fieldColors(colors),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+        )
+        Spacer(Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            OutlinedTextField(
+                value = start,
+                onValueChange = { start = it },
+                label = { Text("Start number") },
+                singleLine = true,
+                shape = RoundedCornerShape(14.dp),
+                colors = fieldColors(colors),
+                modifier = Modifier.weight(1f).heightIn(min = 56.dp),
+            )
+            OutlinedTextField(
+                value = end,
+                onValueChange = { end = it },
+                label = { Text("End number") },
+                placeholder = { Text("22") },
+                singleLine = true,
+                shape = RoundedCornerShape(14.dp),
+                colors = fieldColors(colors),
+                modifier = Modifier.weight(1f).heightIn(min = 56.dp),
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Creates one slot per number in the range, named \"<prefix> <n>\" (e.g. \"Car 1\"). " +
+                "Leave prefix blank for bare numbers. Max 500 slots per batch.",
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.inkSecondary,
+        )
+        error?.let {
+            Spacer(Modifier.height(10.dp))
+            Text(it, color = colors.danger, style = MaterialTheme.typography.bodySmall)
+        }
     }
 }
 
