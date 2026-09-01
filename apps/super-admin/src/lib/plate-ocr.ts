@@ -1,11 +1,5 @@
 import "server-only";
-import { createWorker, OEM } from "tesseract.js";
-import path from "node:path";
-
-// Same bundled English model as dl-ocr.ts (apps/super-admin/ocr-data/eng.traineddata)
-// -- no external OCR API dependency, per this repo's existing zero-external-API
-// stance for the infra layer.
-const LANG_PATH = path.join(process.cwd(), "ocr-data");
+import { runOcr } from "./ocr-worker";
 
 // Standard Indian plate format: 2-letter state code, 1-2 digit RTO code, 1-3 letter
 // series, 4-digit number (e.g. "KA01AB1234"). Tolerant of spaces/hyphens the OCR
@@ -25,13 +19,6 @@ export function parsePlateFromText(text: string): string | null {
 }
 
 export async function extractPlateNumber(buffer: Buffer): Promise<string | null> {
-  const worker = await createWorker("eng", OEM.LSTM_ONLY, { langPath: LANG_PATH, gzip: false });
-  try {
-    const {
-      data: { text },
-    } = await worker.recognize(buffer);
-    return parsePlateFromText(text);
-  } finally {
-    await worker.terminate();
-  }
+  const text = await runOcr(buffer);
+  return parsePlateFromText(text);
 }

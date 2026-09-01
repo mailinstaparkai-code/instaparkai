@@ -1,11 +1,5 @@
 import "server-only";
-import { createWorker, OEM } from "tesseract.js";
-import path from "node:path";
-
-// Bundled locally (apps/super-admin/ocr-data/eng.traineddata) so this never depends
-// on tesseract.js's default jsdelivr CDN fetch at request time -- see CLAUDE.md's
-// note on this app having zero external-API dependencies at the infra layer today.
-const LANG_PATH = path.join(process.cwd(), "ocr-data");
+import { runOcr } from "./ocr-worker";
 
 // Anchored to the end ($) so the label must sit immediately before the date (only
 // a colon/dash/space between) -- an unanchored match against a wider window false
@@ -46,13 +40,6 @@ export function parseExpiryFromText(text: string): string | null {
 }
 
 export async function extractDlExpiryDate(buffer: Buffer): Promise<string | null> {
-  const worker = await createWorker("eng", OEM.LSTM_ONLY, { langPath: LANG_PATH, gzip: false });
-  try {
-    const {
-      data: { text },
-    } = await worker.recognize(buffer);
-    return parseExpiryFromText(text);
-  } finally {
-    await worker.terminate();
-  }
+  const text = await runOcr(buffer);
+  return parseExpiryFromText(text);
 }
