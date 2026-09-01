@@ -79,8 +79,16 @@ export function AppManageDialog({
           <Input
             id={`api-key-${appId}`}
             name="api_key"
-            type="password"
+            type="text"
+            // Chrome/Safari largely ignore autocomplete="off" specifically on
+            // type="password" fields and offer to autofill an unrelated saved
+            // credential anyway (this is exactly what happened here -- a stored
+            // key ended up 2 characters off from the real one). Plain text
+            // inputs don't get that same password-manager override, and
+            // data-1p-ignore/data-lpignore opt out of 1Password/LastPass too.
             autoComplete="off"
+            data-1p-ignore
+            data-lpignore="true"
             placeholder={
               isConfigured
                 ? "Currently configured — enter a new key to replace it"
