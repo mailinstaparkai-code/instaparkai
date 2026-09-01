@@ -52,9 +52,10 @@ export default async function ConfigurationPage({
         .order("name"),
       supabase
         .from("tariff_rules")
-        .select("id, vehicle_category, pricing_type, rate, surge_multiplier, slab_tiers")
+        .select("id, vehicle_category, pricing_type, rate, surge_multiplier, slab_tiers, effective_from")
         .eq("parking_space_id", getCurrentSiteId(session))
-        .order("vehicle_category"),
+        .order("vehicle_category")
+        .order("effective_from"),
       supabase
         .from("parking_spaces")
         .select("guest_request_mode, direct_checkout_mode")

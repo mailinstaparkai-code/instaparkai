@@ -6,6 +6,7 @@ import { getCurrentSiteId, getValetSession } from "@/lib/valet-auth/session";
 import * as qrCodesLib from "@/lib/parking-admin/qr-codes";
 import * as queueLib from "@/lib/parking-admin/queue";
 import * as vehiclePassesLib from "@/lib/parking-admin/vehicle-passes";
+import { resolveEffectiveFrom } from "@/lib/tariff";
 
 const PATH = "/parking-admin/configuration";
 
@@ -181,13 +182,17 @@ export async function deleteVehicleType(formData: FormData) {
 
 // -- Tariff rules -------------------------------------------------------
 
-export async function createTariffRule(formData: FormData) {
-  const vehicle_category = formData.get("vehicle_category")?.toString().trim();
+// Shared by create and update -- parses pricing_type/rate/surge/slab tiers out of the
+// submitted form. Returns null if the submission is incomplete (caller no-ops).
+function parseTariffFields(formData: FormData): {
+  pricing_type: string;
+  rate: number;
+  surge_multiplier: number | null;
+  slab_tiers: { upto_minutes: number | null; rate: number }[] | null;
+} | null {
   const pricing_type = formData.get("pricing_type")?.toString();
   const surgeRaw = formData.get("surge_multiplier")?.toString().trim();
-  if (!vehicle_category || !pricing_type) return;
-
-  const session = await assertParkingAdmin();
+  if (!pricing_type) return null;
 
   let rate: number;
   let slab_tiers: { upto_minutes: number | null; rate: number }[] | null = null;
@@ -201,22 +206,64 @@ export async function createTariffRule(formData: FormData) {
         return { upto_minutes: uptoRaw ? Number(uptoRaw) : null, rate: Number(rateRaw) };
       })
       .filter((t): t is { upto_minutes: number | null; rate: number } => t !== null);
-    if (!slab_tiers.length) return;
+    if (!slab_tiers.length) return null;
     rate = slab_tiers[0].rate;
   } else {
     const rateRaw = formData.get("rate")?.toString().trim();
-    if (!rateRaw) return;
+    if (!rateRaw) return null;
     rate = Number(rateRaw);
   }
 
+  return { pricing_type, rate, surge_multiplier: surgeRaw ? Number(surgeRaw) : null, slab_tiers };
+}
+
+export async function createTariffRule(formData: FormData) {
+  const vehicle_category = formData.get("vehicle_category")?.toString().trim();
+  if (!vehicle_category) return;
+  const fields = parseTariffFields(formData);
+  if (!fields) return;
+
+  const session = await assertParkingAdmin();
   const supabase = createServiceClient();
+
   const { error } = await supabase.from("tariff_rules").insert({
     parking_space_id: getCurrentSiteId(session),
     vehicle_category,
-    pricing_type,
-    rate,
-    surge_multiplier: surgeRaw ? Number(surgeRaw) : null,
-    slab_tiers,
+    ...fields,
+    effective_from: resolveEffectiveFrom(formData.get("effective_date")?.toString()),
+  });
+  if (error) throw new Error(error.message);
+
+  revalidatePath(PATH);
+  updateTag(`tariff-rules:${getCurrentSiteId(session)}`);
+}
+
+// "Editing" inserts a new versioned row for the same vehicle_category rather than
+// mutating the old one -- see tariff.ts's resolveEffectiveFrom and queue.ts's
+// getCachedTariffRules for why (a future-dated edit must not disturb the still-active
+// current value).
+export async function updateTariffRule(formData: FormData) {
+  const id = formData.get("id")?.toString();
+  if (!id) return;
+  const fields = parseTariffFields(formData);
+  if (!fields) return;
+
+  const session = await assertParkingAdmin();
+  const supabase = createServiceClient();
+
+  const { data: existing } = await supabase
+    .from("tariff_rules")
+    .select("vehicle_category")
+    .eq("id", id)
+    .eq("parking_space_id", getCurrentSiteId(session))
+    .maybeSingle();
+  if (!existing) throw new Error("Tariff rule not found.");
+
+  const { error } = await supabase.from("tariff_rules").insert({
+    parking_space_id: getCurrentSiteId(session),
+    vehicle_category: existing.vehicle_category,
+    ...fields,
+    effective_from: resolveEffectiveFrom(formData.get("effective_date")?.toString()),
   });
   if (error) throw new Error(error.message);
 

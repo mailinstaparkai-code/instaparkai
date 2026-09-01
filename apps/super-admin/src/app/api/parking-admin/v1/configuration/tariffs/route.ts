@@ -32,6 +32,7 @@ export async function POST(req: Request) {
       rate: typeof body.rate === "number" ? body.rate : undefined,
       surge_multiplier: typeof body.surgeMultiplier === "number" ? body.surgeMultiplier : null,
       slab_tiers: Array.isArray(body.slabTiers) ? body.slabTiers : null,
+      effective_date: typeof body.effectiveDate === "string" ? body.effectiveDate : null,
     });
     return NextResponse.json({ tariffRule: mapTariffRuleForApi(rule) }, { status: 201 });
   } catch (err) {

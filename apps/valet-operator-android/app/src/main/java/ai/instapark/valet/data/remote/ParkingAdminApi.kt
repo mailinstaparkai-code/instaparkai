@@ -10,6 +10,8 @@ import ai.instapark.valet.data.remote.dto.CreateSlotsBulkRequest
 import ai.instapark.valet.data.remote.dto.CreateSlotsBulkResponse
 import ai.instapark.valet.data.remote.dto.CreateTariffRuleRequest
 import ai.instapark.valet.data.remote.dto.CreateTariffRuleResponse
+import ai.instapark.valet.data.remote.dto.UpdateTariffRuleRequest
+import ai.instapark.valet.data.remote.dto.UpdateTariffRuleResponse
 import ai.instapark.valet.data.remote.dto.CreateVehiclePassRequest
 import ai.instapark.valet.data.remote.dto.CreateVehiclePassResponse
 import ai.instapark.valet.data.remote.dto.CreateVehicleTypeRequest
@@ -219,6 +221,9 @@ interface ParkingAdminApi {
 
     @POST("configuration/tariffs")
     suspend fun createTariffRule(@Body request: CreateTariffRuleRequest): CreateTariffRuleResponse
+
+    @PATCH("configuration/tariffs/{id}")
+    suspend fun updateTariffRule(@Path("id") id: String, @Body request: UpdateTariffRuleRequest): UpdateTariffRuleResponse
 
     @DELETE("configuration/tariffs/{id}")
     suspend fun deleteTariffRule(@Path("id") id: String)

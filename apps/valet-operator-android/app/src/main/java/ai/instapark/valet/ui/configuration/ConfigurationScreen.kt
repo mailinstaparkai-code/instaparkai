@@ -2,7 +2,9 @@ package ai.instapark.valet.ui.configuration
 
 import ai.instapark.valet.data.remote.dto.CreateTariffRuleRequest
 import ai.instapark.valet.data.remote.dto.QrCodeItem
+import ai.instapark.valet.data.remote.dto.SlabTier
 import ai.instapark.valet.data.remote.dto.TariffRuleItem
+import ai.instapark.valet.data.remote.dto.UpdateTariffRuleRequest
 import ai.instapark.valet.data.remote.dto.VehiclePassItem
 import ai.instapark.valet.data.remote.dto.VehicleTypeItem
 import ai.instapark.valet.data.remote.dto.ZoneItem
@@ -36,6 +38,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.CurrencyRupee
 import androidx.compose.material.icons.outlined.DeleteOutline
 import androidx.compose.material.icons.outlined.DirectionsCar
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.LocalParking
 import androidx.compose.material.icons.outlined.PlaylistAdd
 import androidx.compose.material.icons.outlined.QrCode
@@ -345,12 +348,41 @@ private fun VehicleTypesTab(viewModel: ConfigurationViewModel) {
 
 // -- Tariffs --------------------------------------------------------------
 
-private val pricingTypeOptions = listOf("flat" to "Flat", "hourly" to "Hourly", "surge" to "Surge")
+private val pricingTypeOptions = listOf("flat" to "Flat", "hourly" to "Hourly", "surge" to "Surge", "slab" to "Slab (tiered)")
+
+private fun todayDateString(): String = java.time.LocalDate.now().toString()
+
+private fun formatRate(rule: TariffRuleItem): String =
+    if (rule.pricingType == "slab") "Tiered" else "₹${rule.rate}" + (rule.surgeMultiplier?.let { " × $it" } ?: "")
+
+private data class TariffGroup(val category: String, val current: TariffRuleItem?, val upcoming: List<TariffRuleItem>)
+
+// Editing a rule inserts a new versioned row for the same vehicle category rather
+// than mutating the old one (see UpdateTariffRuleRequest / the server's
+// updateTariffRule) -- group the flat list the API returns into the currently
+// effective row per category (current) and any not-yet-effective ones (upcoming).
+private fun groupTariffRules(rules: List<TariffRuleItem>): List<TariffGroup> {
+    val now = java.time.Instant.now()
+    val groups = LinkedHashMap<String, Pair<TariffRuleItem?, MutableList<TariffRuleItem>>>()
+    for (rule in rules.sortedBy { it.effectiveFrom }) {
+        val effective = try {
+            java.time.OffsetDateTime.parse(rule.effectiveFrom).toInstant()
+        } catch (e: Exception) {
+            java.time.Instant.EPOCH
+        }
+        val entry = groups.getOrPut(rule.vehicleCategory) { null to mutableListOf() }
+        groups[rule.vehicleCategory] = if (!effective.isAfter(now)) rule to entry.second else entry.first to entry.second
+        if (effective.isAfter(now)) entry.second.add(rule)
+    }
+    return groups.map { (category, pair) -> TariffGroup(category, pair.first, pair.second) }
+}
 
 @Composable
 private fun TariffsTab(viewModel: ConfigurationViewModel) {
     val colors = ValetTheme.colors
     var addOpen by remember { mutableStateOf(false) }
+    var editRule by remember { mutableStateOf<TariffRuleItem?>(null) }
+    val groups = remember(viewModel.tariffRules) { groupTariffRules(viewModel.tariffRules) }
 
     Column(modifier = Modifier.fillMaxSize()) {
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.End) {
@@ -360,28 +392,54 @@ private fun TariffsTab(viewModel: ConfigurationViewModel) {
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            items(viewModel.tariffRules, key = { it.id }) { rule: TariffRuleItem ->
+            items(groups, key = { it.category }) { group ->
                 GlassCard(modifier = Modifier.fillMaxWidth(), cornerRadius = 14.dp) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column {
-                            Text(rule.vehicleCategory, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
-                            Text(
-                                "${rule.pricingType} · ₹${rule.rate}" + (rule.surgeMultiplier?.let { " × $it" } ?: ""),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = colors.inkSecondary,
-                            )
+                    Column {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column {
+                                Text(group.category, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                                Text(
+                                    group.current?.let { "${it.pricingType} · ${formatRate(it)}" } ?: "No current rule",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = colors.inkSecondary,
+                                )
+                            }
+                            Row {
+                                if (group.current != null) {
+                                    IconButton(onClick = { editRule = group.current }) {
+                                        Icon(Icons.Outlined.Edit, contentDescription = "Edit", tint = colors.primary)
+                                    }
+                                    IconButton(onClick = { viewModel.deleteTariffRule(group.current.id) }) {
+                                        Icon(Icons.Outlined.DeleteOutline, contentDescription = "Delete", tint = colors.danger)
+                                    }
+                                }
+                            }
                         }
-                        IconButton(onClick = { viewModel.deleteTariffRule(rule.id) }) {
-                            Icon(Icons.Outlined.DeleteOutline, contentDescription = "Delete", tint = colors.danger)
+                        group.upcoming.forEach { rule ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    "Scheduled: ${formatRate(rule)} (${rule.pricingType}) from " +
+                                        java.time.OffsetDateTime.parse(rule.effectiveFrom).toLocalDate(),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = colors.inkSecondary,
+                                )
+                                IconButton(onClick = { viewModel.deleteTariffRule(rule.id) }, modifier = Modifier.height(28.dp)) {
+                                    Icon(Icons.Outlined.DeleteOutline, contentDescription = "Cancel scheduled change", tint = colors.danger)
+                                }
+                            }
                         }
                     }
                 }
             }
-            if (viewModel.tariffRules.isEmpty()) {
+            if (groups.isEmpty()) {
                 item { Text("No fare rules yet.", modifier = Modifier.padding(24.dp)) }
             }
         }
@@ -393,6 +451,127 @@ private fun TariffsTab(viewModel: ConfigurationViewModel) {
             onSubmit = { request -> viewModel.createTariffRule(request); addOpen = false },
         )
     }
+
+    editRule?.let { rule ->
+        EditTariffRuleDialog(
+            rule = rule,
+            onDismiss = { editRule = null },
+            onSubmit = { request, onError ->
+                viewModel.updateTariffRule(rule.id, request) { error ->
+                    if (error == null) editRule = null else onError(error)
+                }
+            },
+        )
+    }
+}
+
+private fun buildSlabTiers(uptoMinutes: List<String>, rates: List<String>): List<SlabTier>? {
+    val tiers = (0..2).mapNotNull { i ->
+        val rate = rates.getOrNull(i)?.toDoubleOrNull() ?: return@mapNotNull null
+        SlabTier(uptoMinutes = uptoMinutes.getOrNull(i)?.toIntOrNull(), rate = rate)
+    }
+    return tiers.ifEmpty { null }
+}
+
+// Shared by Add and Edit -- pricing type picker, rate/surge/slab-tier inputs, and the
+// effective-date field. Vehicle category is deliberately NOT part of this (Add shows
+// its own dropdown above; Edit shows the category read-only, since changing category
+// is what "+ Fare rule" is for, not editing).
+@Composable
+private fun TariffPricingFields(
+    pricingType: String,
+    onPricingTypeChange: (String) -> Unit,
+    rate: String,
+    onRateChange: (String) -> Unit,
+    surge: String,
+    onSurgeChange: (String) -> Unit,
+    slabUptoMinutes: List<String>,
+    onSlabUptoMinutesChange: (Int, String) -> Unit,
+    slabRates: List<String>,
+    onSlabRateChange: (Int, String) -> Unit,
+    effectiveDate: String,
+    onEffectiveDateChange: (String) -> Unit,
+) {
+    val colors = ValetTheme.colors
+
+    TappableRowPicker(
+        label = "Pricing type",
+        options = pricingTypeOptions,
+        selected = pricingType,
+        onSelect = onPricingTypeChange,
+    )
+    Spacer(Modifier.height(12.dp))
+    if (pricingType != "slab") {
+        OutlinedTextField(
+            value = rate,
+            onValueChange = onRateChange,
+            label = { Text(if (pricingType == "surge") "Base rate" else "Rate") },
+            singleLine = true,
+            shape = RoundedCornerShape(14.dp),
+            colors = fieldColors(colors),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+        )
+    }
+    if (pricingType == "surge") {
+        Spacer(Modifier.height(10.dp))
+        OutlinedTextField(
+            value = surge,
+            onValueChange = onSurgeChange,
+            label = { Text("Surge multiplier") },
+            singleLine = true,
+            shape = RoundedCornerShape(14.dp),
+            colors = fieldColors(colors),
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+        )
+    }
+    if (pricingType == "slab") {
+        Text(
+            "Each tier applies for up to N minutes and adds on top of the tiers before " +
+                "it (e.g. ₹30 for the first hour, then +₹15 more after 2 hours). Leave the " +
+                "last tier's minutes blank for \"and beyond\".",
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.inkSecondary,
+        )
+        Spacer(Modifier.height(8.dp))
+        for (i in 0..2) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = slabUptoMinutes.getOrElse(i) { "" },
+                    onValueChange = { onSlabUptoMinutesChange(i, it) },
+                    label = { Text("Tier ${i + 1} up to (min)") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                    colors = fieldColors(colors),
+                    modifier = Modifier.weight(1f),
+                )
+                OutlinedTextField(
+                    value = slabRates.getOrElse(i) { "" },
+                    onValueChange = { onSlabRateChange(i, it) },
+                    label = { Text("Rate ₹") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(14.dp),
+                    colors = fieldColors(colors),
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+    }
+    Spacer(Modifier.height(4.dp))
+    OutlinedTextField(
+        value = effectiveDate,
+        onValueChange = onEffectiveDateChange,
+        label = { Text("Effective from (YYYY-MM-DD)") },
+        singleLine = true,
+        shape = RoundedCornerShape(14.dp),
+        colors = fieldColors(colors),
+        modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+    )
+    Text(
+        "Leave as today to apply immediately, or pick a future date to schedule this change.",
+        style = MaterialTheme.typography.labelSmall,
+        color = colors.inkSecondary,
+    )
 }
 
 @Composable
@@ -402,6 +581,13 @@ private fun AddTariffRuleDialog(onDismiss: () -> Unit, onSubmit: (CreateTariffRu
     var pricingType by remember { mutableStateOf("flat") }
     var rate by remember { mutableStateOf("") }
     var surge by remember { mutableStateOf("") }
+    var slabUpto by remember { mutableStateOf(listOf("", "", "")) }
+    var slabRate by remember { mutableStateOf(listOf("", "", "")) }
+    var effectiveDate by remember { mutableStateOf(todayDateString()) }
+
+    val slabTiers = buildSlabTiers(slabUpto, slabRate)
+    val valid = vehicleCategory.isNotBlank() &&
+        (if (pricingType == "slab") slabTiers != null else rate.toDoubleOrNull() != null)
 
     PremiumDialog(
         icon = Icons.Outlined.CurrencyRupee,
@@ -411,7 +597,7 @@ private fun AddTariffRuleDialog(onDismiss: () -> Unit, onSubmit: (CreateTariffRu
             DialogSecondaryButton(text = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
             DialogPrimaryButton(
                 text = "Create",
-                enabled = vehicleCategory.isNotBlank() && rate.toDoubleOrNull() != null,
+                enabled = valid,
                 onClick = {
                     onSubmit(
                         CreateTariffRuleRequest(
@@ -419,6 +605,8 @@ private fun AddTariffRuleDialog(onDismiss: () -> Unit, onSubmit: (CreateTariffRu
                             pricingType = pricingType,
                             rate = rate.toDoubleOrNull(),
                             surgeMultiplier = surge.toDoubleOrNull(),
+                            slabTiers = slabTiers,
+                            effectiveDate = effectiveDate.trim().ifBlank { null },
                         )
                     )
                 },
@@ -436,33 +624,93 @@ private fun AddTariffRuleDialog(onDismiss: () -> Unit, onSubmit: (CreateTariffRu
             modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
         )
         Spacer(Modifier.height(12.dp))
-        TappableRowPicker(
-            label = "Pricing type",
-            options = pricingTypeOptions,
-            selected = pricingType,
-            onSelect = { pricingType = it },
+        TariffPricingFields(
+            pricingType = pricingType,
+            onPricingTypeChange = { pricingType = it },
+            rate = rate,
+            onRateChange = { rate = it },
+            surge = surge,
+            onSurgeChange = { surge = it },
+            slabUptoMinutes = slabUpto,
+            onSlabUptoMinutesChange = { i, v -> slabUpto = slabUpto.toMutableList().also { it[i] = v } },
+            slabRates = slabRate,
+            onSlabRateChange = { i, v -> slabRate = slabRate.toMutableList().also { it[i] = v } },
+            effectiveDate = effectiveDate,
+            onEffectiveDateChange = { effectiveDate = it },
         )
-        Spacer(Modifier.height(12.dp))
-        OutlinedTextField(
-            value = rate,
-            onValueChange = { rate = it },
-            label = { Text(if (pricingType == "surge") "Base rate" else "Rate") },
-            singleLine = true,
-            shape = RoundedCornerShape(14.dp),
-            colors = fieldColors(colors),
-            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-        )
-        if (pricingType == "surge") {
-            Spacer(Modifier.height(10.dp))
-            OutlinedTextField(
-                value = surge,
-                onValueChange = { surge = it },
-                label = { Text("Surge multiplier") },
-                singleLine = true,
-                shape = RoundedCornerShape(14.dp),
-                colors = fieldColors(colors),
-                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+    }
+}
+
+@Composable
+private fun EditTariffRuleDialog(
+    rule: TariffRuleItem,
+    onDismiss: () -> Unit,
+    onSubmit: (UpdateTariffRuleRequest, (String) -> Unit) -> Unit,
+) {
+    val colors = ValetTheme.colors
+    var pending by remember { mutableStateOf(false) }
+    var pricingType by remember { mutableStateOf(rule.pricingType) }
+    var rate by remember { mutableStateOf(if (rule.pricingType != "slab") rule.rate.toString() else "") }
+    var surge by remember { mutableStateOf(rule.surgeMultiplier?.toString() ?: "") }
+    var slabUpto by remember {
+        mutableStateOf((0..2).map { rule.slabTiers?.getOrNull(it)?.uptoMinutes?.toString() ?: "" })
+    }
+    var slabRate by remember {
+        mutableStateOf((0..2).map { rule.slabTiers?.getOrNull(it)?.rate?.toString() ?: "" })
+    }
+    var effectiveDate by remember { mutableStateOf(todayDateString()) }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    val slabTiers = buildSlabTiers(slabUpto, slabRate)
+    val valid = if (pricingType == "slab") slabTiers != null else rate.toDoubleOrNull() != null
+
+    PremiumDialog(
+        icon = Icons.Outlined.Edit,
+        title = "Edit ${rule.vehicleCategory} tariff",
+        onDismissRequest = onDismiss,
+        footer = {
+            DialogSecondaryButton(text = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f))
+            DialogPrimaryButton(
+                text = if (pending) "Saving…" else "Save",
+                enabled = valid && !pending,
+                onClick = {
+                    pending = true
+                    error = null
+                    onSubmit(
+                        UpdateTariffRuleRequest(
+                            pricingType = pricingType,
+                            rate = rate.toDoubleOrNull(),
+                            surgeMultiplier = surge.toDoubleOrNull(),
+                            slabTiers = slabTiers,
+                            effectiveDate = effectiveDate.trim().ifBlank { null },
+                        )
+                    ) { message -> pending = false; error = message }
+                },
+                modifier = Modifier.weight(1f),
             )
+        },
+    ) {
+        Text("Vehicle category", style = MaterialTheme.typography.labelMedium, color = colors.inkSecondary)
+        Spacer(Modifier.height(4.dp))
+        Text(rule.vehicleCategory, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+        Spacer(Modifier.height(12.dp))
+        TariffPricingFields(
+            pricingType = pricingType,
+            onPricingTypeChange = { pricingType = it },
+            rate = rate,
+            onRateChange = { rate = it },
+            surge = surge,
+            onSurgeChange = { surge = it },
+            slabUptoMinutes = slabUpto,
+            onSlabUptoMinutesChange = { i, v -> slabUpto = slabUpto.toMutableList().also { it[i] = v } },
+            slabRates = slabRate,
+            onSlabRateChange = { i, v -> slabRate = slabRate.toMutableList().also { it[i] = v } },
+            effectiveDate = effectiveDate,
+            onEffectiveDateChange = { effectiveDate = it },
+        )
+        error?.let {
+            Spacer(Modifier.height(10.dp))
+            Text(it, color = colors.danger, style = MaterialTheme.typography.bodySmall)
         }
     }
 }

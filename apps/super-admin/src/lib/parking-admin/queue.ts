@@ -68,10 +68,18 @@ export function getCachedTariffRules(siteId: string) {
     async () => {
       const { data } = await createServiceClient()
         .from("tariff_rules")
-        .select("vehicle_category, pricing_type, rate, surge_multiplier, slab_tiers")
+        .select("vehicle_category, pricing_type, rate, surge_multiplier, slab_tiers, effective_from")
         .eq("parking_space_id", siteId)
-        .returns<TariffRule[]>();
-      return data ?? [];
+        .lte("effective_from", new Date().toISOString())
+        .order("effective_from", { ascending: true })
+        .returns<(TariffRule & { effective_from: string })[]>();
+
+      // Editing a tariff inserts a new row for the same vehicle_category rather than
+      // mutating the old one (so a future-dated edit doesn't disturb the still-active
+      // current value) -- keep only the most recently effective row per category.
+      const current = new Map<string, TariffRule>();
+      for (const rule of data ?? []) current.set(rule.vehicle_category, rule);
+      return [...current.values()];
     },
     ["tariff-rules", siteId],
     { tags: [`tariff-rules:${siteId}`], revalidate: 60 }

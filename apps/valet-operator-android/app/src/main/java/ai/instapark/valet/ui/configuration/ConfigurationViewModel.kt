@@ -2,6 +2,7 @@ package ai.instapark.valet.ui.configuration
 
 import ai.instapark.valet.data.remote.ApiException
 import ai.instapark.valet.data.remote.dto.CreateTariffRuleRequest
+import ai.instapark.valet.data.remote.dto.UpdateTariffRuleRequest
 import ai.instapark.valet.data.remote.dto.GuestRequestsResponse
 import ai.instapark.valet.data.remote.dto.TariffRuleItem
 import ai.instapark.valet.data.remote.dto.VehiclePassItem
@@ -133,6 +134,19 @@ class ConfigurationViewModel(private val repository: ConfigurationRepository) : 
 
     fun createTariffRule(request: CreateTariffRuleRequest) {
         viewModelScope.launch { repository.createTariffRule(request).onSuccess { refreshCurrentTab() } }
+    }
+
+    // Surfaces errors via onDone (like createSlotsBulk) rather than swallowing them --
+    // a rejected edit (e.g. missing rate) should be visible in the dialog.
+    fun updateTariffRule(id: String, request: UpdateTariffRuleRequest, onDone: (String?) -> Unit) {
+        viewModelScope.launch {
+            repository.updateTariffRule(id, request)
+                .onSuccess {
+                    refreshCurrentTab()
+                    onDone(null)
+                }
+                .onFailure { onDone((it as? ApiException)?.message ?: "Something went wrong.") }
+        }
     }
 
     fun deleteTariffRule(id: String) {

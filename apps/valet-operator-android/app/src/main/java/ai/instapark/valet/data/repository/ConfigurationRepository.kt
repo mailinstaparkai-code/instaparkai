@@ -6,6 +6,8 @@ import ai.instapark.valet.data.remote.dto.CreateSlotResponse
 import ai.instapark.valet.data.remote.dto.CreateSlotsBulkRequest
 import ai.instapark.valet.data.remote.dto.CreateSlotsBulkResponse
 import ai.instapark.valet.data.remote.dto.CreateTariffRuleRequest
+import ai.instapark.valet.data.remote.dto.UpdateTariffRuleRequest
+import ai.instapark.valet.data.remote.dto.UpdateTariffRuleResponse
 import ai.instapark.valet.data.remote.dto.CreateTariffRuleResponse
 import ai.instapark.valet.data.remote.dto.CreateVehiclePassRequest
 import ai.instapark.valet.data.remote.dto.CreateVehiclePassResponse
@@ -63,6 +65,8 @@ class ConfigurationRepository(
     suspend fun tariffRules(): Result<TariffRulesResponse> = wrap { api.tariffRules() }
     suspend fun createTariffRule(request: CreateTariffRuleRequest): Result<CreateTariffRuleResponse> =
         wrap { api.createTariffRule(request) }
+    suspend fun updateTariffRule(id: String, request: UpdateTariffRuleRequest): Result<UpdateTariffRuleResponse> =
+        wrap { api.updateTariffRule(id, request) }
     suspend fun deleteTariffRule(id: String): Result<Unit> = wrap { api.deleteTariffRule(id) }
 
     suspend fun guestRequests(): Result<GuestRequestsResponse> = wrap { api.guestRequests() }

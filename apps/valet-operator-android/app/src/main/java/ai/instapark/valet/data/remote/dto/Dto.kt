@@ -298,7 +298,15 @@ data class CreateVehiclePassResponse(val vehiclePass: VehiclePassItem)
 
 // -- Configuration: Tariffs -------------------------------------------------
 
-data class SlabTier(val uptoMinutes: Int?, val rate: Double)
+// slab_tiers is stored/returned as raw snake_case jsonb (see mapTariffRuleForApi on
+// the server -- it passes rule.slab_tiers through untransformed, unlike every other
+// camelCase field in this API), so this needs an explicit SerializedName: Gson does
+// exact case-sensitive field matching with no naming policy configured, so without
+// this "upto_minutes" was silently never matching "uptoMinutes" in either direction.
+data class SlabTier(
+    @com.google.gson.annotations.SerializedName("upto_minutes") val uptoMinutes: Int?,
+    val rate: Double,
+)
 
 data class TariffRuleItem(
     val id: String,
@@ -307,6 +315,7 @@ data class TariffRuleItem(
     val rate: Double,
     val surgeMultiplier: Double?,
     val slabTiers: List<SlabTier>?,
+    val effectiveFrom: String,
 )
 
 data class TariffRulesResponse(val tariffRules: List<TariffRuleItem>)
@@ -316,8 +325,18 @@ data class CreateTariffRuleRequest(
     val rate: Double? = null,
     val surgeMultiplier: Double? = null,
     val slabTiers: List<SlabTier>? = null,
+    val effectiveDate: String? = null,
 )
 data class CreateTariffRuleResponse(val tariffRule: TariffRuleItem)
+
+data class UpdateTariffRuleRequest(
+    val pricingType: String,
+    val rate: Double? = null,
+    val surgeMultiplier: Double? = null,
+    val slabTiers: List<SlabTier>? = null,
+    val effectiveDate: String? = null,
+)
+data class UpdateTariffRuleResponse(val tariffRule: TariffRuleItem)
 
 // -- Configuration: Guest requests / QR --------------------------------------
 

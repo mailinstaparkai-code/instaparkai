@@ -1,4 +1,13 @@
 import "server-only";
+import { todayIST } from "./operator-availability";
+
+// A blank date, or today's own IST date, means "effective immediately" -- otherwise
+// the chosen date becomes midnight IST of that date. Used by both the web Server
+// Action and the Android-facing configuration.ts create/update tariff functions.
+export function resolveEffectiveFrom(dateStr: string | null | undefined): string {
+  if (!dateStr || dateStr === todayIST()) return new Date().toISOString();
+  return new Date(`${dateStr}T00:00:00+05:30`).toISOString();
+}
 
 export type TariffRule = {
   vehicle_category: string;
