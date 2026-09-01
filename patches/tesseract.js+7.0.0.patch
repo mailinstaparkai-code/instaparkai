@@ -1,13 +1,20 @@
 diff --git a/node_modules/tesseract.js/src/worker-script/node/index.js b/node_modules/tesseract.js/src/worker-script/node/index.js
-index b6e0485..258cdfd 100644
+index b6e0485..8aba4c0 100644
 --- a/node_modules/tesseract.js/src/worker-script/node/index.js
 +++ b/node_modules/tesseract.js/src/worker-script/node/index.js
-@@ -12,7 +12,7 @@
+@@ -12,10 +12,11 @@
  // Use built-in fetch if available, otherwise fallback to node-fetch
  const fetch = global.fetch || require('node-fetch');
  const { parentPort } = require('worker_threads');
 -const worker = require('..');
-+const worker = require('tesseract.js');
- const getCore = require('./getCore');
- const gunzip = require('./gunzip');
- const cache = require('./cache');
+-const getCore = require('./getCore');
+-const gunzip = require('./gunzip');
+-const cache = require('./cache');
++const path = require('path');
++const worker = require(path.join(__dirname, '..'));
++const getCore = require(path.join(__dirname, 'getCore'));
++const gunzip = require(path.join(__dirname, 'gunzip'));
++const cache = require(path.join(__dirname, 'cache'));
+ 
+ /*
+  * register message handler
