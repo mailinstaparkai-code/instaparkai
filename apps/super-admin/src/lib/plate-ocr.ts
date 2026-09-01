@@ -19,7 +19,17 @@ const PLATE_RE_NO_SEP = /([A-Z]{2})(\d{1,2})([A-Z]{1,3})(\d{4})/;
 // null and the operator just types the plate manually, same as if OCR weren't there.
 export function parsePlateFromText(text: string): string | null {
   const cleaned = text.toUpperCase().replace(/[^A-Z0-9\s-]/g, " ");
-  const match = cleaned.match(PLATE_RE) ?? cleaned.replace(/[\s-]/g, "").match(PLATE_RE_NO_SEP);
+  // Most modern Indian plates print a blue "IND" country stamp between the plate's
+  // own two lines (see the hologram/IND mark next to the state code) -- OCR reads
+  // it as literal text sitting right in the middle of the plate number and, since
+  // it's a real alphabetic token (not punctuation `[^A-Z0-9\s-]` already strips),
+  // it survives into both match attempts below and breaks them the same way actual
+  // noise would. No legitimate plate has "IND" as part of its own text (state codes
+  // are always exactly 2 letters), so it's safe to drop as a known artifact.
+  const withoutCountryStamp = cleaned.replace(/\bIND\b/g, " ");
+  const match =
+    withoutCountryStamp.match(PLATE_RE) ??
+    withoutCountryStamp.replace(/[\s-]/g, "").match(PLATE_RE_NO_SEP);
   if (!match) return null;
   const [, state, rto, series, number] = match;
   return `${state}${rto.padStart(2, "0")}${series}${number}`;
