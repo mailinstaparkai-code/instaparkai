@@ -37,12 +37,16 @@ export function AppManageDialog({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    // React nullifies the synthetic event's fields once the handler's synchronous
+    // portion finishes, so `event.currentTarget` reads as null after the `await`
+    // below -- capture the form reference before it, not after.
+    const form = event.currentTarget;
     setPending(true);
     setError(null);
     setSaved(false);
     try {
-      await updateAppApiKey(new FormData(event.currentTarget));
-      event.currentTarget.reset();
+      await updateAppApiKey(new FormData(form));
+      form.reset();
       setSaved(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
