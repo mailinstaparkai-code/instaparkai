@@ -3,11 +3,5 @@
   "private": true,
   "workspaces": [
     "apps/*"
-  ],
-  "scripts": {
-    "postinstall": "node -e \"process.chdir(require('path').dirname(require('path').dirname(require('path').dirname(require.resolve('patch-package/package.json'))))); require(require.resolve('patch-package/index.js'))\""
-  },
-  "devDependencies": {
-    "patch-package": "^8.0.1"
-  }
+  ]
 }
