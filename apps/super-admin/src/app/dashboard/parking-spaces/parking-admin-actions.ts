@@ -106,6 +106,23 @@ export async function updateParkingAdminSites(formData: FormData) {
   revalidatePath(`/dashboard/parking-spaces/${organization_id}`);
 }
 
+export async function resetParkingAdminPassword(formData: FormData) {
+  const account_id = formData.get("account_id")?.toString();
+  const organization_id = formData.get("organization_id")?.toString();
+  const password = formData.get("password")?.toString();
+  if (!account_id || !organization_id || !password) return;
+
+  await assertSuperAdmin();
+  const supabase = createServiceClient();
+  const { error } = await supabase
+    .from("valet_accounts")
+    .update({ password_hash: hashPassword(password) })
+    .eq("id", account_id);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/dashboard/parking-spaces/${organization_id}`);
+}
+
 export async function deleteParkingAdminAccount(formData: FormData) {
   const account_id = formData.get("account_id")?.toString();
   const organization_id = formData.get("organization_id")?.toString();

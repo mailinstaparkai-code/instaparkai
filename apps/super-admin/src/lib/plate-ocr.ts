@@ -1,7 +1,7 @@
 import "server-only";
 import { runOcr } from "./ocr-worker";
 import { createServiceClient } from "@/lib/supabase/service";
-import { resolveAnprProvider, extractPlateViaKotai } from "./parking-admin/anpr";
+import { resolveAnprProvider, extractPlateViaKotai, extractPlateViaFastAlpr } from "./parking-admin/anpr";
 
 // Standard Indian plate format: 2-letter state code, 1-2 digit RTO code, 1-3 letter
 // series, 4-digit number (e.g. "KA01AB1234"). Tolerant of spaces/hyphens the OCR
@@ -48,16 +48,19 @@ export async function extractPlateNumber(
 ): Promise<string | null> {
   if (organizationId) {
     const provider = await resolveAnprProvider(createServiceClient(), organizationId);
-    if (provider?.adapterKey === "kotai") {
-      try {
+    try {
+      if (provider?.adapterKey === "kotai") {
         return await extractPlateViaKotai(buffer, provider.apiKey, provider.endpointUrl);
-      } catch (err) {
-        // Silent fallback by explicit product decision: an operator should still
-        // get a best-effort reading rather than nothing, even if the assigned
-        // vendor is temporarily broken (bad key, network issue, etc.) -- but that
-        // failure must stay visible somewhere, hence the log.
-        console.error("ANPR vendor call failed, falling back to OCR.space", err);
       }
+      if (provider?.adapterKey === "fastalpr" && provider.endpointUrl) {
+        return await extractPlateViaFastAlpr(buffer, provider.apiKey, provider.endpointUrl);
+      }
+    } catch (err) {
+      // Silent fallback by explicit product decision: an operator should still
+      // get a best-effort reading rather than nothing, even if the assigned
+      // vendor is temporarily broken (bad key, network issue, etc.) -- but that
+      // failure must stay visible somewhere, hence the log.
+      console.error("ANPR vendor call failed, falling back to OCR.space", err);
     }
   }
 

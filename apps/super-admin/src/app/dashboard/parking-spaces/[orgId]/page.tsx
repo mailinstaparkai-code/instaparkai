@@ -8,6 +8,7 @@ import { createParkingSpace, deleteParkingSpace, assignOrganizationPlan } from "
 import {
   createParkingAdminAccount,
   updateParkingAdminSites,
+  resetParkingAdminPassword,
   deleteParkingAdminAccount,
 } from "../parking-admin-actions";
 import { Breadcrumb } from "../components/breadcrumb";
@@ -328,6 +329,22 @@ export default async function OrganizationPage({
                           </label>
                         ))}
                       </div>
+                    </FormDialog>
+                    <FormDialog
+                      trigger={
+                        <Button variant="outline" size="sm">
+                          Reset password
+                        </Button>
+                      }
+                      title={`Reset password for ${admin.username}`}
+                      action={resetParkingAdminPassword}
+                      submitLabel="Reset"
+                    >
+                      <input type="hidden" name="account_id" value={admin.id} />
+                      <input type="hidden" name="organization_id" value={org.id} />
+                      <Field label="New password">
+                        <Input name="password" type="password" required />
+                      </Field>
                     </FormDialog>
                     <DeleteButton
                       title={admin.username}

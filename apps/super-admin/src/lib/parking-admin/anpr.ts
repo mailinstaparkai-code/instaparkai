@@ -91,3 +91,35 @@ export async function extractPlateViaKotai(
   const plate = data.results?.[0]?.plate;
   return plate ? plate.toUpperCase() : null;
 }
+
+type FastAlprResponse = {
+  found: boolean;
+  plate?: string;
+};
+
+// Self-hosted fast-alpr (see /alpr-service at the repo root) -- unlike Kotai/
+// CarmenCloud this isn't a third-party vendor, so there's no per-call quota to
+// exhaust; `apiKey` here is a shared secret this deployment controls, not
+// something issued by an external provider.
+export async function extractPlateViaFastAlpr(
+  buffer: Buffer,
+  apiKey: string,
+  endpointUrl: string
+): Promise<string | null> {
+  const body = new FormData();
+  body.set("file", new Blob([new Uint8Array(buffer)], { type: "image/jpeg" }), "capture.jpg");
+
+  const res = await fetch(endpointUrl, {
+    method: "POST",
+    headers: { "X-Api-Key": apiKey },
+    body,
+    signal: AbortSignal.timeout(20_000),
+  });
+
+  if (!res.ok) {
+    throw new Error(`FastALPR request failed with HTTP ${res.status}`);
+  }
+
+  const data = (await res.json()) as FastAlprResponse;
+  return data.found && data.plate ? data.plate.toUpperCase() : null;
+}
