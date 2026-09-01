@@ -140,7 +140,7 @@ const getSiteRow = cache(async function getSiteRow(
 ) {
   const { data } = await supabase
     .from("parking_spaces")
-    .select("name, auto_allocate_operator, guest_request_mode, direct_checkout_mode")
+    .select("name, auto_allocate_operator, guest_request_mode, direct_checkout_mode, organization_id")
     .eq("id", siteId)
     .single();
   return data;
@@ -149,6 +149,17 @@ const getSiteRow = cache(async function getSiteRow(
 export async function getSiteName(supabase: ReturnType<typeof createServiceClient>, siteId: string) {
   const site = await getSiteRow(supabase, siteId);
   return site?.name ?? "Valet parking";
+}
+
+// The organization (Marketplace's "customer" unit) that owns this site --
+// resolved here rather than duplicating a query, since getSiteRow already fetches
+// this exact row for other per-site settings.
+export async function getSiteOrganizationId(
+  supabase: ReturnType<typeof createServiceClient>,
+  siteId: string
+): Promise<string | null> {
+  const site = await getSiteRow(supabase, siteId);
+  return site?.organization_id ?? null;
 }
 
 export async function isAutoAllocateEnabled(
