@@ -6,6 +6,7 @@ import {
   ScanLine,
   ArrowLeftRight,
   CreditCard,
+  Store,
   Users,
   Wallet,
   BarChart3,
@@ -34,8 +35,13 @@ export const superAdminNav: NavItem[] = [
   { label: "Live Occupancy", href: null, icon: MapPin },
   { label: "Parking Spaces", href: "/dashboard/parking-spaces", icon: Building2 },
   { label: "Subscription Plans", href: "/dashboard/subscription-plans", icon: CreditCard },
+  { label: "Marketplace", href: "/dashboard/marketplace", icon: Store },
   { label: "Camera Monitoring", href: null, icon: Camera },
-  { label: "ANPR Console", href: null, icon: ScanLine },
+  // Repointed to Marketplace's ANPR category page for now -- there's no separate
+  // live camera/gate-monitoring console built yet. When a real ANPR Console
+  // exists, either reclaim this href for it or add a "Configure vendor" link from
+  // it back to /dashboard/marketplace/anpr.
+  { label: "ANPR Console", href: "/dashboard/marketplace/anpr", icon: ScanLine },
   { label: "Entry & Exit Control", href: null, icon: ArrowLeftRight },
   { label: "Pass Management", href: null, icon: Ticket },
   { label: "Visitors", href: null, icon: Users },
