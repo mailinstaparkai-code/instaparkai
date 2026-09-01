@@ -185,6 +185,10 @@ data class CheckInResponse(
     val ticket: QueueTicket,
 )
 
+data class OcrPlateResponse(
+    val plateNumber: String?,
+)
+
 data class MarkParkedRequest(val slotId: String)
 data class DispatchRequest(val operatorId: String)
 data class VoidRequest(val reason: String?)

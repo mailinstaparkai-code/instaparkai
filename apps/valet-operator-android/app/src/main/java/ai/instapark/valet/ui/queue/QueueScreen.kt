@@ -248,6 +248,7 @@ private fun QueueContent(response: QueueResponse, viewModel: QueueViewModel) {
             directCheckoutModeEnabled = response.directCheckoutModeEnabled,
             pending = viewModel.mutationPending,
             onDismiss = { showCheckIn = false },
+            onOcrPlate = { file, onResult -> viewModel.ocrPlate(file, onResult) },
             onSubmit = { vehicleNumber, vehicleType, mobileNumber, qrCode, photos, onError ->
                 viewModel.checkIn(vehicleNumber, vehicleType, mobileNumber, qrCode, photos) { error ->
                     if (error == null) showCheckIn = false else onError(error)
@@ -639,6 +640,7 @@ private fun CheckInDialog(
     directCheckoutModeEnabled: Boolean,
     pending: Boolean,
     onDismiss: () -> Unit,
+    onOcrPlate: (java.io.File, (String?) -> Unit) -> Unit,
     onSubmit: (String, String, String, String?, CheckInPhotos, (String) -> Unit) -> Unit,
 ) {
     var vehicleNumber by remember { mutableStateOf("") }
@@ -651,6 +653,9 @@ private fun CheckInDialog(
     var leftPhoto by remember { mutableStateOf<java.io.File?>(null) }
     var rightPhoto by remember { mutableStateOf<java.io.File?>(null) }
     var odometerPhoto by remember { mutableStateOf<java.io.File?>(null) }
+    var platePhoto by remember { mutableStateOf<java.io.File?>(null) }
+    var readingPlate by remember { mutableStateOf(false) }
+    var plateOcrSuggested by remember { mutableStateOf(false) }
     val colors = ValetTheme.colors
 
     PremiumDialog(
@@ -667,7 +672,7 @@ private fun CheckInDialog(
                     (directCheckoutModeEnabled || mobileNumber.isNotBlank()) &&
                     (directCheckoutModeEnabled || !qrCodeModeEnabled || qrCode.isNotBlank()),
                 onClick = {
-                    val photos = CheckInPhotos(frontPhoto, backPhoto, leftPhoto, rightPhoto, odometerPhoto)
+                    val photos = CheckInPhotos(frontPhoto, backPhoto, leftPhoto, rightPhoto, odometerPhoto, platePhoto)
                     val code = qrCode.trim().takeIf { it.isNotBlank() }
                     onSubmit(vehicleNumber, vehicleType, mobileNumber, code, photos) { message -> error = message }
                 },
@@ -679,13 +684,27 @@ private fun CheckInDialog(
         Spacer(Modifier.height(4.dp))
         OutlinedTextField(
             value = vehicleNumber,
-            onValueChange = { vehicleNumber = it.uppercase() },
+            onValueChange = {
+                vehicleNumber = it.uppercase()
+                plateOcrSuggested = false
+            },
             placeholder = { Text("KA01AB1234") },
             singleLine = true,
             leadingIcon = { CountryChip() },
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier.fillMaxWidth(),
         )
+        if (readingPlate) {
+            Spacer(Modifier.height(4.dp))
+            Text("Reading plate…", style = MaterialTheme.typography.labelSmall, color = colors.inkSecondary)
+        } else if (plateOcrSuggested) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "OCR suggested — please verify.",
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.inkSecondary,
+            )
+        }
         Spacer(Modifier.height(14.dp))
         Text("Vehicle type", style = MaterialTheme.typography.labelMedium, color = colors.inkSecondary)
         Spacer(Modifier.height(6.dp))
@@ -739,7 +758,27 @@ private fun CheckInDialog(
             PhotoCaptureField("Right", rightPhoto, { rightPhoto = it }, Modifier.weight(1f))
         }
         Spacer(Modifier.height(8.dp))
-        PhotoCaptureField("Odometer", odometerPhoto, { odometerPhoto = it }, Modifier.fillMaxWidth(0.25f))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            PhotoCaptureField("Odometer", odometerPhoto, { odometerPhoto = it }, Modifier.weight(1f))
+            PhotoCaptureField(
+                "Plate",
+                platePhoto,
+                { file ->
+                    platePhoto = file
+                    if (file != null) {
+                        readingPlate = true
+                        onOcrPlate(file) { suggested ->
+                            readingPlate = false
+                            if (suggested != null) {
+                                vehicleNumber = suggested
+                                plateOcrSuggested = true
+                            }
+                        }
+                    }
+                },
+                Modifier.weight(1f),
+            )
+        }
         error?.let {
             Spacer(Modifier.height(10.dp))
             Text(it, color = colors.danger, style = MaterialTheme.typography.bodySmall)

@@ -76,6 +76,14 @@ class QueueViewModel(private val repository: QueueRepository) : ViewModel() {
         onDone: (String?) -> Unit,
     ) = perform({ repository.checkIn(vehicleNumber, vehicleType, mobileNumber, qrCode, photos) }, onDone)
 
+    fun ocrPlate(file: File, onResult: (String?) -> Unit) {
+        viewModelScope.launch {
+            repository.ocrPlate(file)
+                .onSuccess { onResult(it.plateNumber) }
+                .onFailure { onResult(null) }
+        }
+    }
+
     fun markParked(id: String, slotId: String, onDone: (String?) -> Unit) =
         perform({ repository.markParked(id, slotId) }, onDone)
 

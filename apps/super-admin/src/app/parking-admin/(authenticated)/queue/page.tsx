@@ -13,6 +13,7 @@ import { Field } from "../../components/field";
 import { FormDialog } from "../../components/form-dialog";
 import { PhotoInput } from "../../components/photo-input";
 import { VehicleTypeSelector } from "../../components/vehicle-type-selector";
+import { PlateCaptureField } from "./plate-capture-field";
 import {
   checkInVehicle,
   completeDirectCheckout,
@@ -199,14 +200,7 @@ export default async function LiveQueuePage({
           action={checkInVehicle}
           submitLabel="Check in"
         >
-          <Field label="Vehicle number">
-            <div className="relative">
-              <span className="absolute top-1/2 left-1.5 -translate-y-1/2 rounded-md bg-status-disabled/20 px-1.5 py-0.5 text-[10px] font-bold text-status-disabled">
-                IND
-              </span>
-              <Input name="vehicle_number" required placeholder="KA01AB1234" className="pl-11" />
-            </div>
-          </Field>
+          <PlateCaptureField />
           <Field label="Vehicle type">
             <VehicleTypeSelector
               name="vehicle_type"

@@ -33,6 +33,7 @@ export const CHECKIN_PHOTO_FIELDS = [
   { name: "photo_left", label: "left" },
   { name: "photo_right", label: "right" },
   { name: "photo_odometer", label: "odometer" },
+  { name: "photo_plate", label: "plate" },
 ];
 
 const DAILY_STATUS_BADGE: Record<string, string> = {

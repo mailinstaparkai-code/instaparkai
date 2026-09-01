@@ -4,6 +4,7 @@ import ai.instapark.valet.data.remote.ParkingAdminApi
 import ai.instapark.valet.data.remote.dto.AutoAllocateRequest
 import ai.instapark.valet.data.remote.dto.DispatchRequest
 import ai.instapark.valet.data.remote.dto.MarkParkedRequest
+import ai.instapark.valet.data.remote.dto.OcrPlateResponse
 import ai.instapark.valet.data.remote.dto.PhotosResponse
 import ai.instapark.valet.data.remote.dto.QueueResponse
 import ai.instapark.valet.data.remote.dto.QueueTicket
@@ -24,6 +25,7 @@ data class CheckInPhotos(
     val left: File? = null,
     val right: File? = null,
     val odometer: File? = null,
+    val plate: File? = null,
 )
 
 class QueueRepository(
@@ -62,7 +64,12 @@ class QueueRepository(
             photoLeft = filePart("photo_left", photos.left),
             photoRight = filePart("photo_right", photos.right),
             photoOdometer = filePart("photo_odometer", photos.odometer),
+            photoPlate = filePart("photo_plate", photos.plate),
         ).ticket
+    }
+
+    suspend fun ocrPlate(file: File): Result<OcrPlateResponse> = wrap {
+        api.ocrPlate(filePart("file", file)!!)
     }
 
     suspend fun markParked(id: String, slotId: String): Result<Unit> = wrap {

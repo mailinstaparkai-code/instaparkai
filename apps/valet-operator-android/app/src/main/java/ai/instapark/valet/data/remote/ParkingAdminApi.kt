@@ -29,6 +29,7 @@ import ai.instapark.valet.data.remote.dto.LoginResponse
 import ai.instapark.valet.data.remote.dto.MarkParkedRequest
 import ai.instapark.valet.data.remote.dto.MeResponse
 import ai.instapark.valet.data.remote.dto.MyDailyStatus
+import ai.instapark.valet.data.remote.dto.OcrPlateResponse
 import ai.instapark.valet.data.remote.dto.OperatorsResponse
 import ai.instapark.valet.data.remote.dto.SetGuestRequestModeRequest
 import ai.instapark.valet.data.remote.dto.SetGuestRequestModeResponse
@@ -110,7 +111,12 @@ interface ParkingAdminApi {
         @Part photoLeft: MultipartBody.Part? = null,
         @Part photoRight: MultipartBody.Part? = null,
         @Part photoOdometer: MultipartBody.Part? = null,
+        @Part photoPlate: MultipartBody.Part? = null,
     ): CheckInResponse
+
+    @Multipart
+    @POST("queue/ocr-plate")
+    suspend fun ocrPlate(@Part file: MultipartBody.Part): OcrPlateResponse
 
     @POST("queue/{id}/mark-parked")
     suspend fun markParked(@Path("id") id: String, @Body request: MarkParkedRequest)
