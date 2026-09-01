@@ -8,7 +8,7 @@ import { Field } from "../../components/field";
 import { extractPlate } from "./ocr-actions";
 
 // Vehicle-number field for the check-in dialog, with an optional OCR assist: tapping
-// the camera icon captures/picks a close-up of the plate, runs it through Tesseract
+// the camera icon captures/picks a close-up of the plate, runs it through OCR.space
 // (server-side, see lib/plate-ocr.ts) and pre-fills the field -- always editable,
 // same "suggestion, not truth" philosophy as operators/dl-document-input.tsx's
 // DL-expiry OCR. The photo itself rides along as photo_plate when the form submits.
@@ -16,7 +16,7 @@ export function PlateCaptureField() {
   const inputRef = useRef<HTMLInputElement>(null);
   const inputId = useId();
   const [vehicleNumber, setVehicleNumber] = useState("");
-  const [status, setStatus] = useState<"idle" | "reading">("idle");
+  const [status, setStatus] = useState<"idle" | "reading" | "failed">("idle");
   const [ocrSuggested, setOcrSuggested] = useState(false);
 
   async function handlePhoto(event: ChangeEvent<HTMLInputElement>) {
@@ -40,8 +40,10 @@ export function PlateCaptureField() {
     if (suggested) {
       setVehicleNumber(suggested);
       setOcrSuggested(true);
+      setStatus("idle");
+    } else {
+      setStatus("failed");
     }
-    setStatus("idle");
   }
 
   return (
@@ -59,6 +61,7 @@ export function PlateCaptureField() {
           onChange={(e) => {
             setVehicleNumber(e.target.value);
             setOcrSuggested(false);
+            setStatus("idle");
           }}
         />
         <label
@@ -88,6 +91,9 @@ export function PlateCaptureField() {
       )}
       {ocrSuggested && (
         <p className="text-xs text-muted-foreground">OCR suggested — please verify.</p>
+      )}
+      {status === "failed" && (
+        <p className="text-xs text-status-danger">Couldn't read plate — please enter manually.</p>
       )}
     </Field>
   );

@@ -6,6 +6,11 @@ export async function extractDlExpiry(formData: FormData): Promise<string | null
   const file = formData.get("file");
   if (!(file instanceof File) || file.size === 0) return null;
 
-  const buffer = Buffer.from(await file.arrayBuffer());
-  return extractDlExpiryDate(buffer);
+  try {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    return await extractDlExpiryDate(buffer);
+  } catch (err) {
+    console.error("extractDlExpiry failed", err);
+    return null;
+  }
 }

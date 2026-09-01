@@ -640,7 +640,7 @@ private fun CheckInDialog(
     directCheckoutModeEnabled: Boolean,
     pending: Boolean,
     onDismiss: () -> Unit,
-    onOcrPlate: (java.io.File, (String?) -> Unit) -> Unit,
+    onOcrPlate: (java.io.File, (String?, String?) -> Unit) -> Unit,
     onSubmit: (String, String, String, String?, CheckInPhotos, (String) -> Unit) -> Unit,
 ) {
     var vehicleNumber by remember { mutableStateOf("") }
@@ -656,6 +656,7 @@ private fun CheckInDialog(
     var platePhoto by remember { mutableStateOf<java.io.File?>(null) }
     var readingPlate by remember { mutableStateOf(false) }
     var plateOcrSuggested by remember { mutableStateOf(false) }
+    var plateOcrFailed by remember { mutableStateOf(false) }
     val colors = ValetTheme.colors
 
     PremiumDialog(
@@ -687,6 +688,7 @@ private fun CheckInDialog(
             onValueChange = {
                 vehicleNumber = it.uppercase()
                 plateOcrSuggested = false
+                plateOcrFailed = false
             },
             placeholder = { Text("KA01AB1234") },
             singleLine = true,
@@ -703,6 +705,13 @@ private fun CheckInDialog(
                 "OCR suggested — please verify.",
                 style = MaterialTheme.typography.labelSmall,
                 color = colors.inkSecondary,
+            )
+        } else if (plateOcrFailed) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Couldn't read plate — please enter manually.",
+                style = MaterialTheme.typography.labelSmall,
+                color = colors.danger,
             )
         }
         Spacer(Modifier.height(14.dp))
@@ -767,11 +776,14 @@ private fun CheckInDialog(
                     platePhoto = file
                     if (file != null) {
                         readingPlate = true
-                        onOcrPlate(file) { suggested ->
+                        plateOcrFailed = false
+                        onOcrPlate(file) { suggested, _ ->
                             readingPlate = false
                             if (suggested != null) {
                                 vehicleNumber = suggested
                                 plateOcrSuggested = true
+                            } else {
+                                plateOcrFailed = true
                             }
                         }
                     }

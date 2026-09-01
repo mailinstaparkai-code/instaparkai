@@ -76,11 +76,11 @@ class QueueViewModel(private val repository: QueueRepository) : ViewModel() {
         onDone: (String?) -> Unit,
     ) = perform({ repository.checkIn(vehicleNumber, vehicleType, mobileNumber, qrCode, photos) }, onDone)
 
-    fun ocrPlate(file: File, onResult: (String?) -> Unit) {
+    fun ocrPlate(file: File, onResult: (String?, String?) -> Unit) {
         viewModelScope.launch {
             repository.ocrPlate(file)
-                .onSuccess { onResult(it.plateNumber) }
-                .onFailure { onResult(null) }
+                .onSuccess { onResult(it.plateNumber, null) }
+                .onFailure { onResult(null, it.friendlyMessage()) }
         }
     }
 

@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Field } from "../../components/field";
 import { extractDlExpiry } from "./ocr-actions";
 
-// Driving License upload + expiry date -- on file select, runs OCR (Tesseract.js,
+// Driving License upload + expiry date -- on file select, runs OCR (OCR.space,
 // server-side) to pre-fill the expiry date. The extracted date is only a
 // suggestion: DL card layouts vary too much across Indian states for regex-based
 // date extraction to be trusted unattended, so the admin always reviews/edits it.
@@ -18,6 +18,7 @@ export function DlDocumentInput({ defaultExpiry }: { defaultExpiry?: string | nu
   const [status, setStatus] = useState<"idle" | "compressing" | "verifying" | "ready">("idle");
   const [expiry, setExpiry] = useState(defaultExpiry ?? "");
   const [ocrSuggested, setOcrSuggested] = useState(false);
+  const [ocrFailed, setOcrFailed] = useState(false);
 
   async function handleChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -31,6 +32,7 @@ export function DlDocumentInput({ defaultExpiry }: { defaultExpiry?: string | nu
     if (inputRef.current) inputRef.current.files = dataTransfer.files;
 
     setStatus("verifying");
+    setOcrFailed(false);
     const suggested = await extractDlExpiry(
       (() => {
         const fd = new FormData();
@@ -41,6 +43,8 @@ export function DlDocumentInput({ defaultExpiry }: { defaultExpiry?: string | nu
     if (suggested) {
       setExpiry(suggested);
       setOcrSuggested(true);
+    } else {
+      setOcrFailed(true);
     }
     setStatus("ready");
   }
@@ -84,6 +88,7 @@ export function DlDocumentInput({ defaultExpiry }: { defaultExpiry?: string | nu
           onChange={(e) => {
             setExpiry(e.target.value);
             setOcrSuggested(false);
+            setOcrFailed(false);
           }}
         />
         {status === "verifying" && (
@@ -91,6 +96,9 @@ export function DlDocumentInput({ defaultExpiry }: { defaultExpiry?: string | nu
         )}
         {ocrSuggested && (
           <p className="text-xs text-muted-foreground">OCR suggested — please verify.</p>
+        )}
+        {ocrFailed && (
+          <p className="text-xs text-status-danger">Couldn't read expiry — please enter manually.</p>
         )}
       </Field>
     </>
