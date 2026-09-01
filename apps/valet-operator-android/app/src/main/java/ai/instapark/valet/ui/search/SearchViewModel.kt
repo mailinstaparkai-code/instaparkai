@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 data class SearchResult(
+    val id: String,
     val plate: String,
     val meta: String,
     val status: String,
@@ -47,6 +48,7 @@ class SearchViewModel(
             val vehiclesDeferred = async { vehiclesRepository.list() }
             val queueItems = queueDeferred.await().getOrNull()?.tickets.orEmpty().map {
                 SearchResult(
+                    id = it.id,
                     plate = it.vehicleNumber,
                     meta = listOfNotNull(it.vehicleType, it.slotNumber?.let { s -> "Slot $s" }, it.mobileNumber).joinToString(" · "),
                     status = it.status,
@@ -55,6 +57,7 @@ class SearchViewModel(
             }
             val vehicleItems = vehiclesDeferred.await().getOrNull()?.tickets.orEmpty().map {
                 SearchResult(
+                    id = it.id,
                     plate = it.vehicleNumber,
                     meta = listOfNotNull(it.vehicleType, it.slotNumber?.let { s -> "Slot $s" }, it.mobileNumber).joinToString(" · "),
                     status = it.status,

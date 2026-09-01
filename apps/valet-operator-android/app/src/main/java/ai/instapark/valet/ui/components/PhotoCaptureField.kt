@@ -60,6 +60,8 @@ fun PhotoCaptureField(
     file: File?,
     onFileChange: (File?) -> Unit,
     modifier: Modifier = Modifier,
+    compressMaxDimension: Int = ImageCompressor.DEFAULT_MAX_DIMENSION,
+    compressQuality: Int = ImageCompressor.DEFAULT_QUALITY,
 ) {
     val context = LocalContext.current
     val colors = ValetTheme.colors
@@ -75,7 +77,7 @@ fun PhotoCaptureField(
             scope.launch {
                 val outFile = File(context.cacheDir, "upload-${System.currentTimeMillis()}.jpg")
                 val compressed = withContext(Dispatchers.IO) {
-                    ImageCompressor.compress(context, uri, outFile)
+                    ImageCompressor.compress(context, uri, outFile, compressMaxDimension, compressQuality)
                 }
                 compressing = false
                 onFileChange(compressed)

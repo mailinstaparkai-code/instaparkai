@@ -56,10 +56,16 @@ import androidx.lifecycle.viewmodel.compose.viewModel
  * a persisted recent-searches list with Clear, and quick actions. "Scan plate" routes
  * to the existing check-in flow (manual entry/photo capture) -- no OCR, per decision.
  */
+// Statuses QueueScreen's own "All" filter chip covers -- anything else (completed,
+// voided, etc.) only ever shows up in Vehicles' history list. Reused here to decide
+// which tab a tapped result should open.
+private val ACTIVE_STATUSES = setOf("checked_in", "parked", "requested", "in_transit", "arrived")
+
 @Composable
 fun SearchOverlay(
     onDismiss: () -> Unit,
     onGoToQueue: () -> Unit,
+    onGoToVehicles: () -> Unit,
 ) {
     val container = appContainer()
     val viewModel: SearchViewModel = viewModel(
@@ -130,7 +136,9 @@ fun SearchOverlay(
                         viewModel.results.forEach { result ->
                             ResultRow(result) {
                                 viewModel.commitSearch(result.plate)
+                                container.pendingHighlightTicketId = result.id
                                 onDismiss()
+                                if (result.status in ACTIVE_STATUSES) onGoToQueue() else onGoToVehicles()
                             }
                         }
                         Divider()

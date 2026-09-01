@@ -118,6 +118,7 @@ fun DashboardScreen(
             SearchOverlay(
                 onDismiss = { searchOpen = false },
                 onGoToQueue = { searchOpen = false; onGoToQueue() },
+                onGoToVehicles = { searchOpen = false; onGoToVehicles() },
             )
         }
     }

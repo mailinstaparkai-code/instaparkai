@@ -23,7 +23,11 @@ export function PlateCaptureField() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const compressed = await compressImageFile(file);
+    // Downscaling to compressImageFile's default 1280px measurably degraded OCR
+    // accuracy on a real reported photo (confirmed empirically: a correct read at
+    // 1600px/q90 became a wrong one at 1280px/q90) -- this is the only check-in
+    // photo OCR actually reads text from, so it alone gets a higher ceiling.
+    const compressed = await compressImageFile(file, 1920, 0.85);
 
     const dataTransfer = new DataTransfer();
     dataTransfer.items.add(compressed);
@@ -94,6 +98,11 @@ export function PlateCaptureField() {
       )}
       {status === "failed" && (
         <p className="text-xs text-status-danger">Couldn't read plate — please enter manually.</p>
+      )}
+      {status === "idle" && !ocrSuggested && (
+        <p className="text-xs text-muted-foreground">
+          Tip: tap the camera icon for a close-up of just the plate for an accurate OCR read.
+        </p>
       )}
     </Field>
   );

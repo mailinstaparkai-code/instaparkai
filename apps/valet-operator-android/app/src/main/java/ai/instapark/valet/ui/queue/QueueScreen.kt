@@ -53,6 +53,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
@@ -84,6 +85,7 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -121,6 +123,31 @@ private fun QueueContent(response: QueueResponse, viewModel: QueueViewModel) {
     val container = appContainer()
     val role by container.tokenStore.roleFlow.collectAsState(initial = null)
     val isAdmin = role == "parking_admin"
+
+    // Consumes AppContainer.pendingHighlightTicketId, set by SearchOverlay right
+    // before navigating here. Re-keyed on the pending id itself (read fresh each
+    // recomposition, not remembered) so that if the target isn't in the currently
+    // filtered list, resetting the filter to "All" -- which triggers a reload --
+    // lets this effect retry against the new (unfiltered) response instead of the
+    // id being silently dropped by a stale key comparison.
+    val listState = rememberLazyListState()
+    var highlightedTicketId by remember { mutableStateOf<String?>(null) }
+    val pendingHighlightId = container.pendingHighlightTicketId
+    LaunchedEffect(response.tickets, pendingHighlightId) {
+        if (pendingHighlightId == null) return@LaunchedEffect
+        val index = response.tickets.indexOfFirst { it.id == pendingHighlightId }
+        if (index < 0 && viewModel.statusFilter != null) {
+            viewModel.applyStatusFilter(null)
+            return@LaunchedEffect
+        }
+        container.pendingHighlightTicketId = null
+        if (index >= 0) {
+            listState.animateScrollToItem(index)
+            highlightedTicketId = pendingHighlightId
+            delay(2500)
+            highlightedTicketId = null
+        }
+    }
 
     Column(modifier = Modifier.fillMaxSize().valetAppCanvas(colors.isDark)) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -211,11 +238,19 @@ private fun QueueContent(response: QueueResponse, viewModel: QueueViewModel) {
         }
 
         LazyColumn(
+            state = listState,
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             items(response.tickets, key = { it.id }) { ticket ->
+                val highlightModifier = if (ticket.id == highlightedTicketId) {
+                    Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(colors.tintOrange.copy(alpha = 0.4f))
+                } else {
+                    Modifier
+                }
                 TicketCard(
                     ticket = ticket,
                     viewModel = viewModel,
@@ -225,7 +260,7 @@ private fun QueueContent(response: QueueResponse, viewModel: QueueViewModel) {
                     canRequest = response.canRequest,
                     canDispatch = response.canDispatch,
                     directCheckoutModeEnabled = response.directCheckoutModeEnabled,
-                    modifier = Modifier.animateItem(),
+                    modifier = highlightModifier.then(Modifier.animateItem()),
                 )
             }
             if (response.tickets.isEmpty()) {
@@ -656,7 +691,11 @@ private fun CheckInDialog(
     var platePhoto by remember { mutableStateOf<java.io.File?>(null) }
     var readingPlate by remember { mutableStateOf(false) }
     var plateOcrSuggested by remember { mutableStateOf(false) }
-    var plateOcrFailed by remember { mutableStateOf(false) }
+    // null = no failure to show. A real thrown error (network/backend) shows its own
+    // message; a clean "ran fine, found nothing" result shows the generic fallback --
+    // previously both collapsed to the same message, making a real outage
+    // indistinguishable from a bad photo without checking server logs.
+    var plateOcrError by remember { mutableStateOf<String?>(null) }
     val colors = ValetTheme.colors
 
     PremiumDialog(
@@ -688,7 +727,7 @@ private fun CheckInDialog(
             onValueChange = {
                 vehicleNumber = it.uppercase()
                 plateOcrSuggested = false
-                plateOcrFailed = false
+                plateOcrError = null
             },
             placeholder = { Text("KA01AB1234") },
             singleLine = true,
@@ -706,10 +745,10 @@ private fun CheckInDialog(
                 style = MaterialTheme.typography.labelSmall,
                 color = colors.inkSecondary,
             )
-        } else if (plateOcrFailed) {
+        } else if (plateOcrError != null) {
             Spacer(Modifier.height(4.dp))
             Text(
-                "Couldn't read plate — please enter manually.",
+                plateOcrError!!,
                 style = MaterialTheme.typography.labelSmall,
                 color = colors.danger,
             )
@@ -776,21 +815,33 @@ private fun CheckInDialog(
                     platePhoto = file
                     if (file != null) {
                         readingPlate = true
-                        plateOcrFailed = false
-                        onOcrPlate(file) { suggested, _ ->
+                        plateOcrError = null
+                        onOcrPlate(file) { suggested, error ->
                             readingPlate = false
                             if (suggested != null) {
                                 vehicleNumber = suggested
                                 plateOcrSuggested = true
                             } else {
-                                plateOcrFailed = true
+                                plateOcrError = error ?: "Couldn't read plate — please enter manually."
                             }
                         }
                     }
                 },
                 Modifier.weight(1f),
+                // Downscaling to the default 1280px measurably degraded OCR accuracy on a
+                // real reported photo (confirmed empirically: a correct read at 1600px/q90
+                // became a wrong one at 1280px/q90) -- the plate tile alone gets a higher
+                // ceiling since it's the only check-in photo OCR actually reads text from.
+                compressMaxDimension = 1920,
+                compressQuality = 85,
             )
         }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "Tip: capture a close-up of just the plate for an accurate OCR read.",
+            style = MaterialTheme.typography.labelSmall,
+            color = colors.inkSecondary,
+        )
         error?.let {
             Spacer(Modifier.height(10.dp))
             Text(it, color = colors.danger, style = MaterialTheme.typography.bodySmall)

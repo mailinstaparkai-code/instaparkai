@@ -34,6 +34,12 @@ class AppContainer(context: Context) {
     val themeStore = ThemeStore(context)
     val searchStore = SearchStore(context)
     val updateStore = UpdateStore(context)
+
+    // One-shot signal: set by SearchOverlay right before navigating to Queue/Vehicles
+    // so that screen can scroll to and briefly highlight the tapped result, then
+    // cleared by whichever screen consumes it. Not compose State -- it's read exactly
+    // once inside a LaunchedEffect(Unit) on arrival, not observed reactively.
+    var pendingHighlightTicketId: String? = null
     private val sessionTokenHolder = SessionTokenHolder()
     private val gson = Gson()
 

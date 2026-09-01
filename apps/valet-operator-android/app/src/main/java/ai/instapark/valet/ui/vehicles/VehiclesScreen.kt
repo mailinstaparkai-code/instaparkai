@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -40,6 +41,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -51,6 +57,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun VehiclesScreen() {
@@ -68,13 +75,39 @@ fun VehiclesScreen() {
                 Button(onClick = { viewModel.load() }) { Text("Retry") }
             }
         }
-        is VehiclesUiState.Success -> VehiclesContent(state.response, viewModel)
+        is VehiclesUiState.Success -> VehiclesContent(state.response, viewModel, container)
     }
 }
 
 @Composable
-private fun VehiclesContent(response: VehiclesResponse, viewModel: VehiclesViewModel) {
+private fun VehiclesContent(
+    response: VehiclesResponse,
+    viewModel: VehiclesViewModel,
+    container: ai.instapark.valet.AppContainer,
+) {
     val colors = ValetTheme.colors
+
+    // See QueueScreen.kt's identical block for the full rationale -- consumes
+    // AppContainer.pendingHighlightTicketId set by SearchOverlay, retrying after a
+    // filter reset if the target isn't in the currently filtered page.
+    val listState = rememberLazyListState()
+    var highlightedTicketId by remember { mutableStateOf<String?>(null) }
+    val pendingHighlightId = container.pendingHighlightTicketId
+    LaunchedEffect(response.tickets, pendingHighlightId) {
+        if (pendingHighlightId == null) return@LaunchedEffect
+        val index = response.tickets.indexOfFirst { it.id == pendingHighlightId }
+        if (index < 0 && viewModel.statusFilter != null) {
+            viewModel.applyStatusFilter(null)
+            return@LaunchedEffect
+        }
+        container.pendingHighlightTicketId = null
+        if (index >= 0) {
+            listState.animateScrollToItem(index)
+            highlightedTicketId = pendingHighlightId
+            delay(2500)
+            highlightedTicketId = null
+        }
+    }
     Column(modifier = Modifier.fillMaxSize().valetAppCanvas(colors.isDark)) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text("Vehicles", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
@@ -120,12 +153,20 @@ private fun VehiclesContent(response: VehiclesResponse, viewModel: VehiclesViewM
         }
 
         LazyColumn(
+            state = listState,
             modifier = Modifier.weight(1f),
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             items(response.tickets, key = { it.id }) { ticket ->
-                VehicleTicketCard(ticket, modifier = Modifier.animateItem())
+                val highlightModifier = if (ticket.id == highlightedTicketId) {
+                    Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(colors.tintOrange.copy(alpha = 0.4f))
+                } else {
+                    Modifier
+                }
+                VehicleTicketCard(ticket, modifier = highlightModifier.then(Modifier.animateItem()))
             }
             if (response.tickets.isEmpty()) {
                 item { Text("No records for this filter.", modifier = Modifier.padding(24.dp)) }
