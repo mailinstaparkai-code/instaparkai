@@ -43,8 +43,12 @@ export function computeFare(
         if (b.upto_minutes === null) return -1;
         return a.upto_minutes - b.upto_minutes;
       });
-      const tier = sorted.find((t) => t.upto_minutes === null || minutesParked <= t.upto_minutes);
-      return tier ? tier.rate : sorted[sorted.length - 1].rate;
+      // Each tier's rate is a delta on top of the ones before it (e.g. "₹30 for the
+      // first hour, +₹15 more after 2 hours" is entered as two tiers, 30 and 15) --
+      // sum every tier up to and including the matching one, not just that tier alone.
+      const matchIndex = sorted.findIndex((t) => t.upto_minutes === null || minutesParked <= t.upto_minutes);
+      const cutoff = matchIndex === -1 ? sorted.length - 1 : matchIndex;
+      return sorted.slice(0, cutoff + 1).reduce((sum, t) => sum + t.rate, 0);
     }
     default:
       return null;
