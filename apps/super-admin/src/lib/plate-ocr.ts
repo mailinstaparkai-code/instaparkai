@@ -15,6 +15,17 @@ const PLATE_RE = /\b([A-Z]{2})[\s-]?(\d{1,2})[\s-]?([A-Z]{1,3})[\s-]?(\d{4})\b/;
 // whitespace/hyphen character removed.
 const PLATE_RE_NO_SEP = /([A-Z]{2})(\d{1,2})([A-Z]{1,3})(\d{4})/;
 
+// Strict full-string check for vendor-adapter output (Kotai, FastALPR, ...), which
+// returns an already-segmented plate rather than free-text to parse. Vendors have
+// been observed returning non-plate garbage as confidently as a real read -- a
+// 45-real-photo batch test found FastALPR's default model silently drops the last
+// character on ~40% of real check-in photos (e.g. "KA05JG324" for actual
+// "KA05JG3244"), and Kotai's demo key has separately been caught returning a wrong
+// plate outright. Unlike parsePlateFromText's OCR.space path (which scans noisy
+// free text for a substring match), a vendor's output is either the whole plate or
+// it's wrong -- so this validates the complete string, not a substring.
+const WELL_FORMED_PLATE_RE = /^[A-Z]{2}\d{1,2}[A-Z]{1,3}\d{4}$/;
+
 // Best-effort, same philosophy as dl-ocr.ts's parseExpiryFromText: plate photos vary
 // wildly in angle/lighting/reflection, so this is a pre-fill suggestion for the
 // operator to confirm/correct, never an auto-validated value. A no-match returns
@@ -49,12 +60,24 @@ export async function extractPlateNumber(
   if (organizationId) {
     const provider = await resolveAnprProvider(createServiceClient(), organizationId);
     try {
+      let vendorPlate: string | null = null;
       if (provider?.adapterKey === "kotai") {
-        return await extractPlateViaKotai(buffer, provider.apiKey, provider.endpointUrl);
+        vendorPlate = await extractPlateViaKotai(buffer, provider.apiKey, provider.endpointUrl);
+      } else if (provider?.adapterKey === "fastalpr" && provider.endpointUrl) {
+        vendorPlate = await extractPlateViaFastAlpr(buffer, provider.apiKey, provider.endpointUrl);
       }
-      if (provider?.adapterKey === "fastalpr" && provider.endpointUrl) {
-        return await extractPlateViaFastAlpr(buffer, provider.apiKey, provider.endpointUrl);
+
+      // A clean "no plate found" (null) is trusted as final -- a purpose-built ANPR
+      // engine saying "nothing here" is a real answer, not a failure to route
+      // around. A non-null result that isn't a well-formed plate, though, is
+      // exactly the silent-garbage failure mode found in testing -- that gets
+      // treated the same as a thrown error, not returned to the operator.
+      if (vendorPlate === null || WELL_FORMED_PLATE_RE.test(vendorPlate)) {
+        return vendorPlate;
       }
+      console.error(
+        `ANPR vendor "${provider?.adapterKey}" returned a malformed plate ("${vendorPlate}"), falling back to OCR.space`
+      );
     } catch (err) {
       // Silent fallback by explicit product decision: an operator should still
       // get a best-effort reading rather than nothing, even if the assigned

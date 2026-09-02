@@ -14,6 +14,9 @@ import ai.instapark.valet.ui.queue.QueueScreen
 import ai.instapark.valet.ui.reports.ReportsScreen
 import ai.instapark.valet.ui.theme.ValetTheme
 import ai.instapark.valet.ui.theme.ValetTokens
+import ai.instapark.valet.ui.update.UpdateBanner
+import ai.instapark.valet.ui.update.UpdateViewModel
+import ai.instapark.valet.ui.update.UpdateViewModelFactory
 import ai.instapark.valet.ui.vehicles.VehiclesScreen
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
@@ -61,6 +64,10 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -222,6 +229,21 @@ fun ValetNavGraph() {
     val bottomTabs = if (role == "parking_admin") parkingAdminTabs else operatorTabs
     val isMoreChild = currentRoute in moreChildRoutes
 
+    // App-wide, not Dashboard-only (unlike the original DashboardViewModel-owned
+    // check) -- instantiated here so it's Activity-scoped and survives every tab
+    // switch, exactly like NotificationsBell's own ViewModel. Polling is gated on a
+    // real session existing so it never fires pre-login.
+    val updateViewModel: UpdateViewModel = viewModel(
+        factory = UpdateViewModelFactory(container.updateRepository, container.updateStore)
+    )
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(updateViewModel, lifecycleOwner, role) {
+        if (role == null) return@LaunchedEffect
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            updateViewModel.pollWhileActive()
+        }
+    }
+
     Scaffold(
         containerColor = colors.canvasBottom,
         topBar = {
@@ -251,11 +273,16 @@ fun ValetNavGraph() {
         },
         contentWindowInsets = androidx.compose.foundation.layout.WindowInsets(0, 0, 0, 0),
     ) { padding ->
-        NavHost(
-            navController = navController,
-            startDestination = startDestination,
-            modifier = Modifier.padding(padding),
-        ) {
+        Column(modifier = Modifier.padding(padding)) {
+            val update = updateViewModel.updateAvailable
+            if (update != null && showBottomBar) {
+                UpdateBanner(update = update, onDismiss = { updateViewModel.dismissUpdate() })
+            }
+            NavHost(
+                navController = navController,
+                startDestination = startDestination,
+                modifier = Modifier.weight(1f),
+            ) {
             composable(Screen.Login.route) {
                 LoginScreen(
                     onLoginSuccess = {
@@ -271,8 +298,12 @@ fun ValetNavGraph() {
                     onGoToVehicles = { navigateToTab(navController, Screen.Vehicles.route) },
                 )
             }
-            composable(Screen.Queue.route) { QueueScreen() }
-            composable(Screen.Vehicles.route) { VehiclesScreen() }
+            composable(Screen.Queue.route) {
+                QueueScreen(onGoToVehicles = { navigateToTab(navController, Screen.Vehicles.route) })
+            }
+            composable(Screen.Vehicles.route) {
+                VehiclesScreen(onGoToQueue = { navigateToTab(navController, Screen.Queue.route) })
+            }
             composable(Screen.Profile.route) {
                 ProfileScreen(
                     onSignedOut = {
@@ -294,6 +325,7 @@ fun ValetNavGraph() {
             composable(Screen.Reports.route) { ReportsScreen() }
             composable(Screen.Configuration.route) { ConfigurationScreen() }
             composable(Screen.Operators.route) { OperatorsScreen() }
+            }
         }
     }
 }

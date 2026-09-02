@@ -125,6 +125,13 @@ This is the single most important thing to understand before touching auth code.
   available." — could never actually render, since the dialog never opened while
   disabled). Prefer leaving the trigger enabled and explaining the empty/blocked state
   inside the dialog/panel it opens, over silently disabling it with no indication why.
+- **`type="password"` inputs can get silently corrupted by browser password managers**,
+  even with `autocomplete="off"` (that attribute is largely ignored specifically for
+  password fields). Hit this for real on Marketplace's API-key field: a saved key came
+  back 2 characters longer than the real one, and it was a password manager's doing, not
+  a paste error. Any field that holds a secret/API-key value the user needs to see and
+  edit (not a login password) should be `type="text"` with `data-1p-ignore` and
+  `data-lpignore="true"` instead — see `components/app-manage-dialog.tsx`.
 
 ## Performance: latency here is round-trips, not SQL
 
@@ -236,6 +243,76 @@ this app.
   notifications) without the project owner supplying a fresh copy.
 - See that app's own `README.md` for build/signing/release-versioning instructions —
   don't duplicate them here.
+
+## ANPR / plate-reading (Marketplace + vendor adapters)
+
+A Super Admin can assign a per-organization ANPR (plate-recognition) vendor from the
+**Marketplace** (`/dashboard/marketplace`) that takes over plate reading at check-in
+instead of the OCR.space default. Read this before touching anything under
+`lib/parking-admin/anpr.ts`, `lib/plate-ocr.ts`, or `lib/marketplace.ts`.
+
+- **Orchestration lives in one place**: `lib/plate-ocr.ts`'s `extractPlateNumber()` is
+  the only function that decides whether to call a vendor or fall back to OCR.space —
+  both callers (the Android-facing `v1/queue/ocr-plate` route and the web check-in
+  Server Action) delegate to it rather than duplicating the decision.
+- **Never trust a vendor's returned text as-is.** A 45-real-photo batch test (real
+  Ajmera Annex check-in photos, not synthetic ones) found the self-hosted FastALPR
+  adapter silently drops the last character on ~40% of real photos (e.g. `"KA05JG324"`
+  for the actual `"KA05JG3244"`), and Kotai has separately been caught returning a
+  wrong plate outright with high apparent confidence. `extractPlateNumber()` validates
+  any non-null vendor result against a strict `^[A-Z]{2}\d{1,2}[A-Z]{1,3}\d{4}$` regex
+  before returning it — a non-conforming result is treated the same as a thrown error
+  and falls through to OCR.space, rather than handing the operator silently-wrong data.
+  A clean "no plate found" (`null`) from a vendor is still trusted as final immediately
+  (no fallback) — that's a real answer from a purpose-built engine, not a failure to
+  route around. **This format check catches wrong-length garbage, not
+  right-length-but-wrong-character misreads** — a vendor can still return a
+  well-formed, confidently-wrong plate (confirmed happening in testing), so the
+  operator's own confirm-before-submit step is still the real safety net, not this
+  regex.
+- **Kotai's demo API returns HTTP 200 even on real failure** — an invalid key or an
+  exhausted free-trial quota both come back as `{"status": false, "message": "..."}`
+  with no `results` field, not a non-2xx status. `extractPlateViaKotai` explicitly
+  checks `data.status === false` in addition to `!res.ok`; any new HTTP-based adapter
+  should assume a vendor might have its own "200-but-actually-failed" shape and verify
+  against a deliberately-bad key during development rather than trusting `res.ok`.
+- **A self-hosted vendor is a different deploy target, not a Vercel function.**
+  `alpr-service/` (repo root, sibling to `apps/`) wraps
+  [fast-alpr](https://github.com/ankandrew/fast-alpr) (MIT, ONNX-based, no API
+  key/quota) in a small FastAPI service, deployed separately to Render as a Docker Web
+  Service — Python/ONNX has nothing to `npm install`, so it can't run in-process in the
+  Next.js app the way an HTTP vendor adapter can. It's called from
+  `extractPlateViaFastAlpr` exactly like any other HTTP adapter (`X-Api-Key` header,
+  `marketplace_apps.endpoint_url`/`api_key` columns reused as-is — no schema
+  difference from a real vendor). **Render gotcha**: if you set a Root Directory (e.g.
+  `alpr-service`) for a monorepo subfolder, the separate "Dockerfile Path" field is
+  relative to *that* Root Directory, not the repo root, despite what Render's own UI
+  copy says — setting it to `alpr-service/Dockerfile` on top of a Root Directory of
+  `alpr-service` doubles the path and fails the build with a "does not exist" error.
+- **fast-alpr's default OCR models are a poor fit for India specifically** — worth
+  knowing before assuming a "bigger model" fixes an accuracy problem. Its shipped
+  `cct-xs-v2-global-model` has `max_plate_slots: 10`, which is *exactly* India's plate
+  length (zero margin), and India is **not** in the model's trained `plate_regions`
+  list at all — it's genuinely out-of-distribution. Swapping to the larger `cct-s-v2`
+  variant was tested and made real-photo accuracy measurably *worse* (27% well-formed
+  vs. 47% for the smaller model), and the largest shipped variant
+  (`global-plates-mobile-vit-v2-model`) has `max_plate_slots: 9` — structurally
+  incapable of ever emitting a full 10-character Indian plate. Don't reach for a bigger
+  fast-alpr model as the fix; the format-validation safety net above is the actual
+  mitigation in place.
+- **India-specific open-source alternatives were evaluated and rejected.**
+  [`sanchit2843/Indian_LPR`](https://github.com/sanchit2843/Indian_LPR) was tested
+  locally against the same 45-photo batch (no code from it was ever added to this
+  repo) — its inference
+  script does zero image resizing and was trained exclusively on 1920×1080 landscape
+  photos with no orientation/scale augmentation; fed this app's real 960×1280
+  **portrait** check-in photos, it missed the plate entirely on 35 of 45 real test
+  photos and also has no license file (a real legal gap for commercial use, never
+  resolved since testing ruled it out on accuracy first). Two other India-ALPR repos
+  were ruled out on inspection without testing: one depends on Mamba-SSM (effectively
+  GPU-only, incompatible with the free-tier CPU-only Render hosting used here), the
+  other's OCR stage calls the paid Google Cloud Vision API, defeating the point of a
+  quota-free self-hosted vendor.
 
 ## Where to look next
 

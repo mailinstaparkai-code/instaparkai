@@ -8,6 +8,7 @@ import ai.instapark.valet.ui.components.GlassCard
 import ai.instapark.valet.ui.components.StatusPill
 import ai.instapark.valet.ui.components.ValetFilterChip
 import ai.instapark.valet.ui.components.statusAccent
+import ai.instapark.valet.ui.search.SearchOverlay
 import ai.instapark.valet.ui.theme.ValetTheme
 import ai.instapark.valet.ui.theme.valetAppCanvas
 import ai.instapark.valet.ui.util.vehicleImageRes
@@ -34,9 +35,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CurrencyRupee
 import androidx.compose.material.icons.automirrored.outlined.FactCheck
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -60,7 +63,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import kotlinx.coroutines.delay
 
 @Composable
-fun VehiclesScreen() {
+fun VehiclesScreen(onGoToQueue: () -> Unit = {}) {
     val container = appContainer()
     val viewModel: VehiclesViewModel = viewModel(factory = VehiclesViewModelFactory(container.vehiclesRepository))
 
@@ -75,7 +78,7 @@ fun VehiclesScreen() {
                 Button(onClick = { viewModel.load() }) { Text("Retry") }
             }
         }
-        is VehiclesUiState.Success -> VehiclesContent(state.response, viewModel, container)
+        is VehiclesUiState.Success -> VehiclesContent(state.response, viewModel, container, onGoToQueue)
     }
 }
 
@@ -84,38 +87,59 @@ private fun VehiclesContent(
     response: VehiclesResponse,
     viewModel: VehiclesViewModel,
     container: ai.instapark.valet.AppContainer,
+    onGoToQueue: () -> Unit,
 ) {
     val colors = ValetTheme.colors
+    var searchOpen by remember { mutableStateOf(false) }
 
     // See QueueScreen.kt's identical block for the full rationale -- consumes
     // AppContainer.pendingHighlightTicketId set by SearchOverlay, retrying after a
-    // filter reset if the target isn't in the currently filtered page.
+    // filter reset, then a forced reload from page 1 (bounded by
+    // highlightReloadAttempted) if the target still isn't in the cached, possibly
+    // stale/paginated list.
     val listState = rememberLazyListState()
     var highlightedTicketId by remember { mutableStateOf<String?>(null) }
+    var highlightReloadAttempted by remember { mutableStateOf<String?>(null) }
     val pendingHighlightId = container.pendingHighlightTicketId
     LaunchedEffect(response.tickets, pendingHighlightId) {
         if (pendingHighlightId == null) return@LaunchedEffect
         val index = response.tickets.indexOfFirst { it.id == pendingHighlightId }
-        if (index < 0 && viewModel.statusFilter != null) {
-            viewModel.applyStatusFilter(null)
+        if (index < 0) {
+            if (viewModel.statusFilter != null) {
+                viewModel.applyStatusFilter(null)
+                return@LaunchedEffect
+            }
+            if (highlightReloadAttempted != pendingHighlightId) {
+                highlightReloadAttempted = pendingHighlightId
+                viewModel.reloadFromFirstPage()
+                return@LaunchedEffect
+            }
+            container.pendingHighlightTicketId = null // genuinely not there -- stop retrying
             return@LaunchedEffect
         }
         container.pendingHighlightTicketId = null
-        if (index >= 0) {
-            listState.animateScrollToItem(index)
-            highlightedTicketId = pendingHighlightId
-            delay(2500)
-            highlightedTicketId = null
-        }
+        highlightReloadAttempted = null
+        listState.animateScrollToItem(index)
+        highlightedTicketId = pendingHighlightId
+        delay(2500)
+        highlightedTicketId = null
     }
+    Box(Modifier.fillMaxSize()) {
     Column(modifier = Modifier.fillMaxSize().valetAppCanvas(colors.isDark)) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("Vehicles", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-            Text(
-                "${response.totalCount} record(s)",
-                style = MaterialTheme.typography.bodyMedium,
-                color = colors.inkSecondary,
-            )
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Column {
+                    Text("Vehicles", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    Text(
+                        "${response.totalCount} record(s)",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = colors.inkSecondary,
+                    )
+                }
+                IconButton(onClick = { searchOpen = true }) {
+                    Icon(Icons.Outlined.Search, contentDescription = "Search", tint = colors.inkSecondary)
+                }
+            }
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 StatCard(
@@ -188,6 +212,17 @@ private fun VehiclesContent(
                 }
             }
         }
+    }
+
+    if (searchOpen) {
+        // Already on Vehicles: no navigation needed for a non-active-status result --
+        // closing the overlay alone re-triggers the highlight LaunchedEffect above.
+        SearchOverlay(
+            onDismiss = { searchOpen = false },
+            onGoToQueue = { searchOpen = false; onGoToQueue() },
+            onGoToVehicles = { searchOpen = false },
+        )
+    }
     }
 }
 

@@ -548,7 +548,47 @@ keys) to any file, including this one — reference where to find/reset them ins
     builds can't install as *updates* over an existing install (Android enforces
     same-signer for upgrades) — regenerating a keystore is not a recovery path.
 
-All AI features remain deferred by design (see below).
+- **OCR-assisted plate scanning at check-in + Marketplace (ANPR vendor management)** —
+  the one AI feature not deferred (see Architecture decisions below for why this is an
+  intentional exception, not scope creep).
+  - **Check-in flow**: a camera icon on the vehicle-number field lets the operator
+    photograph the plate; the suggested text pre-fills the field but is always
+    operator-editable before submit — never auto-validated or auto-submitted. Default
+    engine is **OCR.space** (`lib/ocr-worker.ts`'s `runOcr`, free tier, 25k
+    requests/month), with a regex parser (`lib/plate-ocr.ts`'s `parsePlateFromText`)
+    that tolerates the two real failure modes hit during testing: a two-line plate
+    where the line break lands mid-group, and a blue "IND" country-stamp mark that OCR
+    reads as literal text sitting in the middle of the plate number.
+  - **Marketplace** (`/dashboard/marketplace`, Super Admin only): a catalog of
+    third-party ANPR vendors (`marketplace_categories`/`marketplace_apps`/
+    `organization_app_assignments` tables) a Super Admin can configure with an API
+    key/endpoint and assign per-organization, independent of any code change — assigning
+    a vendor to an org routes that org's check-in plate scans through it instead of the
+    OCR.space default. **Kotai Electronics** (Bearer-token REST API) is the one vendor
+    with a real working adapter; **Circuit Digest** is catalog-only (no usable API docs
+    were ever supplied, so no adapter exists — flip it on and it just silently falls
+    back to OCR.space, by design); **CarmenCloud** was investigated (full API contract
+    documented) but the given API key was rejected by CarmenCloud's own service with an
+    explicit-deny error across every region tested, including their own documentation's
+    example — **on hold pending the account/key issue being resolved on CarmenCloud's
+    side**, no code was written for it.
+  - **FastALPR (self-hosted)** — a quota-free alternative added after Kotai's demo key
+    hit its free-trial limit and CarmenCloud's key was rejected outright. Wraps
+    [fast-alpr](https://github.com/ankandrew/fast-alpr) (MIT license, ONNX-based, no
+    per-call cost) in a small FastAPI service (`alpr-service/` at the repo root — a
+    separate Python/Docker deploy, not part of the Next.js app) hosted on Render's free
+    tier. See `CLAUDE.md`'s ANPR section for the accuracy findings (real-photo batch
+    testing found this — and every alternative tried, including an India-specific
+    open-source model — has a meaningful garbled/wrong-read rate) and the
+    format-validation safety net now in place to catch it. **Known limitation**:
+    Render's free tier spins the service down after inactivity, so the first request
+    after a quiet period pays a real cold-start delay (potentially tens of seconds)
+    before falling into its normal ~2-4s response time — upgrading that one Render
+    service off the free tier removes this if it becomes a real operational problem.
+  - **Super Admin can now reset a Parking Admin's login password from the UI** (see
+    Test accounts below) — closes a gap that previously required a direct SQL query.
+
+All other AI features remain deferred by design (see Architecture decisions above).
 
 ## Architecture decisions worth knowing before you continue
 
@@ -559,10 +599,13 @@ All AI features remain deferred by design (see below).
   (explicit user decision, not a shortcut) — a standalone username/password system. See
   `CLAUDE.md`'s Auth model section before touching anything under
   `src/lib/valet-auth/` or `src/app/parking-admin/`.
-- **AI features are deferred**: damage-detection computer vision, ANPR OCR plate
-  scanning, predictive ETA, smart slot allocation, and staffing analytics are all
-  explicitly out of scope until the manual workflow is solid end-to-end. Don't add them
-  opportunistically.
+- **AI features are mostly still deferred, with one exception**: damage-detection
+  computer vision, predictive ETA, smart slot allocation, and staffing analytics remain
+  explicitly out of scope until the manual workflow is solid end-to-end — don't add
+  them opportunistically. **ANPR OCR plate scanning at check-in has since been built**
+  (see the What's built bullet below and `CLAUDE.md`'s ANPR section) — that line is
+  intentionally an exception to the "AI stays deferred" rule, not evidence the rule
+  changed generally.
 - **Guest-facing tracking page** will be public routes inside this same Next.js app
   (e.g. `/track/[token]`), not a separate deployment.
 - The original valet PRD mentions embedded reference screenshots from an unrelated
@@ -608,6 +651,17 @@ All AI features remain deferred by design (see below).
   tokens, but no real Android device or browser-with-permission-granted was available in
   this sandboxed environment, so an actual notification landing on a real phone/browser
   has not been observed firsthand — worth a quick real-device/real-browser check.
+- **No ANPR vendor tested so far is reliable enough to trust unattended** — the best
+  option found (self-hosted FastALPR) still returns a wrong-but-well-formed plate often
+  enough that it slipped past the format-validation safety net in testing (one
+  single-letter misread confirmed by eye: `KA53HA4481` returned for actual
+  `KA53MA4481`). The check-in UI's "operator confirms/edits before submit" design is
+  load-bearing here, not just a nicety — don't ever wire plate OCR to auto-submit
+  without a human in the loop, on any vendor.
+- CarmenCloud (a candidate second real ANPR vendor) is blocked on the vendor's own
+  side — the provided API key is rejected with an explicit-deny error on every region
+  endpoint, including CarmenCloud's own documented example. No code exists for it; pick
+  this back up once the account/key issue is resolved externally.
 - Two Vercel deploys in this batch hit a stale `.next/dev` cache after a local
   `rm -rf .next && npm run build` collided with the still-running dev preview server
   (`ENOENT ... pages-manifest.json` / `Cannot find module '.../[turbopack]_runtime.js'`)
@@ -642,6 +696,14 @@ All AI features remain deferred by design (see below).
   deploying, sanity-check with `curl -s -o /dev/null -w "%{http_code}" https://instaparkai-super-admin.vercel.app/api/parking-admin/v1/me`
   — expect `401` (reached, auth required); a `404` HTML page means you deployed to (or are
   checking) the wrong place.
+- **`alpr-service` (the self-hosted FastALPR wrapper) is deployed separately on
+  Render**, not Vercel — a Web Service pointed at `alpr-service/` in this repo (Root
+  Directory `alpr-service`, Dockerfile Path `Dockerfile` — see `CLAUDE.md`'s ANPR
+  section for the Root-Directory/Dockerfile-Path gotcha that broke the first deploy
+  attempt). Its `ALPR_API_KEY` env var (set in Render's dashboard) must match the "API
+  key" value entered for the FastALPR row in Super Admin's Marketplace UI — they're the
+  same shared secret, not a vendor-issued key. If FastALPR stops working, check Render's
+  own dashboard/logs for that service first (separate from Vercel's).
 - Env vars live in Vercel's Production environment settings (not just `.env.local` —
   update both if they ever rotate): `NEXT_PUBLIC_SUPABASE_URL`,
   `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, plus three added for
@@ -658,13 +720,16 @@ All AI features remain deferred by design (see below).
 
 - **Super Admin**: `mail.instaparkai@gmail.com`, password set by the project owner
   directly (not stored anywhere in this repo).
-- **Parking Admin** (test site "Hotel Parking Test"): username `hotelvikas`. Password was
-  reset during operator-login verification (the original was unknown/unrecorded) — shared
-  with the project owner directly, not stored in this repo. If it's needed and unknown
-  again, a Super Admin can't currently reset a Parking Admin's password through the UI
-  (not built yet) — reset it directly via `npx supabase db query --linked` by generating
-  a new hash with `src/lib/valet-auth/password.ts`'s `hashPassword()`, or delete and
-  recreate the account from the parking space's detail page in the Super Admin portal.
+- **Parking Admin** (test site "Hotel Parking Test"): username `hotelvikas`. Password has
+  been reset multiple times during verification passes (the original was
+  unknown/unrecorded) — most recently to `Reset-Test-9f3kQ2` while verifying the ANPR
+  work below; treat it as a disposable test credential, not a stable one, and expect it
+  to change again next time someone needs to verify against this account. A Super Admin
+  can now reset a Parking Admin's password directly from the UI ("Reset password" next
+  to "Edit sites"/"Delete" on the Organization detail page's Parking Admins list,
+  `resetParkingAdminPassword` in `parking-admin-actions.ts`) — the old
+  `npx supabase db query --linked` + manual `hashPassword()` workaround is no longer the
+  only option, though it still works if needed.
 - **Valet Operators** (same test site): `testoperator` (Test Operator Final) and `valet1`
   (Ravi Kumar) — both created during verification (operator-login flow, then reused for
   Phase A's round-robin/availability testing, which needed 2+ operators). Passwords
@@ -694,3 +759,9 @@ Roughly in order (matches the phased plan this project has been following):
    directly (auto-update, wider rollout), revisit Play Console's internal testing track
    — that needs a Google Play Developer account (real Google account, $25 one-time fee,
    identity verification) that doesn't exist yet for this project.
+7. Resolve the CarmenCloud API key/account issue (rejected with an explicit-deny error)
+   if a second real ANPR vendor is still wanted — the integration itself is fully
+   designed and ready to build the moment the key works.
+8. If FastALPR's cold-start delay (Render free tier) turns into a real operator
+   complaint, upgrading that one Render service off the free tier is the fix — no code
+   changes needed.

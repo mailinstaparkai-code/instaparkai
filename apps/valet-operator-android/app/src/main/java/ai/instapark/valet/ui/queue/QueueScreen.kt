@@ -19,6 +19,7 @@ import ai.instapark.valet.ui.components.StatusPill
 import ai.instapark.valet.ui.components.TappableRowPicker
 import ai.instapark.valet.ui.components.VehicleTypeSelector
 import ai.instapark.valet.ui.components.statusAccent
+import ai.instapark.valet.ui.search.SearchOverlay
 import ai.instapark.valet.ui.theme.ValetTheme
 import ai.instapark.valet.ui.theme.valetAppCanvas
 import ai.instapark.valet.ui.util.vehicleImageRes
@@ -68,6 +69,7 @@ import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.icons.outlined.PhotoLibrary
 import androidx.compose.material.icons.outlined.QrCode
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.VpnKey
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -97,7 +99,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 @Composable
-fun QueueScreen() {
+fun QueueScreen(onGoToVehicles: () -> Unit = {}) {
     val container = appContainer()
     val viewModel: QueueViewModel = viewModel(factory = QueueViewModelFactory(container.queueRepository))
 
@@ -112,13 +114,14 @@ fun QueueScreen() {
                 Button(onClick = { viewModel.load() }) { Text("Retry") }
             }
         }
-        is QueueUiState.Success -> QueueContent(state.response, viewModel)
+        is QueueUiState.Success -> QueueContent(state.response, viewModel, onGoToVehicles)
     }
 }
 
 @Composable
-private fun QueueContent(response: QueueResponse, viewModel: QueueViewModel) {
+private fun QueueContent(response: QueueResponse, viewModel: QueueViewModel, onGoToVehicles: () -> Unit) {
     var showCheckIn by remember { mutableStateOf(false) }
+    var searchOpen by remember { mutableStateOf(false) }
     val colors = ValetTheme.colors
     val container = appContainer()
     val role by container.tokenStore.roleFlow.collectAsState(initial = null)
@@ -129,26 +132,40 @@ private fun QueueContent(response: QueueResponse, viewModel: QueueViewModel) {
     // recomposition, not remembered) so that if the target isn't in the currently
     // filtered list, resetting the filter to "All" -- which triggers a reload --
     // lets this effect retry against the new (unfiltered) response instead of the
-    // id being silently dropped by a stale key comparison.
+    // id being silently dropped by a stale key comparison. If the filter is already
+    // "All" but the ticket still isn't there, the cached list itself may simply be
+    // stale (QueueViewModel is retained, not reloaded, across bottom-nav tab
+    // switches) -- one forced reload is attempted before giving up, bounded by
+    // highlightReloadAttempted so a genuinely-missing ticket can't loop forever.
     val listState = rememberLazyListState()
     var highlightedTicketId by remember { mutableStateOf<String?>(null) }
+    var highlightReloadAttempted by remember { mutableStateOf<String?>(null) }
     val pendingHighlightId = container.pendingHighlightTicketId
     LaunchedEffect(response.tickets, pendingHighlightId) {
         if (pendingHighlightId == null) return@LaunchedEffect
         val index = response.tickets.indexOfFirst { it.id == pendingHighlightId }
-        if (index < 0 && viewModel.statusFilter != null) {
-            viewModel.applyStatusFilter(null)
+        if (index < 0) {
+            if (viewModel.statusFilter != null) {
+                viewModel.applyStatusFilter(null)
+                return@LaunchedEffect
+            }
+            if (highlightReloadAttempted != pendingHighlightId) {
+                highlightReloadAttempted = pendingHighlightId
+                viewModel.load()
+                return@LaunchedEffect
+            }
+            container.pendingHighlightTicketId = null // genuinely not there -- stop retrying
             return@LaunchedEffect
         }
         container.pendingHighlightTicketId = null
-        if (index >= 0) {
-            listState.animateScrollToItem(index)
-            highlightedTicketId = pendingHighlightId
-            delay(2500)
-            highlightedTicketId = null
-        }
+        highlightReloadAttempted = null
+        listState.animateScrollToItem(index)
+        highlightedTicketId = pendingHighlightId
+        delay(2500)
+        highlightedTicketId = null
     }
 
+    Box(Modifier.fillMaxSize()) {
     Column(modifier = Modifier.fillMaxSize().valetAppCanvas(colors.isDark)) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
@@ -169,14 +186,19 @@ private fun QueueContent(response: QueueResponse, viewModel: QueueViewModel) {
                         )
                     }
                 }
-                Button(
-                    onClick = { showCheckIn = true },
-                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
-                        containerColor = colors.accent,
-                        contentColor = Color.White,
-                    ),
-                    shape = RoundedCornerShape(50),
-                ) { Text("+ Check-in", fontWeight = FontWeight.SemiBold) }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { searchOpen = true }) {
+                        Icon(Icons.Outlined.Search, contentDescription = "Search", tint = colors.inkSecondary)
+                    }
+                    Button(
+                        onClick = { showCheckIn = true },
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                            containerColor = colors.accent,
+                            contentColor = Color.White,
+                        ),
+                        shape = RoundedCornerShape(50),
+                    ) { Text("+ Check-in", fontWeight = FontWeight.SemiBold) }
+                }
             }
 
             if (response.canToggleAutoAllocate) {
@@ -290,6 +312,18 @@ private fun QueueContent(response: QueueResponse, viewModel: QueueViewModel) {
                 }
             },
         )
+    }
+
+    if (searchOpen) {
+        // Already on Queue: no navigation needed for a Queue-status result -- closing
+        // the overlay alone re-triggers the highlight LaunchedEffect above, since it
+        // reads pendingHighlightTicketId fresh off AppContainer on every recomposition.
+        SearchOverlay(
+            onDismiss = { searchOpen = false },
+            onGoToQueue = { searchOpen = false },
+            onGoToVehicles = { searchOpen = false; onGoToVehicles() },
+        )
+    }
     }
 }
 

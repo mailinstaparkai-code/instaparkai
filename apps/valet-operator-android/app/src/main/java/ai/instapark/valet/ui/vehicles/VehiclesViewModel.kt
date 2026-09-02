@@ -45,6 +45,15 @@ class VehiclesViewModel(private val repository: VehiclesRepository) : ViewModel(
         load()
     }
 
+    // Used by the search-highlight fallback (VehiclesScreen.kt): the cached list may
+    // be stale relative to what a fresh search just found, and if it's paginated past
+    // page 1, the target ticket won't be on the currently-loaded page either. Resets
+    // both before reloading, mirroring applyStatusFilter's own reset-then-load shape.
+    fun reloadFromFirstPage() {
+        page = 1
+        load()
+    }
+
     fun nextPage() {
         page += 1
         load()

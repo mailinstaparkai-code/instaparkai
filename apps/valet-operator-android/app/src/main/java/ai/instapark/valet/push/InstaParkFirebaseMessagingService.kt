@@ -16,8 +16,15 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-private const val CHANNEL_ID = "vehicle_dispatched"
-private const val CHANNEL_NAME = "Vehicle pickups"
+private data class NotificationSpec(val channelId: String, val channelName: String, val defaultTitle: String, val defaultBody: String)
+
+// data.type differentiates payloads sent through the same FCM pipeline -- absent/
+// unrecognized falls back to today's vehicle_dispatched behavior, so existing pushes
+// (which never set this field) are unaffected.
+private val SPECS = mapOf(
+    "app_update" to NotificationSpec("app_updates", "App updates", "Update available", "A new version is ready to install"),
+)
+private val DEFAULT_SPEC = NotificationSpec("vehicle_dispatched", "Vehicle pickups", "Vehicle assigned", "A vehicle is ready for pickup")
 
 class InstaParkFirebaseMessagingService : FirebaseMessagingService() {
 
@@ -31,19 +38,23 @@ class InstaParkFirebaseMessagingService : FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
-        val title = message.notification?.title ?: "Vehicle assigned"
-        val body = message.notification?.body ?: "A vehicle is ready for pickup"
-        showNotification(title, body)
+        val spec = SPECS[message.data["type"]] ?: DEFAULT_SPEC
+        val title = message.notification?.title ?: spec.defaultTitle
+        val body = message.notification?.body ?: spec.defaultBody
+        showNotification(spec.channelId, spec.channelName, title, body)
         Haptics.notify(applicationContext)
     }
 
-    private fun showNotification(title: String, body: String) {
+    private fun showNotification(channelId: String, channelName: String, title: String, body: String) {
         val manager = getSystemService(NotificationManager::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH)
+            val channel = NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH)
             manager.createNotificationChannel(channel)
         }
 
+        // Tapping opens the app -- no deep link into a download flow. Once the
+        // app-wide UpdateBanner ships, opening the app already surfaces its own
+        // Download button; a second tap-to-download path would just duplicate it.
         val intent = Intent(this, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
         }
@@ -51,7 +62,7 @@ class InstaParkFirebaseMessagingService : FirebaseMessagingService() {
             this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+        val notification = NotificationCompat.Builder(this, channelId)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentTitle(title)
             .setContentText(body)

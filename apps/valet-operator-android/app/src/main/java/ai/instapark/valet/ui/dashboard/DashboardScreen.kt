@@ -1,7 +1,6 @@
 package ai.instapark.valet.ui.dashboard
 
 import ai.instapark.valet.R
-import ai.instapark.valet.data.remote.dto.AppVersionResponse
 import ai.instapark.valet.data.remote.dto.DashboardResponse
 import ai.instapark.valet.data.remote.dto.QueueTicket
 import ai.instapark.valet.ui.appContainer
@@ -37,10 +36,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Coffee
 import androidx.compose.material.icons.outlined.DirectionsCar
-import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.LocalParking
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.PowerSettingsNew
@@ -49,7 +46,6 @@ import androidx.compose.material.icons.outlined.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -71,8 +67,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ai.instapark.valet.util.Haptics
-import android.content.Intent
-import android.net.Uri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import java.util.Calendar
 
@@ -87,8 +81,6 @@ fun DashboardScreen(
             container.dashboardRepository,
             container.tokenStore,
             container.queueRepository,
-            container.updateRepository,
-            container.updateStore,
         )
     )
     var searchOpen by remember { mutableStateOf(false) }
@@ -175,12 +167,6 @@ private fun DashboardContent(
             }
         }
         Spacer(Modifier.height(14.dp))
-
-        val update = viewModel.updateAvailable
-        if (update != null) {
-            UpdateBanner(update = update, onDismiss = { viewModel.dismissUpdate() })
-            Spacer(Modifier.height(12.dp))
-        }
 
         SearchEntryField(onClick = onOpenSearch)
         Spacer(Modifier.height(12.dp))
@@ -287,59 +273,6 @@ private fun SearchEntryField(onClick: () -> Unit) {
             color = colors.inkTertiary,
             modifier = Modifier.padding(start = 11.dp),
         )
-    }
-}
-
-/** Soft, dismissible nudge -- this app has no Play Store distribution to push updates
- * through, so this is the only way an existing install learns a newer build exists. */
-@Composable
-private fun UpdateBanner(update: AppVersionResponse, onDismiss: () -> Unit) {
-    val colors = ValetTheme.colors
-    val context = LocalContext.current
-
-    GlassCard(modifier = Modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(colors.tintBlue),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Outlined.Download, contentDescription = null, tint = colors.primary, modifier = Modifier.size(20.dp))
-            }
-            Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
-                Text(
-                    "Update available",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Text(
-                    "Version ${update.latestVersionName} is ready to install",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = colors.inkSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            Row(
-                modifier = Modifier
-                    .padding(start = 8.dp)
-                    .clip(RoundedCornerShape(50))
-                    .background(colors.primary)
-                    .clickable {
-                        val apkUrl = update.apkUrl ?: return@clickable
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(apkUrl)))
-                    }
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text("Download", color = Color.White, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
-            }
-            IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Outlined.Close, contentDescription = "Dismiss", tint = colors.inkTertiary, modifier = Modifier.size(16.dp))
-            }
-        }
     }
 }
 

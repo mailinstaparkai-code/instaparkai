@@ -52,12 +52,29 @@ export function computeFare(
         if (b.upto_minutes === null) return -1;
         return a.upto_minutes - b.upto_minutes;
       });
-      // Each tier's rate is a delta on top of the ones before it (e.g. "₹30 for the
-      // first hour, +₹15 more after 2 hours" is entered as two tiers, 30 and 15) --
-      // sum every tier up to and including the matching one, not just that tier alone.
-      const matchIndex = sorted.findIndex((t) => t.upto_minutes === null || minutesParked <= t.upto_minutes);
-      const cutoff = matchIndex === -1 ? sorted.length - 1 : matchIndex;
-      return sorted.slice(0, cutoff + 1).reduce((sum, t) => sum + t.rate, 0);
+      // Each finite tier's rate is a one-time delta for reaching that block (e.g.
+      // "first hour ₹20" is owed in full once any part of that hour is used). The
+      // final tier (upto_minutes: null, see this column's own migration comment,
+      // 20260712151137_slab_tariff_pricing.sql) is different: its rate applies to
+      // "any remaining duration," i.e. it's a per-hour-or-part-thereof rate for time
+      // beyond the last finite cutoff, not a one-time addition -- a vehicle parked for
+      // 6 hours against "first hour ₹20, then ₹40/hr" owes 20 + 40*5, not 20 + 40.
+      // (Real bug hit in this repo: a 6-hour stay was quoted the same flat total as a
+      // 2-hour one, since the old logic summed every tier's rate exactly once.)
+      let total = 0;
+      let previousCutoff = 0;
+      for (const tier of sorted) {
+        if (tier.upto_minutes === null) {
+          const remainingMinutes = Math.max(0, minutesParked - previousCutoff);
+          const extraHours = Math.ceil(remainingMinutes / 60);
+          total += tier.rate * extraHours;
+          break;
+        }
+        total += tier.rate;
+        previousCutoff = tier.upto_minutes;
+        if (minutesParked <= tier.upto_minutes) break;
+      }
+      return total;
     }
     default:
       return null;

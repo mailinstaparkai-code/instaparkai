@@ -1,15 +1,11 @@
 package ai.instapark.valet.ui.dashboard
 
-import ai.instapark.valet.BuildConfig
 import ai.instapark.valet.data.local.TokenStore
-import ai.instapark.valet.data.local.UpdateStore
 import ai.instapark.valet.data.remote.ApiException
-import ai.instapark.valet.data.remote.dto.AppVersionResponse
 import ai.instapark.valet.data.remote.dto.DashboardResponse
 import ai.instapark.valet.data.remote.dto.QueueTicket
 import ai.instapark.valet.data.repository.DashboardRepository
 import ai.instapark.valet.data.repository.QueueRepository
-import ai.instapark.valet.data.repository.UpdateRepository
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -30,8 +26,6 @@ class DashboardViewModel(
     private val repository: DashboardRepository,
     private val tokenStore: TokenStore,
     private val queueRepository: QueueRepository,
-    private val updateRepository: UpdateRepository,
-    private val updateStore: UpdateStore,
 ) : ViewModel() {
     var uiState by mutableStateOf<DashboardUiState>(DashboardUiState.Loading)
         private set
@@ -58,36 +52,12 @@ class DashboardViewModel(
     var statusHapticSignal by mutableStateOf(0)
         private set
 
-    // Non-null only when a newer build than this install exists AND the user hasn't
-    // already dismissed that exact version -- a soft, dismissible nudge (this app has
-    // no Play Store distribution to force updates through).
-    var updateAvailable by mutableStateOf<AppVersionResponse?>(null)
-        private set
-
     init {
         viewModelScope.launch {
             greetingName = tokenStore.fullNameFlow.first() ?: tokenStore.usernameFlow.first()
             role = tokenStore.roleFlow.first()
         }
         load()
-        checkForUpdate()
-    }
-
-    private fun checkForUpdate() {
-        viewModelScope.launch {
-            val latest = updateRepository.checkForUpdate().getOrNull() ?: return@launch
-            val latestVersionCode = latest.latestVersionCode ?: return@launch
-            if (latestVersionCode <= BuildConfig.VERSION_CODE) return@launch
-            val dismissed = updateStore.dismissedVersionCode.first()
-            if (latestVersionCode == dismissed) return@launch
-            updateAvailable = latest
-        }
-    }
-
-    fun dismissUpdate() {
-        val versionCode = updateAvailable?.latestVersionCode ?: return
-        updateAvailable = null
-        viewModelScope.launch { updateStore.dismiss(versionCode) }
     }
 
     fun load() {
@@ -132,10 +102,8 @@ class DashboardViewModelFactory(
     private val repository: DashboardRepository,
     private val tokenStore: TokenStore,
     private val queueRepository: QueueRepository,
-    private val updateRepository: UpdateRepository,
-    private val updateStore: UpdateStore,
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T =
-        DashboardViewModel(repository, tokenStore, queueRepository, updateRepository, updateStore) as T
+        DashboardViewModel(repository, tokenStore, queueRepository) as T
 }
